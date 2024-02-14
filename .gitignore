@@ -1,0 +1,6 @@
+takzyli-backend/
+takzyli-frontend/
+.env
+.idea/
+.cache/
+__pycache__/
