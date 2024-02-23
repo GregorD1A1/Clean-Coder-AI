@@ -3,13 +3,15 @@ from typing_extensions import Annotated
 import os
 from flaml.autogen.code_utils import execute_code
 from tools.helpers import visual_describe, make_screenshot
+from dotenv import load_dotenv, find_dotenv
 
+load_dotenv(find_dotenv())
 
 default_path = '/home/autogen/autogen/takzyli-frontend/'
 #default_path = 'E://Autogen_takzyli/takzyli-frontend/'
 config_list = [
     #{'base_url': "http://localhost:1234/v1", 'api_key': 'NULL', 'model': 'NULL'}
-    {'model': 'gpt-4-1106-preview', 'api_key': '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'},
+    {'model': 'gpt-4-1106-preview', 'api_key': os.getenv('OPENAI_API_KEY')},
     ]
 
 gpt4_config = {
@@ -91,7 +93,7 @@ groupchat = autogen.GroupChat(
     messages=[],
     max_round=500,
     speaker_selection_method="round_robin",
-    #enable_clear_history=True,
+    enable_clear_history=True,
     )
 manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=gpt4_config)
 
