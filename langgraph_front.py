@@ -1,4 +1,4 @@
-from langchain import hub
+from tools.tools_crew import list_dir, see_file
 from langchain.agents import create_openai_functions_agent
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -16,57 +16,29 @@ import json
 from langchain_core.messages import FunctionMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 
 load_dotenv(find_dotenv())
 
-def create_agent(llm, tools, system_message: str):
-    """Create an agent."""
-    functions = [format_tool_to_openai_function(t) for t in tools]
-
-    prompt = ChatPromptTemplate.from_messages(
-        [
-            (
-                "system",
-                "You are a helpful AI assistant, collaborating with other assistants."
-                " Use the provided tools to progress towards answering the question."
-                " If you are unable to fully answer, that's OK, another assistant with different tools "
-                " will help where you left off. Execute what you can to make progress."
-                " If you or any of the other assistants have the final answer or deliverable,"
-                " prefix your response with FINAL ANSWER so the team knows to stop."
-                " You have access to the following tools: {tool_names}.\n{system_message}",
-            ),
-            MessagesPlaceholder(variable_name="messages"),
-        ]
-    )
-    prompt = prompt.partial(system_message=system_message)
-    prompt = prompt.partial(tool_names=", ".join([tool.name for tool in tools]))
-    return prompt | llm.bind_functions(functions)
-
-
-tools = [TavilySearchResults(max_results=1)]
-
-# Choose the LLM that will drive the agent
+tools = [list_dir, see_file]
 llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
 
-class Response(BaseModel):
-    """Final response to the user"""
-
-    height: float = Field(description="height")
-    other_notes: str = Field(description="any additional thoughts")
-
 functions = [format_tool_to_openai_function(t) for t in tools]
-functions.append(convert_pydantic_to_openai_function(Response))
 llm = llm.bind_functions(functions)
 
-# Get the prompt to use - you can modify this!
-prompt = hub.pull("hwchase17/openai-functions-agent")
-
-# Construct the OpenAI Functions agent
-agent_runnable = create_openai_functions_agent(llm, tools, prompt)
-
+prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            "Check out all the files that could be needed to execute the task. Do not do the task, just make "
+            "filesystem research to prepare ground for task executor."
+            " You have access to the following tools: {tool_names}.\n{system_message}",
+        ),
+        MessagesPlaceholder(variable_name="messages"),
+    ]
+)
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
@@ -78,7 +50,14 @@ tool_executor = ToolExecutor(tools)
 
 
 def call_model(state):
+    print("state:", state)
     messages = state["messages"][-5:]
+    """ + [
+        SystemMessage(
+            content="Check out all the files that could be needed to execute the task. Do not do the task, just make "
+                    "filesystem research to prepare ground for task executor."
+        )
+    ]"""
     response = llm.invoke(messages)
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
@@ -118,47 +97,25 @@ def should_continue(state):
     # If there is no function call, then we finish
     if "function_call" not in last_message.additional_kwargs:
         return "end"
-    # Otherwise if there is, we need to check what type of function call it is
-    elif last_message.additional_kwargs["function_call"]["name"] == "Response":
-        return "end"
     # Otherwise we continue
     else:
         return "continue"
 
 
-
-def first_model(state):
-    human_input = state["messages"][-1].content
-    return {
-        "messages": [
-            AIMessage(
-                content="",
-                additional_kwargs={
-                    "function_call": {
-                        "name": "tavily_search_results_json",
-                        "arguments": json.dumps({"query": human_input}),
-                    }
-                },
-            )
-        ]
-    }
-
 # Define a new graph
 workflow = StateGraph(AgentState)
+workflow.state = {"messages": [SystemMessage(content="task: Change time to log out user after unactivity to 120m")]}
 
-workflow.add_node("first_agent", first_model)
 # Define the two nodes we will cycle between
 workflow.add_node("agent", call_model)
 workflow.add_node("action", call_tool)
 
 # Set the entrypoint as `agent`
 # This means that this node is the first one called
-workflow.set_entry_point("first_agent")
+workflow.set_entry_point("agent")
 
 # We now add a conditional edge
 workflow.add_conditional_edges(
-    # First, we define the start node. We use `agent`.
-    # This means these are the edges taken after the `agent` node is called.
     "agent",
     # Next, we pass in the function that will determine which node is called next.
     should_continue,
@@ -176,10 +133,7 @@ workflow.add_conditional_edges(
     },
 )
 
-# We now add a normal edge from `tools` to `agent`.
-# This means that after `tools` is called, `agent` node is called next.
 workflow.add_edge("action", "agent")
-workflow.add_edge("first_agent", "action")
 
 # Finally, we compile it!
 # This compiles it into a LangChain Runnable,
@@ -187,6 +141,14 @@ workflow.add_edge("first_agent", "action")
 app = workflow.compile()
 
 
-inputs = {"messages": [HumanMessage(content="sprawdz wysokość pałacu kultury wyrażoną w puszkach coca coli")]}
-response = app.invoke(inputs)
-print(response)
+inputs = {"messages": [HumanMessage(content="task: Change time to log out user after unactivity to 120m")]}
+#response = app.invoke(inputs)
+#print(response)
+
+for output in app.stream(inputs):
+    # stream() yields dictionaries with output keyed by node name
+    for key, value in output.items():
+        print(f"Output from node '{key}':")
+        print("---")
+        print(value)
+    print("\n---\n")
