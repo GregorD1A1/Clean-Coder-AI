@@ -3,10 +3,8 @@ from langchain.agents import create_openai_functions_agent
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.tools.tavily_search import TavilySearchResults
 from typing import TypedDict, Annotated, List, Union, Sequence
-from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.messages import BaseMessage
 import operator
-from langchain_core.agents import AgentFinish
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
@@ -22,20 +20,25 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 load_dotenv(find_dotenv())
 
+
+class FinalResponse(BaseModel):
+    """List of files executor will need to change"""
+    reasoning: str = Field(description="Reasoning what files will needed")
+    files_for_executor: List[str] = Field(description="List of files")
+
+
 tools = [list_dir, see_file]
 llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
 
 functions = [format_tool_to_openai_function(t) for t in tools]
+functions.append(convert_pydantic_to_openai_function(FinalResponse))
 llm = llm.bind_functions(functions)
 
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
 
 
-# This a helper class we have that is useful for running tools
-# It takes in an agent action and calls that tool and returns the result
 tool_executor = ToolExecutor(tools)
-
 
 def call_model(state):
     print("state:", state)
@@ -43,7 +46,7 @@ def call_model(state):
         SystemMessage(
             content="You are helping your friend Executor to make provided task. Don't do it by yourself."
                     "Make filesystem research and provide file that executor will need to change in order to do his "
-                    "task."
+                    "task. Never recommend file you haven't seen yet."
         )
     ]
     response = llm.invoke(messages)
@@ -87,25 +90,17 @@ def ask_human(state):
     else:
         return {"messages": [HumanMessage(content=human_response)]}
 
-# Define logic that will be used to determine which conditional edge to go down
+# Logic for conditional edges
 def after_agent_condition(state):
     messages = state["messages"]
     last_message = messages[-1]
 
     if "function_call" not in last_message.additional_kwargs:
         return "human"
-    else:
-        return "continue"
-
-
-def after_human_condition(state):
-    messages = state["messages"]
-    last_message = messages[-1]
-
-    if last_message.content == "Approved by human":
+    elif last_message.additional_kwargs["function_call"]["name"] == "FinalResponse":
         return "end"
     else:
-        return "agent"
+        return "continue"
 
 
 workflow = StateGraph(AgentState)
@@ -127,16 +122,8 @@ workflow.add_conditional_edges(
     },
 )
 
-workflow.add_conditional_edges(
-    "human",
-    after_human_condition,
-    {
-        "continue": "agent",
-        "end": END,
-    }
-)
-
 workflow.add_edge("tool", "agent")
+workflow.add_edge("human", "agent")
 
 app = workflow.compile()
 
