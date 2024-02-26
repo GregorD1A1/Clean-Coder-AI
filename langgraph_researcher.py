@@ -19,7 +19,8 @@ load_dotenv(find_dotenv())
 
 
 class FinalResponse(BaseModel):
-    """List of files executor will need to change"""
+    """Final response containing lList of files executor will need to change. Use that tool only when you 100% sure
+    you found all the files Executor will need to modify. If not, do additional research."""
     reasoning: str = Field(description="Reasoning what files will needed")
     files_for_executor: List[str] = Field(description="List of files")
 
@@ -43,7 +44,7 @@ def call_model(state):
     messages = state["messages"] + [
         SystemMessage(
             content="You are helping your friend Executor to make provided task. Don't do it by yourself."
-                    "Make filesystem research and provide file that executor will need to change in order to do his "
+                    "Make filesystem research and provide files that executor will need to change in order to do his "
                     "task. Never recommend file you haven't seen yet."
         )
     ]
@@ -115,7 +116,7 @@ researcher_workflow.add_edge("human", "agent")
 app = researcher_workflow.compile()
 
 
-inputs = {"messages": [HumanMessage(content="task: Change time to log out user after unactivity to 120m")]}
+inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
 #response = app.invoke(inputs)
 #print(response)
 
