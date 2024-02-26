@@ -28,18 +28,6 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
 functions = [format_tool_to_openai_function(t) for t in tools]
 llm = llm.bind_functions(functions)
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            "Check out all the files that could be needed to execute the task. Do not do the task, just make "
-            "filesystem research to prepare ground for task executor."
-            " You have access to the following tools: {tool_names}.\n{system_message}",
-        ),
-        MessagesPlaceholder(variable_name="messages"),
-    ]
-)
-
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
 
@@ -51,13 +39,13 @@ tool_executor = ToolExecutor(tools)
 
 def call_model(state):
     print("state:", state)
-    messages = state["messages"][-5:]
-    """ + [
+    messages = state["messages"] + [
         SystemMessage(
-            content="Check out all the files that could be needed to execute the task. Do not do the task, just make "
-                    "filesystem research to prepare ground for task executor."
+            content="You are helping your friend Executor to make provided task. Don't do it by yourself."
+                    "Make filesystem research and provide file that executor will need to change in order to do his "
+                    "task."
         )
-    ]"""
+    ]
     response = llm.invoke(messages)
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
@@ -89,55 +77,68 @@ def call_tool(state):
     # We return a list, because this will get added to the existing list
     return {"messages": [function_message]}
 
-
-# Define logic that will be used to determine which conditional edge to go down
-def should_continue(state):
+def ask_human(state):
     messages = state["messages"]
     last_message = messages[-1]
-    # If there is no function call, then we finish
+
+    human_response = input(last_message.content)
+    if not human_response:
+        return {"messages": [HumanMessage(content="Approved by human")]}
+    else:
+        return {"messages": [HumanMessage(content=human_response)]}
+
+# Define logic that will be used to determine which conditional edge to go down
+def after_agent_condition(state):
+    messages = state["messages"]
+    last_message = messages[-1]
+
     if "function_call" not in last_message.additional_kwargs:
-        return "end"
-    # Otherwise we continue
+        return "human"
     else:
         return "continue"
 
 
-# Define a new graph
+def after_human_condition(state):
+    messages = state["messages"]
+    last_message = messages[-1]
+
+    if last_message.content == "Approved by human":
+        return "end"
+    else:
+        return "agent"
+
+
 workflow = StateGraph(AgentState)
-workflow.state = {"messages": [SystemMessage(content="task: Change time to log out user after unactivity to 120m")]}
 
-# Define the two nodes we will cycle between
 workflow.add_node("agent", call_model)
-workflow.add_node("action", call_tool)
+workflow.add_node("tool", call_tool)
+workflow.add_node("human", ask_human)
 
-# Set the entrypoint as `agent`
-# This means that this node is the first one called
 workflow.set_entry_point("agent")
 
 # We now add a conditional edge
 workflow.add_conditional_edges(
     "agent",
-    # Next, we pass in the function that will determine which node is called next.
-    should_continue,
-    # Finally we pass in a mapping.
-    # The keys are strings, and the values are other nodes.
-    # END is a special node marking that the graph should finish.
-    # What will happen is we will call `should_continue`, and then the output of that
-    # will be matched against the keys in this mapping.
-    # Based on which one it matches, that node will then be called.
+    after_agent_condition,
     {
-        # If `tools`, then we call the tool node.
-        "continue": "action",
-        # Otherwise we finish.
+        "continue": "tool",
+        "human": "human",
         "end": END,
     },
 )
 
-workflow.add_edge("action", "agent")
+workflow.add_conditional_edges(
+    "human",
+    after_human_condition,
+    {
+        "continue": "agent",
+        "end": END,
+    }
+)
 
-# Finally, we compile it!
-# This compiles it into a LangChain Runnable,
-# meaning you can use it as you would any other runnable
+workflow.add_edge("tool", "agent")
+workflow.add_edge("human", "agent")
+
 app = workflow.compile()
 
 
