@@ -137,7 +137,6 @@ workflow.add_conditional_edges(
 )
 
 workflow.add_edge("tool", "agent")
-workflow.add_edge("human", "agent")
 
 app = workflow.compile()
 
