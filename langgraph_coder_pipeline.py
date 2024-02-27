@@ -1,4 +1,4 @@
-from langgraph_researcher import researcher
+from langgraph_coder.langgraph_researcher import researcher
 from langchain_core.messages import HumanMessage
 import json
 from tools.tools_crew import see_file
