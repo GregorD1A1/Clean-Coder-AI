@@ -113,17 +113,17 @@ researcher_workflow.add_conditional_edges(
 researcher_workflow.add_edge("tool", "agent")
 researcher_workflow.add_edge("human", "agent")
 
-app = researcher_workflow.compile()
+researcher = researcher_workflow.compile()
 
+if __name__ == "__main__":
+    inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
+    #response = researcher.invoke(inputs)
+    #print(response)
 
-inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
-#response = app.invoke(inputs)
-#print(response)
-
-for output in app.stream(inputs):
-    # stream() yields dictionaries with output keyed by node name
-    for key, value in output.items():
-        print(f"Output from node '{key}':")
-        print("---")
-        print(value)
-    print("\n---\n")
+    for output in researcher.stream(inputs):
+        # stream() yields dictionaries with output keyed by node name
+        for key, value in output.items():
+            print(f"Output from node '{key}':")
+            print("---")
+            print(value)
+        print("\n---\n")
