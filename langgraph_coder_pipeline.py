@@ -1,4 +1,4 @@
-from langgraph_coder.langgraph_researcher import researcher
+from langgraph_coder.langgraph_researcher import researcher, find_tool_json
 from langchain_core.messages import HumanMessage
 import json
 from tools.tools_crew import see_file
@@ -6,7 +6,7 @@ from tools.tools_crew import see_file
 
 inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
 response = researcher.invoke(inputs)["messages"][-1]
-files = json.loads(response.additional_kwargs["function_call"]["arguments"])["files_for_executor"]
+files = find_tool_json(response.content)["tool_parameters"]["files_for_executor"]
 
 file_contents = str()
 for file_name in files:

@@ -1,36 +1,41 @@
+import os
+import re
+import json
 from tools.tools_crew import list_dir, see_file
 from langchain_openai.chat_models import ChatOpenAI
+from langgraph_coder.perplexity_ai_llm import PerplexityAILLM
 from typing import TypedDict, Annotated, List, Sequence
 from langchain_core.messages import BaseMessage
 import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain.tools.render import format_tool_to_openai_function
 from langgraph.prebuilt import ToolInvocation
-import json
-from langchain_core.messages import FunctionMessage
 from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, FunctionMessage
+from langchain.tools import BaseTool
+from langchain.tools.render import render_text_description, render_text_description_and_args
+from langchain.tools import tool
 
 
 load_dotenv(find_dotenv())
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
 
-class FinalResponse(BaseModel):
-    """Final response containing lList of files executor will need to change. Use that tool only when you 100% sure
-    you found all the files Executor will need to modify. If not, do additional research."""
-    reasoning: str = Field(description="Reasoning what files will needed")
-    files_for_executor: List[str] = Field(description="List of files")
+@tool
+def final_response(reasoning, files_for_executor):
+    """Final response containing list of files executor will need to change. Use that tool only when you 100% sure
+    you found all the files Executor will need to modify. If not, do additional research.
+    :param reasoning: str, Reasoning what files will be needed.
+    :param files_for_executor: List[str], List of files."""
+    pass
 
 
-tools = [list_dir, see_file]
+tools = [list_dir, see_file, final_response]
+rendered_tools = render_text_description(tools)
+
 llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
-
-functions = [format_tool_to_openai_function(t) for t in tools]
-functions.append(convert_pydantic_to_openai_function(FinalResponse))
-llm = llm.bind_functions(functions)
+#llm = PerplexityAILLM(model_name="mixtral-8x7b-instruct", temperature=0, api_key=PERPLEXITY_API_KEY)
 
 
 class AgentState(TypedDict):
@@ -38,29 +43,54 @@ class AgentState(TypedDict):
 
 
 tool_executor = ToolExecutor(tools)
+system_message = SystemMessage(
+        content="You are expert in filesystem research and in choosing right files. Your research is very careful, "
+                "you always choosing only needed files, while leaving that not needed. "
+                "You are helping your friend Executor to make provided task. "
+                "Do filesystem research and provide files that executor will need to change in order to do his "
+                "task. Never recommend file you haven't seen yet."
+                "\n\n"
+                "You have access to following tools:\n"
+                f"{rendered_tools}"
+                "\n\n"
+                "To use tool, use following json blob:"
+                "```json"
+                "{{"
+                " 'tool': '$TOOL_NAME',"
+                " 'tool_parameters': '$PARAS',"
+                "}}"
+                "```"
+    )
 
 
+def find_tool_json(response):
+    match = re.search(r'```json\n(.*?)\n```', response, re.DOTALL)
+
+    if match:
+        json_str = match.group(1).strip()
+        print("Tool call: ", json_str)
+        json_obj = json.loads(json_str)
+        return json_obj
+    else:
+        return None
+
+
+# node functions
 def call_model(state):
-    messages = state["messages"] + [
-        SystemMessage(
-            content="You are helping your friend Executor to make provided task. Don't do it by yourself."
-                    "Make filesystem research and provide files that executor will need to change in order to do his "
-                    "task. Never recommend file you haven't seen yet."
-        )
-    ]
+    messages = state["messages"] + [system_message]
     response = llm.invoke(messages)
+    tool_call_json = find_tool_json(response.content)
+    response.tool_call = tool_call_json
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
 
 def call_tool(state):
     last_message = state["messages"][-1]
-
+    tool_call = last_message.tool_call
     action = ToolInvocation(
-        tool=last_message.additional_kwargs["function_call"]["name"],
-        tool_input=json.loads(
-            last_message.additional_kwargs["function_call"]["arguments"]
-        ),
+        tool=tool_call["tool"],
+        tool_input=tool_call["tool_parameters"]
     )
     response = tool_executor.invoke(action)
     # We use the response to create a FunctionMessage
@@ -82,10 +112,11 @@ def ask_human(state):
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
+    print("last_message", last_message)
 
-    if "function_call" not in last_message.additional_kwargs:
+    if not last_message.tool_call:
         return "human"
-    elif last_message.additional_kwargs["function_call"]["name"] == "FinalResponse":
+    elif last_message.tool_call["tool"] == "final_response":
         return "end"
     else:
         return "continue"
@@ -117,9 +148,9 @@ researcher = researcher_workflow.compile()
 
 if __name__ == "__main__":
     inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
-    #response = researcher.invoke(inputs)
-    #print(response)
-
+    response = researcher.invoke(inputs)
+    print(response)
+    """
     for output in researcher.stream(inputs):
         # stream() yields dictionaries with output keyed by node name
         for key, value in output.items():
@@ -127,3 +158,4 @@ if __name__ == "__main__":
             print("---")
             print(value)
         print("\n---\n")
+    """

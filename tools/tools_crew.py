@@ -105,3 +105,4 @@ def check_application_logs(dummy_param):
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
+
