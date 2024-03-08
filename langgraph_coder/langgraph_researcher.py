@@ -11,9 +11,7 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langgraph.prebuilt import ToolInvocation
-from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain_core.messages import HumanMessage, SystemMessage, FunctionMessage
-from langchain.tools import BaseTool
 from langchain.tools.render import render_text_description, render_text_description_and_args
 from langchain.tools import tool
 
@@ -145,6 +143,19 @@ researcher_workflow.add_edge("tool", "agent")
 researcher_workflow.add_edge("human", "agent")
 
 researcher = researcher_workflow.compile()
+
+def research_task(task):
+    print("Researcher starting its work")
+    inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
+    researcher_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-1]
+    files = find_tool_json(researcher_response.content)["tool_parameters"]["files_for_executor"]
+
+    file_contents = str()
+    for file_name in files:
+        file_content = see_file(file_name)
+        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
+
+    return file_contents
 
 if __name__ == "__main__":
     inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}

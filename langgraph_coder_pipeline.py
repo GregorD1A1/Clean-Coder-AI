@@ -1,16 +1,12 @@
-from langgraph_coder.langgraph_researcher import researcher, find_tool_json
-from langchain_core.messages import HumanMessage
-import json
-from tools.tools_crew import see_file
+from langgraph_coder.langgraph_researcher import research_task
+from langgraph_coder.langgraph_planner import Planer
 
 
-inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
-response = researcher.invoke(inputs)["messages"][-1]
-files = find_tool_json(response.content)["tool_parameters"]["files_for_executor"]
-
-file_contents = str()
-for file_name in files:
-    file_content = see_file(file_name)
-    file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
-
+task = "Change database to postgres"
+file_contents = research_task(task)
 print(file_contents)
+
+planer = Planer(task, file_contents)
+plan = planer.plan()
+print(plan)
+
