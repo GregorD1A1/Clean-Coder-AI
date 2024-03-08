@@ -12,7 +12,7 @@ from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langgraph.prebuilt import ToolInvocation
 from langchain_core.messages import HumanMessage, SystemMessage, FunctionMessage
-from langchain.tools.render import render_text_description, render_text_description_and_args
+from langchain.tools.render import render_text_description
 from langchain.tools import tool
 
 
@@ -51,11 +51,11 @@ system_message = SystemMessage(
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "To use tool, use following json blob:"
+                "To use tool, strictly follow json blob:"
                 "```json"
                 "{{"
                 " 'tool': '$TOOL_NAME',"
-                " 'tool_parameters': '$PARAS',"
+                " 'tool_input': '$TOOL_PARAMETERS',"
                 "}}"
                 "```"
     )
@@ -86,14 +86,9 @@ def call_model(state):
 def call_tool(state):
     last_message = state["messages"][-1]
     tool_call = last_message.tool_call
-    action = ToolInvocation(
-        tool=tool_call["tool"],
-        tool_input=tool_call["tool_parameters"]
-    )
-    response = tool_executor.invoke(action)
-    # We use the response to create a FunctionMessage
-    function_message = FunctionMessage(content=str(response), name=action.tool)
-    # We return a list, because this will get added to the existing list
+    response = tool_executor.invoke(ToolInvocation(**tool_call))
+    function_message = FunctionMessage(content=str(response), name=tool_call["tool"])
+
     return {"messages": [function_message]}
 
 
@@ -138,17 +133,17 @@ researcher_workflow.add_conditional_edges(
         "end": END,
     },
 )
-
 researcher_workflow.add_edge("tool", "agent")
 researcher_workflow.add_edge("human", "agent")
 
 researcher = researcher_workflow.compile()
 
+
 def research_task(task):
     print("Researcher starting its work")
     inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-1]
-    files = find_tool_json(researcher_response.content)["tool_parameters"]["files_for_executor"]
+    files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
 
     file_contents = str()
     for file_name in files:
@@ -156,17 +151,3 @@ def research_task(task):
         file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
 
     return file_contents
-
-if __name__ == "__main__":
-    inputs = {"messages": [HumanMessage(content="task: Create an endpoint that saves new post without asking user")]}
-    response = researcher.invoke(inputs)
-    print(response)
-    """
-    for output in researcher.stream(inputs):
-        # stream() yields dictionaries with output keyed by node name
-        for key, value in output.items():
-            print(f"Output from node '{key}':")
-            print("---")
-            print(value)
-        print("\n---\n")
-    """
