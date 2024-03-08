@@ -4,3 +4,4 @@ takzyli-frontend/
 .idea/
 .cache/
 __pycache__/
+env/

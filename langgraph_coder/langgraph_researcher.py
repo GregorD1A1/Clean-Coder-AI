@@ -14,6 +14,7 @@ from langgraph.prebuilt import ToolInvocation
 from langchain_core.messages import HumanMessage, SystemMessage, FunctionMessage
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
+from langchain_community.chat_models import ChatOllama
 
 
 load_dotenv(find_dotenv())
@@ -32,7 +33,8 @@ def final_response(reasoning, files_for_executor):
 tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
+#llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
+llm = ChatOllama(model="mixtral") #, temperature=0)
 #llm = PerplexityAILLM(model_name="mixtral-8x7b-instruct", temperature=0, api_key=PERPLEXITY_API_KEY)
 
 
