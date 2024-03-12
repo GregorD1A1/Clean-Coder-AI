@@ -5,7 +5,7 @@ import os
 import json
 
 
-default_path = 'takzyli-backend/'
+default_path = 'takzyli-frontend/'
 
 
 def exception_decorator(func):
@@ -19,7 +19,9 @@ def exception_decorator(func):
 
 @tool
 def list_dir(directory):
-    """List files in directory."""
+    """List files in directory.
+    :param directory: Directory to check.
+    """
     try:
         files = os.listdir(default_path + directory)
         return files
@@ -41,21 +43,16 @@ def see_file(filename):
 
 
 @tool
-def insert_code(payload):
+def insert_code(filename, line_number, code):
     """Insert new piece of code in provided file. Proper indentation is important.
-    :param payload: str, a string representation of json containing the following keys:
-        filename: Name and path of file to change.
-        line_number: Line number to insert new code after.
-        code: Code to insert in the file.
+    :param filename: Name and path of file to change.
+    :param line_number: Line number to insert new code after.
+    :param code: Code to insert in the file.
     """
     try:
         human_message = input("Hit enter to allow that action:")
         if human_message:
             return f"Action was interrupted by human: {human_message}"
-        payload = json.loads(payload)
-        filename = payload['filename']
-        line_number = int(payload['line_number'])
-        code = payload['code']
 
         with open(default_path + filename, 'r+') as file:
             file_contents = file.readlines()
@@ -69,24 +66,20 @@ def insert_code(payload):
 
 
 @tool
-def modify_code(payload):
+def modify_code(filename, start_line, end_line, new_code):
     """Replace old piece of code with new one. Proper indentation is important.
-    :param payload: str, a string representation of json containing the following keys:
-        filename: Name and path of file to change.
-        start_line: Start line number to replace with new code.
-        end_line: End line number to replace with new code.
-        new_code: New piece of code to replace old one.
+    :param filename: Name and path of file to change.
+    :param start_line: Start line number to replace with new code.
+    :param end_line: End line number to replace with new code.
+    :param new_code: New piece of code to replace old one.
     """
     try:
         human_message = input("Hit enter to allow that action:")
         if human_message:
             return f"Action was interrupted by human: {human_message}"
-        payload = json.loads(payload)
-        start_line = int(payload['start_line'])
-        end_line = int(payload['end_line'])
-        with open(default_path + payload['filename'], 'r+') as file:
+        with open(default_path + filename, 'r+') as file:
             file_contents = file.readlines()
-            file_contents[start_line - 1:end_line] = [payload['new_code'] + '\n']
+            file_contents[start_line - 1:end_line] = [new_code + '\n']
             file.seek(0)
             file.truncate()
             file.write("".join(file_contents))
@@ -96,13 +89,33 @@ def modify_code(payload):
 
 
 @tool
-def check_application_logs(dummy_param):
-    """Check out fastapi logs to see if application works correctly."""
+def create_file_with_code(filename, code):
+    """Create new file with provided code.
+    :param filename: Name and path of file to create.
+    :param code: Code to write in the file.
+    """
     try:
-        with open(default_path + 'backend.log', 'r') as file:
-            logs = file.read()
-        return logs
+        human_message = input("Hit enter to allow that action:")
+        if human_message:
+            return f"Action was interrupted by human: {human_message}"
+
+        with open(default_path + filename, 'w') as file:
+            file.write(code)
+        return "File was created successfully"
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
 
+@tool
+def check_application_logs():
+    """Check out fastapi logs to see if application works correctly."""
+    try:
+        with open(default_path + 'frontend-build-errors.txt', 'r') as file:
+            logs = file.read()
+        if logs.strip().endswith("No errors found"):
+            print("Logs are correct")
+            return "ok"
+        else:
+            return logs
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"

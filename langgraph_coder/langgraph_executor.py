@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from langgraph_coder.tools.tools import list_dir, see_file
+from langgraph_coder.tools.tools import see_file, modify_code, insert_code, create_file_with_code, check_application_logs
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, List, Sequence
 from langchain_core.messages import BaseMessage
@@ -14,27 +14,25 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
+from langchain_anthropic import ChatAnthropic
 
 
 load_dotenv(find_dotenv())
-PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
 
 @tool
-def final_response(reasoning, files_for_executor):
-    """Final response containing list of files executor will need to change. Use that tool only when you 100% sure
-    you found all the files Executor will need to modify. If not, do additional research.
-    :param reasoning: str, Reasoning what files will be needed.
-    :param files_for_executor: List[str], List of files."""
+def final_response(are_you_sure):
+    """Call that tool when all planned changes are implemented.
+    :param are_you_sure: str, Write 'yes, I'm sure' if you absolutely sure all needed changes are done."""
     pass
 
 
-tools = [list_dir, see_file, final_response]
+tools = [see_file, modify_code, insert_code, create_file_with_code, final_response]
 rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
-#llm = ChatOllama(model="mixtral") #, temperature=0)
-#llm = PerplexityAILLM(model_name="mixtral-8x7b-instruct", temperature=0, api_key=PERPLEXITY_API_KEY)
+#llm = ChatAnthropic(model='claude-3-opus-20240229')
+#llm = ChatOllama(model="mixtral"), temperature=0)
 
 
 class AgentState(TypedDict):
@@ -43,11 +41,10 @@ class AgentState(TypedDict):
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are expert in filesystem research and in choosing right files. Your research is very careful, "
-                "you always choosing only needed files, while leaving that not needed. "
-                "You are helping your friend Executor to make provided task. "
-                "Do filesystem research and provide files that executor will need to change in order to do his "
-                "task. NEVER recommend file you haven't seen yet."
+        content="You are senior programmer. You need to improve existing code using provided tools. Introduce changes "
+                "from plan one by one, means you can write only one json with change in that step."
+                "You prefer to initiate your modifications from the higher line numbers within the code. "
+                "This method prevents subsequent amendments from incorrectly overwriting the previously adjusted file."
                 "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
@@ -76,7 +73,7 @@ def find_tool_json(response):
 
 # node functions
 def call_model(state):
-    messages = state["messages"] + [system_message]
+    messages = state["messages"]# + [system_message]
     response = llm.invoke(messages)
     tool_call_json = find_tool_json(response.content)
     response.tool_call = tool_call_json
@@ -94,23 +91,43 @@ def call_tool(state):
 
 
 def ask_human(state):
-    human_response = input("Hit enter if you agree with a reserached files or provide commentary.")
+    last_message = state["messages"][-1]
+
+    human_response = input(last_message.content)
     if not human_response:
         return {"messages": [HumanMessage(content="Approved by human")]}
     else:
         return {"messages": [HumanMessage(content=human_response)]}
 
 
+def check_logs(state):
+    logs = check_application_logs()
+    #logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
+    if logs == "ok":
+        return {"messages": [HumanMessage(content="Logs are healthy.")]}
+    else:
+        return {"messages": [HumanMessage(content=logs)]}
+
+
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
-    print("last_message", last_message)
 
+    #if not last_message.tool_call:
+    #    return "human"
     if last_message.tool_call["tool"] == "final_response":
         return "end"
     else:
         return "continue"
 
+
+def after_check_log_condition(state):
+    last_message = state["messages"][-1]
+
+    if last_message.content == "Logs are healthy.":
+        return "end"
+    else:
+        return "return"
 
 def after_ask_human_condition(state):
     last_message = state["messages"][-1]
@@ -120,46 +137,50 @@ def after_ask_human_condition(state):
     else:
         return "return"
 
-
 # workflow definition
-researcher_workflow = StateGraph(AgentState)
+executor_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("agent", call_model)
-researcher_workflow.add_node("tool", call_tool)
-researcher_workflow.add_node("human", ask_human)
+executor_workflow.add_node("agent", call_model)
+executor_workflow.add_node("tool", call_tool)
+executor_workflow.add_node("check_log", check_logs)
+executor_workflow.add_node("human", ask_human)
 
-researcher_workflow.set_entry_point("agent")
+executor_workflow.set_entry_point("agent")
 
-researcher_workflow.add_conditional_edges(
+executor_workflow.add_conditional_edges(
     "agent",
     after_agent_condition,
     {
         "continue": "tool",
-        "end": "human",
+        #"human": "human",
+        "end": "check_log",
     },
 )
-researcher_workflow.add_conditional_edges(
+executor_workflow.add_conditional_edges(
+    "check_log",
+    after_check_log_condition,
+    {
+        "return": "agent",
+        "end": "human",
+    }
+)
+executor_workflow.add_conditional_edges(
     "human",
     after_ask_human_condition,
     {
+        "return": "agent",
         "end": END,
-        "return": "agent"
-    })
-researcher_workflow.add_edge("tool", "agent")
+    }
+)
+executor_workflow.add_edge("tool", "agent")
 
-researcher = researcher_workflow.compile()
+executor = executor_workflow.compile()
 
 
-def research_task(task):
-    print("Researcher starting its work")
-    inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
-    researcher_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
-    files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
-    print("Files to change: ", files)
+def do_task(task, plan, file_contents):
+    print("Executor starting its work")
+    inputs = {"messages": [system_message,HumanMessage(content=f"Task: {task}\n\nPlan: {plan}\n\nFile contents: {file_contents}")]}
+    executor_response = executor.invoke(inputs, {"recursion_limit": 50})["messages"][-1]
 
-    file_contents = str()
-    for file_name in files:
-        file_content = see_file(file_name)
-        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
-
-    return file_contents
+if __name__ == "__main__":
+    executor.get_graph().draw_png()

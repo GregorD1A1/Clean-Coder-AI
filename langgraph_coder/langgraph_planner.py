@@ -1,7 +1,8 @@
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.output_parsers import StrOutputParser
 from langchain.memory import ChatMessageHistory
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from dotenv import load_dotenv, find_dotenv
 
@@ -16,15 +17,19 @@ class Planer():
     def __init__(self, task, file_contents):
         system_message = SystemMessage(
             content="You are programmer and scrum master expert. Your task is to propose what changes need to be done "
-                    "in code in order to execute given task. You carefully describing what code to insert with line nr "
-                    "providing. You not providing any library installation comands or other bash commands, some other "
+                    "in code or which files created in order to execute given task. You carefully describing what code"
+                    "to insert with line nr providing."
+                    "You not providing any library installation commands or other bash commands, some other "
                     "agent will do it, only proposing code changes."
+                    "At every your message, you providing proposition of the entire plan, not just one part of it."
+        )
+        human_message = HumanMessage(content=
                     f"Task is: {task}"
                     "Files:"
-                    f"{file_contents}"
-        )
-        prompt = ChatPromptTemplate.from_messages([system_message, MessagesPlaceholder(variable_name="messages")])
-        llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
+                    f"{file_contents}")
+        prompt = ChatPromptTemplate.from_messages([system_message, human_message, MessagesPlaceholder(variable_name="messages")])
+        llm = ChatOpenAI(model="gpt-4", temperature=0.3)
+        #llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0.3)
         self.chain = prompt | llm | StrOutputParser()
 
     def plan(self):
