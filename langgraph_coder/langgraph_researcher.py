@@ -32,7 +32,7 @@ def final_response(reasoning, files_for_executor):
 tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
+llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 #llm = ChatOllama(model="mixtral") #, temperature=0)
 #llm = PerplexityAILLM(model_name="mixtral-8x7b-instruct", temperature=0, api_key=PERPLEXITY_API_KEY)
 
@@ -48,6 +48,7 @@ system_message = SystemMessage(
                 "You are helping your friend Executor to make provided task. "
                 "Do filesystem research and provide files that executor will need to change in order to do his "
                 "task. NEVER recommend file you haven't seen yet."
+                "Start your research from '/' dir."
                 "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
@@ -94,8 +95,8 @@ def call_tool(state):
 
 
 def ask_human(state):
-    human_response = input("Hit enter if you agree with a reserached files or provide commentary.")
-    if not human_response:
+    human_response = input("Write 'ok' if you agree with a reserached files or provide commentary.")
+    if human_response == "ok":
         return {"messages": [HumanMessage(content="Approved by human")]}
     else:
         return {"messages": [HumanMessage(content=human_response)]}
@@ -157,9 +158,4 @@ def research_task(task):
     files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
     print("Files to change: ", files)
 
-    file_contents = str()
-    for file_name in files:
-        file_content = see_file(file_name)
-        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
-
-    return file_contents
+    return files

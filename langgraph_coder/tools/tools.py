@@ -46,7 +46,7 @@ def see_file(filename):
 def insert_code(filename, line_number, code):
     """Insert new piece of code in provided file. Proper indentation is important.
     :param filename: Name and path of file to change.
-    :param line_number: Line number to insert new code after.
+    :param line_number: Line number to insert new code.
     :param code: Code to insert in the file.
     """
     try:
@@ -56,7 +56,7 @@ def insert_code(filename, line_number, code):
 
         with open(default_path + filename, 'r+') as file:
             file_contents = file.readlines()
-            file_contents.insert(line_number, code + '\n')
+            file_contents.insert(line_number - 1, code + '\n')
             file.seek(0)
             file.truncate()
             file.write("".join(file_contents))
@@ -106,7 +106,6 @@ def create_file_with_code(filename, code):
         return f"{type(e).__name__}: {e}"
 
 
-@tool
 def check_application_logs():
     """Check out fastapi logs to see if application works correctly."""
     try:

@@ -10,7 +10,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 def human_approval(message: str) -> str:
-    return input(f"Plan:\n{message}\n\nHit enter to approve plan or provide commentary with suggestons to improve:\n")
+    return input(f"Plan:\n{message}\n\nWrite 'ok' to approve plan or provide commentary with suggestons to improve:\n")
 
 
 class Planer():
@@ -36,7 +36,7 @@ class Planer():
         print("Planer strating its work")
         human_commentary = "something"
         memory = ChatMessageHistory()
-        while human_commentary:
+        while human_commentary != "ok":
             plan_proposition = self.chain.invoke({"messages": memory.messages})
             memory.add_ai_message(plan_proposition)
             human_commentary = human_approval(plan_proposition)

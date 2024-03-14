@@ -21,9 +21,8 @@ load_dotenv(find_dotenv())
 
 
 @tool
-def final_response(are_you_sure):
-    """Call that tool when all planned changes are implemented.
-    :param are_you_sure: str, Write 'yes, I'm sure' if you absolutely sure all needed changes are done."""
+def final_response():
+    """Call that tool when all planned changes are implemented."""
     pass
 
 
@@ -71,50 +70,21 @@ def find_tool_json(response):
         return None
 
 
-# node functions
-def call_model(state):
-    messages = state["messages"]# + [system_message]
-    response = llm.invoke(messages)
-    tool_call_json = find_tool_json(response.content)
-    response.tool_call = tool_call_json
-    # We return a list, because this will get added to the existing list
-    return {"messages": [response]}
+def check_file_contents(files):
+    file_contents = str()
+    for file_name in files:
+        file_content = see_file(file_name)
+        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
 
-
-def call_tool(state):
-    last_message = state["messages"][-1]
-    tool_call = last_message.tool_call
-    response = tool_executor.invoke(ToolInvocation(**tool_call))
-    response_message = HumanMessage(content=str(response), name=tool_call["tool"])
-
-    return {"messages": [response_message]}
-
-
-def ask_human(state):
-    last_message = state["messages"][-1]
-
-    human_response = input(last_message.content)
-    if not human_response:
-        return {"messages": [HumanMessage(content="Approved by human")]}
-    else:
-        return {"messages": [HumanMessage(content=human_response)]}
-
-
-def check_logs(state):
-    logs = check_application_logs()
-    #logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
-    if logs == "ok":
-        return {"messages": [HumanMessage(content="Logs are healthy.")]}
-    else:
-        return {"messages": [HumanMessage(content=logs)]}
+    return file_contents
 
 
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    #if not last_message.tool_call:
-    #    return "human"
+    if not last_message.tool_call:
+        return "go_human"
     if last_message.tool_call["tool"] == "final_response":
         return "end"
     else:
@@ -124,10 +94,11 @@ def after_agent_condition(state):
 def after_check_log_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content == "Logs are healthy.":
+    if last_message.content.endswith("Logs are healthy."):
         return "end"
     else:
         return "return"
+
 
 def after_ask_human_condition(state):
     last_message = state["messages"][-1]
@@ -137,50 +108,93 @@ def after_ask_human_condition(state):
     else:
         return "return"
 
-# workflow definition
-executor_workflow = StateGraph(AgentState)
-
-executor_workflow.add_node("agent", call_model)
-executor_workflow.add_node("tool", call_tool)
-executor_workflow.add_node("check_log", check_logs)
-executor_workflow.add_node("human", ask_human)
-
-executor_workflow.set_entry_point("agent")
-
-executor_workflow.add_conditional_edges(
-    "agent",
-    after_agent_condition,
-    {
-        "continue": "tool",
-        #"human": "human",
-        "end": "check_log",
-    },
-)
-executor_workflow.add_conditional_edges(
-    "check_log",
-    after_check_log_condition,
-    {
-        "return": "agent",
-        "end": "human",
-    }
-)
-executor_workflow.add_conditional_edges(
-    "human",
-    after_ask_human_condition,
-    {
-        "return": "agent",
-        "end": END,
-    }
-)
-executor_workflow.add_edge("tool", "agent")
-
-executor = executor_workflow.compile()
 
 
-def do_task(task, plan, file_contents):
-    print("Executor starting its work")
-    inputs = {"messages": [system_message,HumanMessage(content=f"Task: {task}\n\nPlan: {plan}\n\nFile contents: {file_contents}")]}
-    executor_response = executor.invoke(inputs, {"recursion_limit": 50})["messages"][-1]
+class Executor():
+    def __init__(self, files):
+        self.files = files
+
+        # workflow definition
+        executor_workflow = StateGraph(AgentState)
+
+        executor_workflow.add_node("agent", self.call_model)
+        executor_workflow.add_node("tool", self.call_tool)
+        executor_workflow.add_node("check_log", self.check_files_and_log)
+        executor_workflow.add_node("human", self.ask_human)
+
+        executor_workflow.set_entry_point("agent")
+
+        executor_workflow.add_conditional_edges(
+            "agent",
+            after_agent_condition,
+            {
+                "continue": "tool",
+                "end": "check_log",
+                "go_human": "human",
+            },
+        )
+        executor_workflow.add_conditional_edges(
+            "check_log",
+            after_check_log_condition,
+            {
+                "return": "agent",
+                "end": "human",
+            }
+        )
+        executor_workflow.add_conditional_edges(
+            "human",
+            after_ask_human_condition,
+            {
+                "return": "agent",
+                "end": END,
+            }
+        )
+        executor_workflow.add_edge("tool", "agent")
+
+        self.executor = executor_workflow.compile()
+
+    # node functions
+    def call_model(self, state):
+        messages = state["messages"]  # + [system_message]
+        response = llm.invoke(messages)
+        tool_call_json = find_tool_json(response.content)
+        response.tool_call = tool_call_json
+        # We return a list, because this will get added to the existing list
+        return {"messages": [response]}
+
+    def call_tool(self, state):
+        last_message = state["messages"][-1]
+        tool_call = last_message.tool_call
+        response = tool_executor.invoke(ToolInvocation(**tool_call))
+        response_message = HumanMessage(content=str(response), name=tool_call["tool"])
+
+        return {"messages": [response_message]}
+
+    def ask_human(self, state):
+        last_message = state["messages"][-1]
+
+        human_response = input("Write 'ok' to confirm end of execution or provide commentary.")
+        if human_response == "ok":
+            return {"messages": [HumanMessage(content="Approved by human")]}
+        else:
+            return {"messages": [HumanMessage(content=human_response)]}
+
+    def check_files_and_log(self, state):
+        file_contents = check_file_contents(self.files)
+        logs = check_application_logs()
+        # logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
+        if logs == "ok":
+            message = file_contents + "\n\n###\n\n" + "Logs are healthy."
+        else:
+            message = file_contents + "\n\n###\n\n" + logs
+
+        return {"messages": [HumanMessage(content=message)]}
+
+
+    def do_task(self, task, plan, file_contents):
+        print("Executor starting its work")
+        inputs = {"messages": [system_message,HumanMessage(content=f"Task: {task}\n\nPlan: {plan}\n\nFile contents: {file_contents}")]}
+        executor_response = self.executor.invoke(inputs, {"recursion_limit": 100})["messages"][-1]
 
 if __name__ == "__main__":
     executor.get_graph().draw_png()
