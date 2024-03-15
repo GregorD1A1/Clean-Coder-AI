@@ -186,7 +186,7 @@ class Executor():
         if logs == "ok":
             message = file_contents + "\n\n###\n\n" + "Logs are healthy."
         else:
-            message = file_contents + "\n\n###\n\n" + logs
+            message = file_contents + "\n\n###\n\nPlease check out logs:\n" + logs
 
         return {"messages": [HumanMessage(content=message)]}
 
@@ -194,7 +194,7 @@ class Executor():
     def do_task(self, task, plan, file_contents):
         print("Executor starting its work")
         inputs = {"messages": [system_message,HumanMessage(content=f"Task: {task}\n\nPlan: {plan}\n\nFile contents: {file_contents}")]}
-        executor_response = self.executor.invoke(inputs, {"recursion_limit": 100})["messages"][-1]
+        executor_response = self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
 
 if __name__ == "__main__":
     executor.get_graph().draw_png()

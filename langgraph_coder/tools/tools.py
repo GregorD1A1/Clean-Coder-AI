@@ -46,17 +46,17 @@ def see_file(filename):
 def insert_code(filename, line_number, code):
     """Insert new piece of code in provided file. Proper indentation is important.
     :param filename: Name and path of file to change.
-    :param line_number: Line number to insert new code.
+    :param line_number: Line number to insert new code after.
     :param code: Code to insert in the file.
     """
     try:
         human_message = input("Hit enter to allow that action:")
         if human_message:
-            return f"Action was interrupted by human: {human_message}"
+            return f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(default_path + filename, 'r+') as file:
             file_contents = file.readlines()
-            file_contents.insert(line_number - 1, code + '\n')
+            file_contents.insert(line_number, code + '\n')
             file.seek(0)
             file.truncate()
             file.write("".join(file_contents))
@@ -76,7 +76,7 @@ def modify_code(filename, start_line, end_line, new_code):
     try:
         human_message = input("Hit enter to allow that action:")
         if human_message:
-            return f"Action was interrupted by human: {human_message}"
+            return f"Action wasn't executed because of human interruption. He said: {human_message}"
         with open(default_path + filename, 'r+') as file:
             file_contents = file.readlines()
             file_contents[start_line - 1:end_line] = [new_code + '\n']
@@ -97,7 +97,7 @@ def create_file_with_code(filename, code):
     try:
         human_message = input("Hit enter to allow that action:")
         if human_message:
-            return f"Action was interrupted by human: {human_message}"
+            return f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(default_path + filename, 'w') as file:
             file.write(code)

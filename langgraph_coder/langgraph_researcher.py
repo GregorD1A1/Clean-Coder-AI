@@ -26,7 +26,7 @@ def final_response(reasoning, files_for_executor):
     you found all the files Executor will need to modify. If not, do additional research.
     :param reasoning: str, Reasoning what files will be needed.
     :param files_for_executor: List[str], List of files."""
-    pass
+    print("Files to change: ", files_for_executor)
 
 
 tools = [list_dir, see_file, final_response]
@@ -46,8 +46,9 @@ system_message = SystemMessage(
         content="You are expert in filesystem research and in choosing right files. Your research is very careful, "
                 "you always choosing only needed files, while leaving that not needed. "
                 "You are helping your friend Executor to make provided task. "
-                "Do filesystem research and provide files that executor will need to change in order to do his "
-                "task. NEVER recommend file you haven't seen yet."
+                "Do filesystem research and provide existing files that executor will need to change or take a look at "
+                "in order to do his task. NEVER recommend file you haven't seen yet. "
+                "Never recommend files that not exist but need to be created."
                 "Start your research from '/' dir."
                 "\n\n"
                 "You have access to following tools:\n"
@@ -154,8 +155,8 @@ researcher = researcher_workflow.compile()
 def research_task(task):
     print("Researcher starting its work")
     inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
+    # try mx_iterations instead of recursion_limit
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
     files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
-    print("Files to change: ", files)
 
     return files

@@ -3,8 +3,7 @@ from langgraph_coder.langgraph_planner import Planer
 from langgraph_coder.langgraph_executor import Executor, check_file_contents
 
 
-task = ("DCenter content of post creation step 1, maybe add some distance from sides. "
-        "Make it same as it done in post creation step 2")
+task = ("for post creation step 3 and 4 make same container around like it is in step 1. keep same style.")
 
 files = research_task(task)
 file_contents = check_file_contents(files)
