@@ -4,13 +4,12 @@ import json
 from langgraph_coder.tools.tools import see_file, modify_code, insert_code, create_file_with_code, check_application_logs
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, List, Sequence
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langgraph.prebuilt import ToolInvocation
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
@@ -35,7 +34,7 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
 
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], operator.add]
+    messages: Sequence[BaseMessage]
 
 
 tool_executor = ToolExecutor(tools)
@@ -159,41 +158,55 @@ class Executor():
         response = llm.invoke(messages)
         tool_call_json = find_tool_json(response.content)
         response.tool_call = tool_call_json
-        # We return a list, because this will get added to the existing list
-        return {"messages": [response]}
+        state["messages"].append(response)
+        return state
 
     def call_tool(self, state):
         last_message = state["messages"][-1]
         tool_call = last_message.tool_call
         response = tool_executor.invoke(ToolInvocation(**tool_call))
+        # Zbadać, co to kurwa jest 'name=tool_call["tool"]'. Czy nie jest to jakiś relikt przeszłości, który należy usunąć?
         response_message = HumanMessage(content=str(response), name=tool_call["tool"])
 
-        return {"messages": [response_message]}
+        state["messages"].append(response_message)
+        return state
 
     def ask_human(self, state):
         last_message = state["messages"][-1]
 
         human_response = input("Write 'ok' to confirm end of execution or provide commentary.")
         if human_response == "ok":
-            return {"messages": [HumanMessage(content="Approved by human")]}
+            state["messages"].append(HumanMessage(content="Approved by human"))
         else:
-            return {"messages": [HumanMessage(content=human_response)]}
+            state["messages"].append(HumanMessage(content=human_response))
+        return state
 
     def check_files_and_log(self, state):
+        # Remove previous file contents messages
+        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
+        # Add new file contents
         file_contents = check_file_contents(self.files)
+        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
+        state["messages"].append(file_contents_msg)
+        # Add logs
         logs = check_application_logs()
         # logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
         if logs == "ok":
-            message = file_contents + "\n\n###\n\n" + "Logs are healthy."
+            log_message = HumanMessage(content="Logs are healthy.")
         else:
-            message = file_contents + "\n\n###\n\nPlease check out logs:\n" + logs
+            log_message = HumanMessage(content="Please check out logs:\n" + logs)
 
-        return {"messages": [HumanMessage(content=message)]}
+        state["messages"].append(log_message)
+        return state
 
 
     def do_task(self, task, plan, file_contents):
         print("Executor starting its work")
-        inputs = {"messages": [system_message,HumanMessage(content=f"Task: {task}\n\nPlan: {plan}\n\nFile contents: {file_contents}")]}
+        inputs = {"messages": [
+            system_message,
+            HumanMessage(content=f"Task: {task}\n\n###\n\nPlan: {plan}"),
+            HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
+        ]}
         executor_response = self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
 
 if __name__ == "__main__":

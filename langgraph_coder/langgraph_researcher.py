@@ -3,14 +3,13 @@ import re
 import json
 from langgraph_coder.tools.tools import list_dir, see_file
 from langchain_openai.chat_models import ChatOpenAI
-from typing import TypedDict, Annotated, List, Sequence
-from langchain_core.messages import BaseMessage
+from typing import TypedDict, Annotated, Sequence
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langgraph.prebuilt import ToolInvocation
-from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
@@ -88,6 +87,7 @@ def call_model(state):
 
 def call_tool(state):
     last_message = state["messages"][-1]
+    # ToDo: use hasattr function to prevent error when there is no tool_call
     tool_call = last_message.tool_call
     response = tool_executor.invoke(ToolInvocation(**tool_call))
     response_message = HumanMessage(content=str(response), name=tool_call["tool"])
