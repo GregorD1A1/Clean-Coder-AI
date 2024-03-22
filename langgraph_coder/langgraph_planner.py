@@ -10,7 +10,7 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 def human_approval(message: str) -> str:
-    return input(f"Plan:\n{message}\n\nWrite 'ok' to approve plan or provide commentary with suggestons to improve:\n")
+    return input(f"Plan:\n{message}\n\nWrite 'ok' to approve plan or provide commentary with suggestions to improve:\n")
 
 
 class Planer():
@@ -18,10 +18,11 @@ class Planer():
         system_message = SystemMessage(
             content="You are programmer and scrum master expert. Your task is to propose what changes need to be done "
                     "in code or which files created in order to execute given task. You carefully describing what code"
-                    "to insert with line nr providing."
+                    "to insert with line nr providing. Not paste all the file code, but only lines to change/insert."
                     "You not providing any library installation commands or other bash commands, some other "
                     "agent will do it, only proposing code changes."
                     "At every your message, you providing proposition of the entire plan, not just one part of it."
+                    "When you feel that more files need to be changed than provided on your input, you talking about it."
         )
         human_message = HumanMessage(content=
                     f"Task is: {task}"
@@ -33,7 +34,7 @@ class Planer():
         self.chain = prompt | llm | StrOutputParser()
 
     def plan(self):
-        print("Planer strating its work")
+        print("Planer starting its work")
         human_commentary = "something"
         memory = ChatMessageHistory()
         while human_commentary != "ok":

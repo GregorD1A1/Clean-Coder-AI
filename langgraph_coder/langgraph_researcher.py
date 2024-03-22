@@ -16,7 +16,6 @@ from langchain_community.chat_models import ChatOllama
 
 
 load_dotenv(find_dotenv())
-PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
 
 @tool
@@ -39,11 +38,14 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
 
+additional_knowledge = "Mostly files you interested in could be found in src/components/."
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are expert in filesystem research and in choosing right files. Your research is very careful, "
-                "you always choosing only needed files, while leaving that not needed. "
+        content="You are expert in filesystem research and choosing right files. Your research is very careful. "
+                "Good practice you follow is when found important dependencies that point from file you checking to "
+                "other file, you check other file also. "
+                "At your final response, you choosing only needed files, while leaving that not needed. "
                 "You are helping your friend Executor to make provided task. "
                 "Do filesystem research and provide existing files that executor will need to change or take a look at "
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
@@ -60,6 +62,9 @@ system_message = SystemMessage(
                 " 'tool_input': '$TOOL_PARAMETERS',"
                 "}"
                 "```"
+                "\n\n"
+                "Additional knowledge:\n"
+                f"{additional_knowledge}\n\n"
     )
 
 
@@ -87,16 +92,17 @@ def call_model(state):
 
 def call_tool(state):
     last_message = state["messages"][-1]
-    # ToDo: use hasattr function to prevent error when there is no tool_call
+    if not hasattr(last_message, "tool_call"):
+        return {"messages": ["no tool called"]}
     tool_call = last_message.tool_call
     response = tool_executor.invoke(ToolInvocation(**tool_call))
-    response_message = HumanMessage(content=str(response), name=tool_call["tool"])
+    response_message = HumanMessage(content=str(response))
 
     return {"messages": [response_message]}
 
 
 def ask_human(state):
-    human_response = input("Write 'ok' if you agree with a reserached files or provide commentary.")
+    human_response = input("Write 'ok' if you agree with a researched files or provide commentary.")
     if human_response == "ok":
         return {"messages": [HumanMessage(content="Approved by human")]}
     else:
@@ -106,21 +112,20 @@ def ask_human(state):
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
-    print("last_message", last_message)
 
     if last_message.tool_call["tool"] == "final_response":
-        return "end"
+        return "human"
     else:
-        return "continue"
+        return "tool"
 
 
 def after_ask_human_condition(state):
     last_message = state["messages"][-1]
 
     if last_message.content == "Approved by human":
-        return "end"
+        return END
     else:
-        return "return"
+        return "agent"
 
 
 # workflow definition
@@ -135,18 +140,11 @@ researcher_workflow.set_entry_point("agent")
 researcher_workflow.add_conditional_edges(
     "agent",
     after_agent_condition,
-    {
-        "continue": "tool",
-        "end": "human",
-    },
 )
 researcher_workflow.add_conditional_edges(
     "human",
     after_ask_human_condition,
-    {
-        "end": END,
-        "return": "agent"
-    })
+)
 researcher_workflow.add_edge("tool", "agent")
 
 researcher = researcher_workflow.compile()

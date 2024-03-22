@@ -50,6 +50,7 @@ system_message = SystemMessage(
                 "To use tool, strictly follow json blob:"
                 "```json"
                 "{"
+                " 'reasoning': '$STEP_BY_STEP_REASONING_ABOUT_WHICH_TOOL_TO_USE_AND_WITH_WHICH_PARAMETERS',"
                 " 'tool': '$TOOL_NAME',"
                 " 'tool_input': '$TOOL_PARAMETERS',"
                 "}"
@@ -83,29 +84,29 @@ def after_agent_condition(state):
     last_message = state["messages"][-1]
 
     if not last_message.tool_call:
-        return "go_human"
+        return "human"
     if last_message.tool_call["tool"] == "final_response":
-        return "end"
+        return "check_log"
     else:
-        return "continue"
+        return "tool"
 
 
 def after_check_log_condition(state):
     last_message = state["messages"][-1]
 
     if last_message.content.endswith("Logs are healthy."):
-        return "end"
+        return "human"
     else:
-        return "return"
+        return "agent"
 
 
 def after_ask_human_condition(state):
     last_message = state["messages"][-1]
 
     if last_message.content == "Approved by human":
-        return "end"
+        return END
     else:
-        return "return"
+        return "agent"
 
 
 
@@ -126,27 +127,14 @@ class Executor():
         executor_workflow.add_conditional_edges(
             "agent",
             after_agent_condition,
-            {
-                "continue": "tool",
-                "end": "check_log",
-                "go_human": "human",
-            },
         )
         executor_workflow.add_conditional_edges(
             "check_log",
             after_check_log_condition,
-            {
-                "return": "agent",
-                "end": "human",
-            }
         )
         executor_workflow.add_conditional_edges(
             "human",
             after_ask_human_condition,
-            {
-                "return": "agent",
-                "end": END,
-            }
         )
         executor_workflow.add_edge("tool", "agent")
 
@@ -163,10 +151,13 @@ class Executor():
 
     def call_tool(self, state):
         last_message = state["messages"][-1]
+        if not hasattr(last_message, "tool_call"):
+            state["messages"].append(HumanMessage(content="no tool called"))
+            return state
         tool_call = last_message.tool_call
         response = tool_executor.invoke(ToolInvocation(**tool_call))
         # Zbadać, co to kurwa jest 'name=tool_call["tool"]'. Czy nie jest to jakiś relikt przeszłości, który należy usunąć?
-        response_message = HumanMessage(content=str(response), name=tool_call["tool"])
+        response_message = HumanMessage(content=str(response))
 
         state["messages"].append(response_message)
         return state

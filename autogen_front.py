@@ -2,7 +2,7 @@ import autogen
 from typing_extensions import Annotated
 import os
 from flaml.autogen.code_utils import execute_code
-from tools.helpers import visual_describe, make_screenshot
+#from tools.helpers import visual_describe, make_screenshot
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -74,13 +74,6 @@ tester = autogen.AssistantAgent(
     '''
 )
 
-executor = autogen.UserProxyAgent(
-    name="Executor",
-    human_input_mode="NEVER",
-    #max_consecutive_auto_reply=50,
-    code_execution_config={"work_dir": "autogen/takzyli-frontend"},
-    system_message="Executor. Execute commends and save code created by engineer."
-)
 user_proxy = autogen.UserProxyAgent(
     name="Admin",
     human_input_mode="ALWAYS",
