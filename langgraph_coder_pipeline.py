@@ -3,7 +3,7 @@ from langgraph_coder.langgraph_planner import Planer
 from langgraph_coder.langgraph_executor import Executor, check_file_contents
 
 
-task = ("In post creation step 2 drag and drop field imported, but I can't see that. Please check out what's wrong with it.")
+task = ("Improve drag and drop component. For now, I see only two fields to manua file select. Add here drag and drop square.")
 
 
 files = research_task(task)

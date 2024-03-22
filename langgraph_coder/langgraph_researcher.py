@@ -51,6 +51,8 @@ system_message = SystemMessage(
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
                 "Never recommend files that not exist but need to be created."
                 "Start your research from '/' dir."
+                "Additional knowledge:\n"
+                f"{additional_knowledge}\n\n"
                 "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
@@ -62,9 +64,6 @@ system_message = SystemMessage(
                 " 'tool_input': '$TOOL_PARAMETERS',"
                 "}"
                 "```"
-                "\n\n"
-                "Additional knowledge:\n"
-                f"{additional_knowledge}\n\n"
     )
 
 
