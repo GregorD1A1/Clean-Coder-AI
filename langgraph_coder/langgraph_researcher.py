@@ -33,8 +33,8 @@ def final_response(reasoning, files_for_executor):
 tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
-#llm = ChatOllama(model="mixtral") #, temperature=0)
+#llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
+llm = ChatOllama(model="openchat") #, temperature=0)
 
 
 class AgentState(TypedDict):
