@@ -1,11 +1,15 @@
 from langchain.tools import tool
 import os
 import json
+import base64
+import playwright
+from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+OAIclient = OpenAI()
 
 
 @tool
@@ -21,7 +25,8 @@ def list_dir(directory):
 
 @tool
 def see_file(filename):
-    """Check contents of file."""
+    """Check contents of file.
+    :param filename: Name and path of file to check."""
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
@@ -60,8 +65,8 @@ def insert_code(filename, line_number, code):
 def modify_code(filename, start_line, end_line, new_code):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     :param filename: Name and path of file to change.
-    :param start_line: Start line number to replace with new code. Inclusive.
-    :param end_line: End line number to replace with new code. Inclusive.
+    :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
+    :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
     :param new_code: New piece of code to replace old one.
     """
     try:
@@ -94,6 +99,38 @@ def create_file_with_code(filename, code):
         with open(work_dir + filename, 'w', encoding='utf-8') as file:
             file.write(code)
         return "File was created successfully"
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
+
+
+@tool
+def image_to_code(prompt):
+    """Writes a frontend code based on provided design with visual AI.
+    :param prompt: Prompt to use for generation. Provide here that you want to receive code based on image, specify framework,
+    any additional info if needed (as images to use).
+    """
+    try:
+        with open(work_dir + "screenshots/template.png", "rb") as image_file:
+            img_encoded = base64.b64encode(image_file.read()).decode("utf-8")
+        response = OAIclient.chat.completions.create(
+            model="gpt-4-vision-preview",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                      {"type": "text", "text": prompt},
+                      {
+                        "type": "image_url",
+                        "image_url": {
+                          "url": f"data:image/jpeg;base64,{img_encoded}",
+                        },
+                      },
+                    ],
+                }
+            ],
+            max_tokens=1000,
+        )
+        return response.choices[0].message.content
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 

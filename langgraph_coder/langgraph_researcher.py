@@ -20,10 +20,13 @@ load_dotenv(find_dotenv())
 
 @tool
 def final_response(reasoning, files_for_executor):
-    """Final response containing list of files executor will need to change. Use that tool only when you 100% sure
+    """That tool outputs list of files executor will need to change. Use that tool only when you 100% sure
     you found all the files Executor will need to modify. If not, do additional research.
+    'tool_input': {
     :param reasoning: str, Reasoning what files will be needed.
-    :param files_for_executor: List[str], List of files."""
+    :param files_for_executor: List[str], List of files.
+    }
+    """
     print("Files to change: ", files_for_executor)
 
 
@@ -32,7 +35,6 @@ rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 #llm = ChatOllama(model="mixtral") #, temperature=0)
-#llm = PerplexityAILLM(model_name="mixtral-8x7b-instruct", temperature=0, api_key=PERPLEXITY_API_KEY)
 
 
 class AgentState(TypedDict):
@@ -42,7 +44,8 @@ additional_knowledge = "Mostly files you interested in could be found in src/com
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are expert in filesystem research and choosing right files. Your research is very careful. "
+        content="You are expert in filesystem research and choosing right files."
+                "Your research is very careful - rather check more files then less. If you not if you need to check some file or not - you check it. "
                 "Good practice you follow is when found important dependencies that point from file you checking to "
                 "other file, you check other file also. "
                 "At your final response, you choosing only needed files, while leaving that not needed. "
@@ -57,11 +60,11 @@ system_message = SystemMessage(
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "To use tool, strictly follow json blob:"
+                "Generate response using next json blob (strictly follow it!): "
                 "```json"
                 "{"
                 " 'tool': '$TOOL_NAME',"
-                " 'tool_input': '$TOOL_PARAMETERS',"
+                " 'tool_input': '$TOOL_PARAMS',"
                 "}"
                 "```"
     )
@@ -153,7 +156,7 @@ def research_task(task):
     print("Researcher starting its work")
     inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
     # try mx_iterations instead of recursion_limit
-    researcher_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
+    researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
     files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
 
     return files

@@ -17,12 +17,15 @@ class Planer():
     def __init__(self, task, file_contents):
         system_message = SystemMessage(
             content="You are programmer and scrum master expert. Your task is to propose what changes need to be done "
-                    "in code or which files created in order to execute given task. You carefully describing what code"
+                    "in code or which files created in order to execute given task. You carefully describing what "
+                    "changes you want to do and why, and after code"
                     "to insert with line nr providing. Not paste all the file code, but only lines to change/insert."
-                    "You not providing any library installation commands or other bash commands, some other "
-                    "agent will do it, only proposing code changes."
+                    "You not providing any library installation commands or other bash commands."
                     "At every your message, you providing proposition of the entire plan, not just one part of it."
+                    "Your plan need to be divided in numbered parts."
                     "When you feel that more files need to be changed than provided on your input, you talking about it."
+                    "\n\n"
+                    "```"
         )
         human_message = HumanMessage(content=
                     f"Task is: {task}"

@@ -1,11 +1,9 @@
-import os
 import re
 import json
 from langgraph_coder.tools.tools import see_file, modify_code, insert_code, create_file_with_code, check_application_logs
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, List, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
@@ -28,7 +26,7 @@ def final_response():
 tools = [see_file, modify_code, insert_code, create_file_with_code, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", streaming=True)
+llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
 #llm = ChatAnthropic(model='claude-3-opus-20240229')
 #llm = ChatOllama(model="mixtral"), temperature=0)
 
@@ -41,8 +39,7 @@ tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
         content="You are senior programmer. You need to improve existing code using provided tools. Introduce changes "
                 "from plan one by one, means you can write only one json with change in that step."
-                "You prefer to initiate your modifications from the higher line numbers within the code. "
-                "This method prevents subsequent amendments from incorrectly overwriting the previously adjusted file."
+                "You are working with smaller parts of code - modify single functions or lines rather then entire file."
                 "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
@@ -68,6 +65,7 @@ def find_tool_json(response):
         return json_obj
     else:
         return None
+
 
 
 def check_file_contents(files):
@@ -119,7 +117,7 @@ class Executor():
 
         executor_workflow.add_node("agent", self.call_model)
         executor_workflow.add_node("tool", self.call_tool)
-        executor_workflow.add_node("check_log", self.check_files_and_log)
+        executor_workflow.add_node("check_log", self.check_log)
         executor_workflow.add_node("human", self.ask_human)
 
         executor_workflow.set_entry_point("agent")
@@ -156,15 +154,16 @@ class Executor():
             return state
         tool_call = last_message.tool_call
         response = tool_executor.invoke(ToolInvocation(**tool_call))
-        # Zbadać, co to kurwa jest 'name=tool_call["tool"]'. Czy nie jest to jakiś relikt przeszłości, który należy usunąć?
-        response_message = HumanMessage(content=str(response))
 
+        response_message = HumanMessage(content=str(response))
         state["messages"].append(response_message)
+        if last_message.tool_call["tool"] in ["insert_code", "modify_code"]:
+            state = self.exchange_file_contents(state)
+        if last_message.tool_call["tool"] == "create_file_with_code":
+            self.files.append(last_message.tool_call["tool_input"]["filename"])
         return state
 
     def ask_human(self, state):
-        last_message = state["messages"][-1]
-
         human_response = input("Write 'ok' to confirm end of execution or provide commentary.")
         if human_response == "ok":
             state["messages"].append(HumanMessage(content="Approved by human"))
@@ -172,13 +171,7 @@ class Executor():
             state["messages"].append(HumanMessage(content=human_response))
         return state
 
-    def check_files_and_log(self, state):
-        # Remove previous file contents messages
-        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
-        # Add new file contents
-        file_contents = check_file_contents(self.files)
-        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
-        state["messages"].append(file_contents_msg)
+    def check_log(self, state):
         # Add logs
         logs = check_application_logs()
         # logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
@@ -190,6 +183,15 @@ class Executor():
         state["messages"].append(log_message)
         return state
 
+    # just functions
+    def exchange_file_contents(self, state):
+        # Remove old one
+        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
+        # Add new file contents
+        file_contents = check_file_contents(self.files)
+        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
+        state["messages"].append(file_contents_msg)
+        return state
 
     def do_task(self, task, plan, file_contents):
         print("Executor starting its work")
