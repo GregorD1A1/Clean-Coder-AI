@@ -13,6 +13,7 @@ from langgraph.prebuilt import ToolInvocation
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
+import xmltodict
 
 
 load_dotenv(find_dotenv())
@@ -22,10 +23,10 @@ load_dotenv(find_dotenv())
 def final_response(reasoning, files_for_executor):
     """That tool outputs list of files executor will need to change. Use that tool only when you 100% sure
     you found all the files Executor will need to modify. If not, do additional research.
-    'tool_input': {
-    :param reasoning: str, Reasoning what files will be needed.
-    :param files_for_executor: List[str], List of files.
-    }
+    <tool_input>
+    <reasoning>Reasoning what files will be needed.</reasoning>
+    <files_for_executor>List of files.</files_for_executor>
+    </tool_input>
     """
     print("Files to change: ", files_for_executor)
 
@@ -60,34 +61,40 @@ system_message = SystemMessage(
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "Generate response using next json blob (strictly follow it!): "
-                "```json"
-                "{"
-                " 'tool': '$TOOL_NAME',"
-                " 'tool_input': '$TOOL_PARAMS',"
-                "}"
-                "```"
+                "To use tool, strictly follow next xml:"
+                "<tool_call>"
+                "<tool>function_name</tool>"
+                "<tool_input>"
+                "<param1_name>param1_value</param1_name>"
+                "<param2_name>param2_value</param2_name>"
+                "..."
+                "</tool_input>"
+                "</tool_call>"
     )
 
 
+# This function is legacy. Delete it if XML will confermed is better than JSON
 def find_tool_json(response):
     match = re.search(r'```json\n(.*?)\n```', response, re.DOTALL)
 
     if match:
         json_str = match.group(1).strip()
-        print("Tool call: ", json_str)
         json_obj = json.loads(json_str)
         return json_obj
     else:
         return None
 
 
+def find_tool_xml(response):
+    match = re.search(r'(<tool_call>.*?</tool_call>)', response, re.DOTALL)
+    return xmltodict.parse(match.group(1))
+
 # node functions
 def call_model(state):
     messages = state["messages"] + [system_message]
     response = llm.invoke(messages)
-    tool_call = find_tool_json(response.content)
-    response.tool_call = tool_call
+    tool_call = find_tool_xml(response.content)
+    response.tool_call = tool_call["tool_call"]
     # We return a list, because this will get added to the existing list
     return {"messages": [response]}
 
@@ -97,6 +104,7 @@ def call_tool(state):
     if not hasattr(last_message, "tool_call"):
         return {"messages": ["no tool called"]}
     tool_call = last_message.tool_call
+    print("Tool call: ", tool_call)
     response = tool_executor.invoke(ToolInvocation(**tool_call))
     response_message = HumanMessage(content=str(response))
 

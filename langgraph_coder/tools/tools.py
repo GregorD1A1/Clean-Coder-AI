@@ -15,9 +15,7 @@ OAIclient = OpenAI()
 @tool
 def list_dir(directory):
     """List files in directory.
-    <tool_input>
-    <directory>Directory to check.</directory>
-    </tool_input>
+    {"tool_input": {"directory": "Directory to check."}}
     """
     try:
         files = os.listdir(work_dir + directory)
@@ -28,9 +26,7 @@ def list_dir(directory):
 @tool
 def see_file(filename):
     """Check contents of file.
-    <tool_input>
-    <filename>Name and path of file to check.</filename>
-    </tool_input>
+    {"tool_input": {"filename": "Name and path of file to check."}}
     """
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
