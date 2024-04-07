@@ -5,3 +5,4 @@ python-dotenv==1.0.1
 langchain_openai==0.0.8
 langchain_anthropic==0.23.1
 playwright==1.42.0
+xmltodict==0.13.0
