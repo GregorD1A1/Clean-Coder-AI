@@ -1,8 +1,0 @@
-# Backend docker autogen
-docker run -it -v /e/Autogen_takzyli:/home/autogen/autogen/ autogen_takzyli_img:latest python /home/autogen/autogen/autogen_back.py
-
-# Frontend docker autogen
-docker run -it -v /e/Autogen_takzyli:/home/autogen/autogen/ autogen_takzyli_img:latest python /home/autogen/autogen/autogen_front.py
-
-# Fastapi
-uvicorn main:app --reload > logs/app.log 2>&1 &

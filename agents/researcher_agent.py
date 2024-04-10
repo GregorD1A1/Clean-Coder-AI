@@ -1,7 +1,6 @@
 import os
 import re
 import json
-from langgraph_coder.tools.tools import list_dir, see_file
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -13,6 +12,9 @@ from langgraph.prebuilt import ToolInvocation
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
+from tools.tools import list_dir, see_file, see_image
+from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped
+from utilities.langgraph_common_functions import ask_human
 
 
 load_dotenv(find_dotenv())
@@ -20,14 +22,16 @@ load_dotenv(find_dotenv())
 
 @tool
 def final_response(reasoning, files_for_executor):
-    """That tool outputs list of files executor will need to change. Use that tool only when you 100% sure
-    you found all the files Executor will need to modify. If not, do additional research.
+    """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
+    Use that tool only when you 100% sure you found all the files Executor will need to modify.
+    If not, do additional research.
     'tool_input': {
-    :param reasoning: str, Reasoning what files will be needed.
-    :param files_for_executor: List[str], List of files.
+        "reasoning": "Reasoning what files will be needed.",
+        "files_to_work_on": ["List", "of", "files."],
+        "template_images": ["List of image paths", "that be used as graphical patterns."]
     }
     """
-    print("Files to change: ", files_for_executor)
+    pass
 
 
 tools = [list_dir, see_file, final_response]
@@ -70,18 +74,6 @@ system_message = SystemMessage(
     )
 
 
-def find_tool_json(response):
-    match = re.search(r'```json\n(.*?)\n```', response, re.DOTALL)
-
-    if match:
-        json_str = match.group(1).strip()
-        print("Tool call: ", json_str)
-        json_obj = json.loads(json_str)
-        return json_obj
-    else:
-        return None
-
-
 # node functions
 def call_model(state):
     messages = state["messages"] + [system_message]
@@ -101,14 +93,6 @@ def call_tool(state):
     response_message = HumanMessage(content=str(response))
 
     return {"messages": [response_message]}
-
-
-def ask_human(state):
-    human_response = input("Write 'ok' if you agree with a researched files or provide commentary.")
-    if human_response == "ok":
-        return {"messages": [HumanMessage(content="Approved by human")]}
-    else:
-        return {"messages": [HumanMessage(content=human_response)]}
 
 
 # Logic for conditional edges
@@ -155,8 +139,43 @@ researcher = researcher_workflow.compile()
 def research_task(task):
     print("Researcher starting its work")
     inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
-    # try mx_iterations instead of recursion_limit
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
-    files = find_tool_json(researcher_response.content)["tool_input"]["files_for_executor"]
 
-    return files
+    tool_json = find_tool_json(researcher_response.content)
+    text_files = tool_json["tool_input"]["files_to_work_on"]
+    file_contents = check_file_contents(text_files)
+
+    image_paths = tool_json["tool_input"]["template_images"]
+    images = []
+    for image_path in image_paths:
+        images.append(
+            {
+                "type": "text",
+                "text": image_path,
+            }
+        )
+        images.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{see_image(image_path)}",
+                },
+            }
+        )
+        '''
+        images.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": see_image(image_path),
+                },
+            }
+        )
+        '''
+
+    message_content = [f"task: {task},\n\n files: {file_contents}"] + images
+    message_for_planner = HumanMessage(content=message_content)
+
+    return message_for_planner, text_files, file_contents

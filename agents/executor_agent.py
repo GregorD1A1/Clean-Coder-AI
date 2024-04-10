@@ -1,6 +1,4 @@
-import re
-import json
-from langgraph_coder.tools.tools import see_file, modify_code, insert_code, create_file_with_code, check_application_logs
+from tools.tools import see_file, modify_code, insert_code, create_file_with_code
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, List, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -12,6 +10,8 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
+from utilities.util_functions import check_file_contents, print_wrapped, find_tool_json, check_application_logs
+from utilities.langgraph_common_functions import ask_human
 
 
 load_dotenv(find_dotenv())
@@ -55,28 +55,6 @@ system_message = SystemMessage(
     )
 
 
-def find_tool_json(response):
-    match = re.search(r'```json\n(.*?)\n```', response, re.DOTALL)
-
-    if match:
-        json_str = match.group(1).strip()
-        print("Tool call: ", json_str)
-        json_obj = json.loads(json_str)
-        return json_obj
-    else:
-        return None
-
-
-
-def check_file_contents(files):
-    file_contents = str()
-    for file_name in files:
-        file_content = see_file(file_name)
-        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
-
-    return file_contents
-
-
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
@@ -107,7 +85,6 @@ def after_ask_human_condition(state):
         return "agent"
 
 
-
 class Executor():
     def __init__(self, files):
         self.files = files
@@ -118,7 +95,7 @@ class Executor():
         executor_workflow.add_node("agent", self.call_model)
         executor_workflow.add_node("tool", self.call_tool)
         executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human", self.ask_human)
+        executor_workflow.add_node("human", ask_human)
 
         executor_workflow.set_entry_point("agent")
 
@@ -163,18 +140,10 @@ class Executor():
             self.files.append(last_message.tool_call["tool_input"]["filename"])
         return state
 
-    def ask_human(self, state):
-        human_response = input("Write 'ok' to confirm end of execution or provide commentary.")
-        if human_response == "ok":
-            state["messages"].append(HumanMessage(content="Approved by human"))
-        else:
-            state["messages"].append(HumanMessage(content=human_response))
-        return state
-
     def check_log(self, state):
         # Add logs
         logs = check_application_logs()
-        # logs = input("Write 'ok' to continue or paste logs of error (Use that feature only for backend).")
+        # logs = input("Write 'ok' to continue or paste logs of error (Use that line only for backend).")
         if logs == "ok":
             log_message = HumanMessage(content="Logs are healthy.")
         else:
@@ -201,6 +170,3 @@ class Executor():
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
         executor_response = self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
-
-if __name__ == "__main__":
-    executor.get_graph().draw_png()

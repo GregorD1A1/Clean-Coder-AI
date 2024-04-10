@@ -31,7 +31,7 @@ def see_file(filename):
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-        formatted_lines = [f"{i+1}:{line}" for i, line in enumerate(lines)]
+        formatted_lines = [f"<{i+1}>|{line[:-1]}</{i+1}>\n" for i, line in enumerate(lines)]
         file_contents = "".join(formatted_lines)
 
         return file_contents
@@ -40,11 +40,26 @@ def see_file(filename):
 
 
 @tool
+def see_image(filename):
+    """Sees the image.
+    {"tool_input": {"filename": "Name and path of image to check."}}
+    """
+    try:
+        with open(work_dir + filename, 'rb') as image_file:
+            img_encoded = base64.b64encode(image_file.read()).decode("utf-8")
+        return img_encoded
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
+
+
+@tool
 def insert_code(filename, line_number, code):
     """Insert new piece of code into provided file. Proper indentation is important.
-    :param filename: Name and path of file to change.
-    :param line_number: Line number to insert new code after.
-    :param code: Code to insert in the file.
+    {"tool_input": {
+        "filename": "Name and path of file to change.",
+        "line_number": "Line number to insert new code after.",
+        "code": "Code to insert in the file."
+    }}
     """
     try:
         human_message = input("Hit enter to allow that action:")
@@ -65,10 +80,12 @@ def insert_code(filename, line_number, code):
 @tool
 def modify_code(filename, start_line, end_line, new_code):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
-    :param filename: Name and path of file to change.
-    :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
-    :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
-    :param new_code: New piece of code to replace old one.
+    {"tool_input": {
+        "filename": "Name and path of file to change.",
+        "start_line": "Start line number to replace with new code. Inclusive - means start_line will be first line to change.",
+        "end_line": "End line number to replace with new code. Inclusive - means end_line will be last line to change.",
+        "new_code": "New piece of code to replace old one."
+    }}
     """
     try:
         human_message = input("Hit enter to allow that action:")
@@ -136,18 +153,28 @@ def image_to_code(prompt):
         return f"{type(e).__name__}: {e}"
 
 
-def check_application_logs():
-    """Check out logs to see if application works correctly."""
-    try:
-        with open(work_dir + 'frontend-build-errors.txt', 'r') as file:
-            logs = file.read()
-        if logs.strip().endswith("No errors found"):
-            print("Logs are correct")
-            return "ok"
-        else:
-            return logs
-    except Exception as e:
-        return f"{type(e).__name__}: {e}"
+# funtion under development
+def make_screenshot(endpoint, login_needed, commands):
+    browser = playwright.chromium.launch(headless=False)
+    page = browser.new_page()
+    if login_needed:
+        page.goto('http://localhost:5555/login')
+        page.fill('#username', 'juraj.kovac@op.pl')
+        page.fill('#password', 'DnEcZTYB')
+        page.click('.login-form button[type="submit"]')
+    page.goto(f'http://localhost:5555/{endpoint}')
 
-if __name__ == "__main__":
-    modify_code('test.txt', 1, 3, 'OsiÄ…gniÄ™cia dziki ')
+    for command in commands:
+        action = command.get('action')
+        selector = command.get('selector')
+        value = command.get('value')
+        if action == 'fill':
+            page.fill(selector, value)
+        elif action == 'click':
+            page.click(selector)
+        elif action == 'hover':
+            page.hover(selector)
+
+    page.screenshot(path='/home/autogen/autogen/takzyli-frontend/screenshots/screenshot.png')
+    browser.close()
+
