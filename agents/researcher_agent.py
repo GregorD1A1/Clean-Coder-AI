@@ -44,7 +44,7 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], operator.add]
 
-additional_knowledge = "Mostly files you interested in could be found in src/components/."
+additional_knowledge = ""#Mostly files you interested in could be found in src/components/."
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
@@ -64,7 +64,7 @@ system_message = SystemMessage(
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "Generate response using next json blob (strictly follow it!): "
+                "Generate response using next json blob (strictly follow it!). That json need to be part of your response:"
                 "```json"
                 "{"
                 " 'tool': '$TOOL_NAME',"

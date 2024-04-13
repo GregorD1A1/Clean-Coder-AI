@@ -95,7 +95,7 @@ class Executor():
         executor_workflow.add_node("agent", self.call_model)
         executor_workflow.add_node("tool", self.call_tool)
         executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human", ask_human)
+        executor_workflow.add_node("human", self.ask_human_executor)
 
         executor_workflow.set_entry_point("agent")
 
@@ -117,7 +117,7 @@ class Executor():
 
     # node functions
     def call_model(self, state):
-        messages = state["messages"]  # + [system_message]
+        messages = state["messages"]
         response = llm.invoke(messages)
         tool_call_json = find_tool_json(response.content)
         response.tool_call = tool_call_json
@@ -147,9 +147,14 @@ class Executor():
         if logs == "ok":
             log_message = HumanMessage(content="Logs are healthy.")
         else:
-            log_message = HumanMessage(content="Please check out logs:\n" + logs)
+            log_message = HumanMessage(content="Logs:\n" + logs)
 
         state["messages"].append(log_message)
+        return state
+
+    def ask_human_executor(self, state):
+        human_response = ask_human(state)
+        state["messages"].append(human_response)
         return state
 
     # just functions

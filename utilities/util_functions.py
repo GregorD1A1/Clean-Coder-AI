@@ -43,7 +43,7 @@ def check_application_logs():
     try:
         with open(work_dir + 'frontend-build-errors.txt', 'r') as file:
             logs = file.read()
-        if logs.strip().endswith("No errors found"):
+        if logs.strip().endswith("No messages found"):
             print("Logs are correct")
             return "ok"
         else:

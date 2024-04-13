@@ -31,7 +31,7 @@ def see_file(filename):
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-        formatted_lines = [f"<{i+1}>|{line[:-1]}</{i+1}>\n" for i, line in enumerate(lines)]
+        formatted_lines = [f"<{i+1}>{line[:-1]}</{i+1}>\n" for i, line in enumerate(lines)]
         file_contents = "".join(formatted_lines)
 
         return file_contents
@@ -54,7 +54,8 @@ def see_image(filename):
 
 @tool
 def insert_code(filename, line_number, code):
-    """Insert new piece of code into provided file. Proper indentation is important.
+    """Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
+    Proper indentation is important.
     {"tool_input": {
         "filename": "Name and path of file to change.",
         "line_number": "Line number to insert new code after.",
@@ -80,12 +81,16 @@ def insert_code(filename, line_number, code):
 @tool
 def modify_code(filename, start_line, end_line, new_code):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
+    Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
     {"tool_input": {
         "filename": "Name and path of file to change.",
         "start_line": "Start line number to replace with new code. Inclusive - means start_line will be first line to change.",
-        "end_line": "End line number to replace with new code. Inclusive - means end_line will be last line to change.",
+        "end_line": "End line number to replace with new code. Be very careful to provide appropriate line, not previous one.
+        If you want to replace entire function or code block, do not forgot about including last line with closing bracket.
+        Inclusive - means end_line will be last line to change.",
         "new_code": "New piece of code to replace old one."
-    }}
+        }
+    }
     """
     try:
         human_message = input("Hit enter to allow that action:")
