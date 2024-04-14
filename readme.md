@@ -14,7 +14,7 @@ Change name of '.env.template' file to '.env' and open it with text editor. Prov
 
 Check out the demonstration video:
 
-[Demo](https://youtu.be/d5qbX-v4qwM)
+[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
 
 1. Define Task
 
