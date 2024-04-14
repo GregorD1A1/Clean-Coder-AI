@@ -14,7 +14,7 @@ Change name of '.env.template' file to '.env' and open it with text editor. Prov
 
 Check out the demonstration video:
 
-<iframe width="560" height="315" src="https://youtu.be/d5qbX-v4qwM" frameborder="0" allowfullscreen></iframe>
+[Demo](https://youtu.be/d5qbX-v4qwM)
 
 1. Define Task
 
