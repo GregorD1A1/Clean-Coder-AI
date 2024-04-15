@@ -1,20 +1,16 @@
-import os
-import re
-import json
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langgraph.prebuilt import ToolInvocation
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from tools.tools import list_dir, see_file, see_image
 from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped
-from utilities.langgraph_common_functions import ask_human
+from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 
 
 load_dotenv(find_dotenv())
@@ -42,7 +38,7 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], operator.add]
+    messages: Sequence[BaseMessage]
 
 additional_knowledge = ""#Mostly files you interested in could be found in src/components/."
 
@@ -53,7 +49,7 @@ system_message = SystemMessage(
                 "Good practice you follow is when found important dependencies that point from file you checking to "
                 "other file, you check other file also. "
                 "At your final response, you choosing only needed files, while leaving that not needed. "
-                "You are helping your friend Executor to make provided task. "
+                "some files do not require modification, but can be used as a template - also include them."
                 "Do filesystem research and provide existing files that executor will need to change or take a look at "
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
                 "Never recommend files that not exist but need to be created."
@@ -75,24 +71,12 @@ system_message = SystemMessage(
 
 
 # node functions
-def call_model(state):
-    messages = state["messages"] + [system_message]
-    response = llm.invoke(messages)
-    tool_call = find_tool_json(response.content)
-    response.tool_call = tool_call
-    # We return a list, because this will get added to the existing list
-    return {"messages": [response]}
+def call_model_researcher(state):
+    return call_model(state, llm)
 
 
-def call_tool(state):
-    last_message = state["messages"][-1]
-    if not hasattr(last_message, "tool_call"):
-        return {"messages": ["no tool called"]}
-    tool_call = last_message.tool_call
-    response = tool_executor.invoke(ToolInvocation(**tool_call))
-    response_message = HumanMessage(content=str(response))
-
-    return {"messages": [response_message]}
+def call_tool_researcher(state):
+    return call_tool(state, tool_executor)
 
 
 # Logic for conditional edges
@@ -105,20 +89,11 @@ def after_agent_condition(state):
         return "tool"
 
 
-def after_ask_human_condition(state):
-    last_message = state["messages"][-1]
-
-    if last_message.content == "Approved by human":
-        return END
-    else:
-        return "agent"
-
-
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("agent", call_model)
-researcher_workflow.add_node("tool", call_tool)
+researcher_workflow.add_node("agent", call_model_researcher)
+researcher_workflow.add_node("tool", call_tool_researcher)
 researcher_workflow.add_node("human", ask_human)
 
 researcher_workflow.set_entry_point("agent")
@@ -138,7 +113,7 @@ researcher = researcher_workflow.compile()
 
 def research_task(task):
     print("Researcher starting its work")
-    inputs = {"messages": [HumanMessage(content=f"task: {task}")]}
+    inputs = {"messages": [system_message, HumanMessage(content=f"task: {task}")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
     tool_json = find_tool_json(researcher_response.content)

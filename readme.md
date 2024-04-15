@@ -10,6 +10,8 @@ Work of a programmer is often about making minor alterations to existing applica
 
 Change name of '.env.template' file to '.env' and open it with text editor. Provide your OpenAI api key and path to project directory you will be working on.
 
+It's very recommended to set up your project to write logs to file - that way executor agent will be able to check logs after changes are introduced and improve possible bugs. Provide full path to your log file after 'LOG_FILE=' in .env to activate that feature.
+
 ## Working process
 
 Check out the demonstration video:

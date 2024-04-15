@@ -79,15 +79,17 @@ def insert_code(filename, line_number, code):
 
 
 @tool
-def modify_code(filename, start_line, end_line, new_code):
+def replace_code(filename, start_line, end_line, new_code):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
+    Important: Pay extra attention to brackets when you are replacing an entire function or code block. Ensure that you
+    include the closing bracket too in the 'end_line'. If you miss it, the program will not run correctly.
     {"tool_input": {
         "filename": "Name and path of file to change.",
         "start_line": "Start line number to replace with new code. Inclusive - means start_line will be first line to change.",
-        "end_line": "End line number to replace with new code. Be very careful to provide appropriate line, not previous one.
-        If you want to replace entire function or code block, do not forgot about including last line with closing bracket.
-        Inclusive - means end_line will be last line to change.",
+        "end_line": "End line number to replace with new code. Inclusive - means end_line will be last line to change.
+        Be very vigilant about this - never forget to include the last line with the closing bracket while replacing
+        an entire function or code block.",
         "new_code": "New piece of code to replace old one."
         }
     }

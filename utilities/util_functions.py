@@ -8,6 +8,7 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+log_file_path = os.getenv("LOG_FILE")
 
 
 def print_wrapped(content, width=160):
@@ -41,7 +42,7 @@ def find_tool_json(response):
 def check_application_logs():
     """Check out logs to see if application works correctly."""
     try:
-        with open(work_dir + 'frontend-build-errors.txt', 'r') as file:
+        with open(log_file_path, 'r') as file:
             logs = file.read()
         if logs.strip().endswith("No messages found"):
             print("Logs are correct")

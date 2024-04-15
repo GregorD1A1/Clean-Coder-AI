@@ -8,7 +8,7 @@ from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain.prompts import PromptTemplate
 from utilities.util_functions import print_wrapped
-from utilities.langgraph_common_functions import ask_human
+from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
 
 
 load_dotenv(find_dotenv())
@@ -19,7 +19,7 @@ llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.2)
 
 
 class AgentState(TypedDict):
-    messages: Annotated[Sequence[BaseMessage], operator.add]
+    messages: Sequence[BaseMessage]
 
 
 system_message = SystemMessage(
@@ -28,46 +28,25 @@ system_message = SystemMessage(
             "need to be inserted, deleted, replaced or which file created."
             "When writing your changes plan, you planning only code changes, neither library installation or tests or anything else."
             "At every your message, you providing proposition of all changes, not just some."
+            "The user can't modify your code. So do not suggest incomplete code which requires users to modify."
 )
 
 
-# working on that function for future
-def choose_files_for_executor(plan, files):
-    prompt = PromptTemplate.from_template(
-        "Based on provided plan, return list of files that need to be changed. Choose files from original list:\n"
-        "{files}\n\nPlan: \n{plan}")
-    chain = prompt | llm
-    chain.invoke({"plan": plan, "files": files})
-
-
 # node functions
-def call_model(state):
-    messages = state["messages"]
-    response = llm.invoke(messages)
-    # We return a list, because this will get added to the existing list
-    return {"messages": [response]}
+def call_model_planner(state):
+    return call_model(state, llm)
 
 
 def ask_human_with_plan_printing(state):
     last_message = state["messages"][-1]
     print_wrapped(last_message.content, 100)
-    return ask_human()
-
-
-# Logic for conditional edges
-def after_ask_human_condition(state):
-    last_message = state["messages"][-1]
-
-    if last_message.content == "Approved by human":
-        return END
-    else:
-        return "agent"
+    return ask_human(state)
 
 
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("agent", call_model)
+researcher_workflow.add_node("agent", call_model_planner)
 researcher_workflow.add_node("human", ask_human_with_plan_printing)
 researcher_workflow.set_entry_point("agent")
 
