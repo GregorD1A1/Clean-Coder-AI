@@ -1,5 +1,5 @@
 # Clean Coder AI framework
-### You AI junior programmer
+### Your AI junior programmer
 
 Clean Coder is an AI code writer developed with special attention to providing a clean context to Large Language Models (LLMs). This enhances the quality of LLM responses and reduces costs.
 
