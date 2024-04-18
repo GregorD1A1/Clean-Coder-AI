@@ -3,7 +3,7 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("In education page of memorial profile make writings dynamic, as it is in final page")
+task = ("create new file that prints 'dzik!' in src dir")
 
 message_for_planner, files, file_contents = research_task(task)
 

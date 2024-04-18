@@ -1,10 +1,10 @@
 import os
 from tools.tools import see_file, replace_code, insert_code, create_file_with_code
 from langchain_openai.chat_models import ChatOpenAI
-from typing import TypedDict, Annotated, List, Sequence
+from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
@@ -84,10 +84,10 @@ class Executor():
     def call_tool_executor(self, state):
         last_message = state["messages"][-1]
         state = call_tool(state, tool_executor)
-        if last_message.tool_call["tool"] in ["insert_code", "modify_code"]:
-            state = self.exchange_file_contents(state)
         if last_message.tool_call["tool"] == "create_file_with_code":
             self.files.append(last_message.tool_call["tool_input"]["filename"])
+        if last_message.tool_call["tool"] in ["insert_code", "modify_code", "create_file_with_code"]:
+            state = self.exchange_file_contents(state)
         return state
 
     def check_log(self, state):

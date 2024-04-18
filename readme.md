@@ -1,8 +1,16 @@
 # Clean Coder AI framework
+### You AI junior programmer
 
 Clean Coder is an AI code writer developed with special attention to providing a clean context to Large Language Models (LLMs). This enhances the quality of LLM responses and reduces costs.
 
 Work of a programmer is often about making minor alterations to existing applications and expanding their capabilities, rather than building a whole new app from scratch. Unlike other AI coding frameworks, Clean Coder specializes in implementing changes within existing applications.
+
+## Key advantages:
+
+- Well-designed context pipeline: The LLM only receives necessary information into its context. This significantly improves the LLM's attention and reduces costs.
+- Automatic context updates after file modifications: There's no need to manually reload the file into the LLM context after adding a few lines.
+- Well-designed tools: These are specially designed to exchange appropriate parts of the code and navigate the file system. A human approval feature is added as a safety measure in case of code interference tools.
+- Ability to create a frontend based on images with designs.
 
 # How to work with Clean Coder
 

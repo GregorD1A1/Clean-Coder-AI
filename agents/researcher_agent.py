@@ -40,7 +40,7 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
-additional_knowledge = ""#Mostly files you interested in could be found in src/components/."
+project_knowledge = "Common styles for memorial profile pages are placed in assets/scss/MemorialProfile.scss"
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
@@ -54,8 +54,8 @@ system_message = SystemMessage(
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
                 "Never recommend files that not exist but need to be created."
                 "Start your research from '/' dir."
-                "Additional knowledge:\n"
-                f"{additional_knowledge}\n\n"
+                "Knowledge about project:\n"
+                f"{project_knowledge}\n\n"
                 "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"

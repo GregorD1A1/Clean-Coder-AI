@@ -32,7 +32,6 @@ def find_tool_json(response):
 
     if match:
         json_str = match.group(1).strip()
-        print_wrapped(json_str)
         json_obj = json.loads(json_str)
         return json_obj
     else:

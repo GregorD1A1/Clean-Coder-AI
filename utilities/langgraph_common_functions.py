@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from utilities.util_functions import find_tool_json
+from utilities.util_functions import find_tool_json, print_wrapped
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
 
@@ -10,6 +10,7 @@ def call_model(state, llm):
     response = llm.invoke(messages)
     tool_call_json = find_tool_json(response.content)
     response.tool_call = tool_call_json
+    print_wrapped(response.content)
     state["messages"].append(response)
     return state
 

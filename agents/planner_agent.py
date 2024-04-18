@@ -62,4 +62,4 @@ def planning(message_from_researcher):
     # try max_iterations instead of recursion_limit
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
 
-    return planner_response
+    return planner_response.content
