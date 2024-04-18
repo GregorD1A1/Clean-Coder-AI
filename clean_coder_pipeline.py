@@ -3,7 +3,7 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("create new file that prints 'dzik!' in src dir")
+task = "Do that and that and something more."
 
 message_for_planner, files, file_contents = research_task(task)
 
