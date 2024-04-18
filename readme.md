@@ -16,9 +16,9 @@ Work of a programmer is often about making minor alterations to existing applica
 
 ## Setup
 
-Change name of '.env.template' file to '.env' and open it with text editor. Provide your OpenAI api key and path to project directory you will be working on.
+Change name of `.env.template` file to `.env` and open it with text editor. Provide your OpenAI api key and path to project directory you will be working on.
 
-It's very recommended to set up your project to write logs to file - that way executor agent will be able to check logs after changes are introduced and improve possible bugs. Provide full path to your log file after 'LOG_FILE=' in .env to activate that feature.
+It's very recommended to set up your project to write logs to file - that way executor agent will be able to check logs after changes are introduced and improve possible bugs. Provide full path to your log file after `LOG_FILE=` in .env to activate that feature.
 
 ## Working process
 
@@ -28,7 +28,7 @@ Check out the demonstration video:
 
 ### 1. Define Task
 
-In 'clean_coder_pipeline.py', modify the task variable. Describe your task in detail. It is advisable to provide "unit" tasks - smaller ones and run the program multiple times rather than asking it to perform a complex task all at once. Specify which files to edit and, if creating a frontend, which design templates to use.
+In `clean_coder_pipeline.py`, modify the task variable. Describe your task in detail. It is advisable to provide "unit" tasks - smaller ones and run the program multiple times rather than asking it to perform a complex task all at once. Specify which files to edit and, if creating a frontend, which design templates to use.
 
 ### 2. Researcher Agent
 
