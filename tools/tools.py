@@ -63,8 +63,8 @@ def insert_code(filename, line_number, code):
     }}
     """
     try:
-        human_message = input("Hit enter to allow that action:")
-        if human_message:
+        human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+        if human_message != 'ok':
             return f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
@@ -95,8 +95,8 @@ def replace_code(filename, start_line, end_line, new_code):
     }
     """
     try:
-        human_message = input("Hit enter to allow that action:")
-        if human_message:
+        human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+        if human_message != 'ok':
             return f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
@@ -117,8 +117,8 @@ def create_file_with_code(filename, code):
     :param code: Code to write in the file.
     """
     try:
-        human_message = input("Hit enter to allow that action:")
-        if human_message:
+        human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+        if human_message != 'ok':
             return f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(work_dir + filename, 'w', encoding='utf-8') as file:
@@ -160,14 +160,14 @@ def image_to_code(prompt):
         return f"{type(e).__name__}: {e}"
 
 
-# funtion under development
+# function under development
 def make_screenshot(endpoint, login_needed, commands):
     browser = playwright.chromium.launch(headless=False)
     page = browser.new_page()
     if login_needed:
         page.goto('http://localhost:5555/login')
-        page.fill('#username', 'juraj.kovac@op.pl')
-        page.fill('#password', 'DnEcZTYB')
+        page.fill('#username', 'uname')
+        page.fill('#password', 'passwd')
         page.click('.login-form button[type="submit"]')
     page.goto(f'http://localhost:5555/{endpoint}')
 
@@ -182,6 +182,6 @@ def make_screenshot(endpoint, login_needed, commands):
         elif action == 'hover':
             page.hover(selector)
 
-    page.screenshot(path='/home/autogen/autogen/takzyli-frontend/screenshots/screenshot.png')
+    page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
 

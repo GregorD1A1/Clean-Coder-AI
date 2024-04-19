@@ -1,7 +1,6 @@
 from langchain_openai.chat_models import ChatOpenAI
-from typing import TypedDict, Annotated, Sequence
+from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-import operator
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
@@ -9,7 +8,7 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from tools.tools import list_dir, see_file, see_image
-from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped
+from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 
 
@@ -17,7 +16,7 @@ load_dotenv(find_dotenv())
 
 
 @tool
-def final_response(reasoning, files_for_executor):
+def final_response(reasoning, files_to_work_on, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
@@ -40,8 +39,8 @@ llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
-project_knowledge = "Common styles for memorial profile pages are placed in assets/scss/MemorialProfile.scss"
 
+project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
         content="You are expert in filesystem research and choosing right files."
@@ -53,14 +52,14 @@ system_message = SystemMessage(
                 "Do filesystem research and provide existing files that executor will need to change or take a look at "
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
                 "Never recommend files that not exist but need to be created."
-                "Start your research from '/' dir."
+                "Start your research from '/' dir.\n"
                 "Knowledge about project:\n"
                 f"{project_knowledge}\n\n"
-                "\n\n"
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "Generate response using next json blob (strictly follow it!). That json need to be part of your response:"
+                "Generate response using next json blob (strictly follow it!). That json need to be part of your "
+                "response. You are not allowed to return response without json tool call.\n"
                 "```json"
                 "{"
                 " 'tool': '$TOOL_NAME',"

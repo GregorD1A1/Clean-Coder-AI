@@ -50,3 +50,13 @@ def check_application_logs():
             return logs
     except Exception as e:
         return f"{type(e).__name__}: {e}"
+
+
+def read_project_knowledge():
+    if os.path.exists(work_dir + ".clean_coder"):
+        with open(work_dir + ".clean_coder/researcher_project_knowledge.prompt", "r") as f:
+            project_knowledge = f.read()
+    else:
+        project_knowledge = "None"
+
+    return project_knowledge

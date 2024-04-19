@@ -1,12 +1,10 @@
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-import operator
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from langchain.prompts import PromptTemplate
 from utilities.util_functions import print_wrapped
 from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
 
@@ -59,7 +57,6 @@ researcher = researcher_workflow.compile()
 def planning(message_from_researcher):
     print("Planner starting its work")
     inputs = {"messages": [system_message, message_from_researcher]}
-    # try max_iterations instead of recursion_limit
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
 
     return planner_response.content

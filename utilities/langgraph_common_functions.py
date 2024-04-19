@@ -29,7 +29,7 @@ def call_tool(state, tool_executor):
 
 
 def ask_human(state):
-    human_response = input("Write 'ok' if you agree with a researched files or provide commentary. ")
+    human_response = input("Write 'ok' if you agree with the agent or provide commentary. ")
     if human_response == "ok":
         state["messages"].append(HumanMessage(content="Approved by human"))
     else:
