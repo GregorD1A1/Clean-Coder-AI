@@ -40,6 +40,9 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
+bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
+                       "and enclosed with '```json', '```' tags.")
+
 project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
@@ -58,20 +61,25 @@ system_message = SystemMessage(
                 "You have access to following tools:\n"
                 f"{rendered_tools}"
                 "\n\n"
-                "Generate response using next json blob (strictly follow it!). That json need to be part of your "
-                "response. You are not allowed to return response without json tool call.\n"
-                "```json"
+                "Generate response using next json blob (strictly follow it!)."
+                "You are not allowed to return response without json tool call.\n"
+                "```json\n"
                 "{"
                 " 'tool': '$TOOL_NAME',"
                 " 'tool_input': '$TOOL_PARAMS',"
-                "}"
+                "}\n"
                 "```"
     )
 
 
 # node functions
 def call_model_researcher(state):
-    return call_model(state, llm)
+    state = call_model(state, llm)
+    # safety mechanism for a bad json
+    tool_call = state["messages"][-1].tool_call
+    if tool_call is None or "tool" not in tool_call:
+        state["messages"].append(HumanMessage(content=bad_json_format_msg))
+    return state
 
 
 def call_tool_researcher(state):
@@ -82,7 +90,9 @@ def call_tool_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.tool_call["tool"] == "final_response":
+    if last_message.content == bad_json_format_msg:
+        return "agent"
+    elif last_message.tool_call["tool"] == "final_response":
         return "human"
     else:
         return "tool"
