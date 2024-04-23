@@ -79,7 +79,8 @@ class Executor():
 
     # node functions
     def call_model_executor(self, state):
-        return call_model(state, llm)
+        state, _ = call_model(state, llm)
+        return state
 
     def call_tool_executor(self, state):
         last_message = state["messages"][-1]

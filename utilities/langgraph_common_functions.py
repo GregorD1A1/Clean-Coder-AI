@@ -12,7 +12,7 @@ def call_model(state, llm):
     response.tool_call = tool_call_json
     print_wrapped(response.content)
     state["messages"].append(response)
-    return state
+    return state, response
 
 
 def call_tool(state, tool_executor):

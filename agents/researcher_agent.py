@@ -74,9 +74,9 @@ system_message = SystemMessage(
 
 # node functions
 def call_model_researcher(state):
-    state = call_model(state, llm)
+    state, response = call_model(state, llm)
     # safety mechanism for a bad json
-    tool_call = state["messages"][-1].tool_call
+    tool_call = response.tool_call
     if tool_call is None or "tool" not in tool_call:
         state["messages"].append(HumanMessage(content=bad_json_format_msg))
     return state
@@ -159,7 +159,4 @@ def research_task(task):
         )
         '''
 
-    message_content = [f"task: {task},\n\n files: {file_contents}"] + images
-    message_for_planner = HumanMessage(content=message_content)
-
-    return message_for_planner, text_files, file_contents
+    return text_files, file_contents, images
