@@ -12,7 +12,7 @@ from utilities.langgraph_common_functions import call_model, ask_human, after_as
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3)
 #llm = ChatAnthropic(model='claude-3-opus-20240229')
 #llm = ChatOllama(model="mixtral") #, temperature=0)
 
@@ -32,28 +32,45 @@ system_message = SystemMessage(
 )
 
 voter_system_message = SystemMessage(
-    content="You have a few proposed plans how to implement given task. Analyze, which of them solves task the best, "
-            "fullfils criteria of providing complete code. Respond in xml with parameters <reasoning> and <choice>."
+    content="You have a few proposed plans how to implement given task. Analyze, which of them solves task the best."
+            "Additional criteria to take into account:"
+            "   1. We interested in complete code, without placeholders someone need to modify or fulfil."
+            "\n\n"
+            " Respond in xml:\n"
+            "```xml"
+            "<response>"
+            "   <reasoning>"
+            "       Explain your decision process."
+            "   </reasoning>"
+            "   <choice>"
+            "       Provide here nr of plan you choose the best. Only the number and nothing more."
+            "   </choice>"
+            "</response>"
+            "```"
 )
 
 
 # node functions
 def call_planers(state):
     nr_plans = 3
-    plan_propositions = "Here are plan propositions:\n\n"
+    plan_propositions = []
     for i in range(nr_plans):
-        print(f"Generating plan proposition {i}/{nr_plans}...")
+        print(f"\nGenerating plan proposition {i+1}/{nr_plans}...")
         messages = state["messages"]
         response = llm.invoke(messages)
-        print_wrapped(response.content)
-        plan_propositions += f"Proposition nr 1: " + response.content + "\n\n"
+        plan_propositions.append(f"Proposition nr {i+1}:\n\n" + response.content)
 
-    state["voter_messages"].append(HumanMessage(content=plan_propositions))
+    print("\nChoosing the best plan...")
+    plan_propositions_str = "Here are plan propositions:\n\n##\n\n" + "\n\n###\n\n".join(plan_propositions)
+    state["voter_messages"].append(HumanMessage(content=plan_propositions_str))
     chain = llm | XMLOutputParser()
-    response = chain.invoke(messages)
-    print_wrapped(response.content)
-    # add chosen plan to messages
+    response = chain.invoke(state["voter_messages"])
 
+    print(response["response"])
+    choice = int(response["response"][1]["choice"])
+    plan = plan_propositions[choice - 1]
+    state["messages"].append(HumanMessage(content=plan))
+    print_wrapped(f"Chosen plan:\n\n{plan}")
 
     return state
 
@@ -72,12 +89,12 @@ def ask_human_with_plan_printing(state):
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
-#researcher_workflow.add_node("planers", call_planers)
+researcher_workflow.add_node("planers", call_planers)
 researcher_workflow.add_node("corrector", call_model_corrector)
 researcher_workflow.add_node("human", ask_human_with_plan_printing)
-researcher_workflow.set_entry_point("corrector")
+researcher_workflow.set_entry_point("planers")
 
-#researcher_workflow.add_edge("planers", "human")
+researcher_workflow.add_edge("planers", "human")
 researcher_workflow.add_edge("corrector", "human")
 researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
