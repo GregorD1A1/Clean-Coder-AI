@@ -72,12 +72,12 @@ def ask_human_with_plan_printing(state):
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("planers", call_planers)
+#researcher_workflow.add_node("planers", call_planers)
 researcher_workflow.add_node("corrector", call_model_corrector)
 researcher_workflow.add_node("human", ask_human_with_plan_printing)
-researcher_workflow.set_entry_point("planers")
+researcher_workflow.set_entry_point("corrector")
 
-researcher_workflow.add_edge("planers", "human")
+#researcher_workflow.add_edge("planers", "human")
 researcher_workflow.add_edge("corrector", "human")
 researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
