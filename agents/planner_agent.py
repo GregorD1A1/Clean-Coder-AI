@@ -52,25 +52,23 @@ voter_system_message = SystemMessage(
 
 # node functions
 def call_planers(state):
+    messages = state["messages"]
     nr_plans = 3
-    plan_propositions = []
-    for i in range(nr_plans):
-        print(f"\nGenerating plan proposition {i+1}/{nr_plans}...")
-        messages = state["messages"]
-        response = llm.invoke(messages)
-        plan_propositions.append(f"Proposition nr {i+1}:\n\n" + response.content)
+    plan_propositions_str = "Here are plan propositions:\n\n##\n\n"
+    print(f"\nGenerating plan propositions...")
+    plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
+    for i, proposition in enumerate(plan_propositions_messages):
+        plan_propositions_str += f"Proposition nr {i+1}:\n\n" + proposition.content
 
-    print("\nChoosing the best plan...")
-    plan_propositions_str = "Here are plan propositions:\n\n##\n\n" + "\n\n###\n\n".join(plan_propositions)
+    print("Choosing the best plan...")
     state["voter_messages"].append(HumanMessage(content=plan_propositions_str))
     chain = llm | XMLOutputParser()
     response = chain.invoke(state["voter_messages"])
 
-    print(response["response"])
     choice = int(response["response"][1]["choice"])
-    plan = plan_propositions[choice - 1]
-    state["messages"].append(HumanMessage(content=plan))
-    print_wrapped(f"Chosen plan:\n\n{plan}")
+    plan = plan_propositions_messages[choice - 1]
+    state["messages"].append(plan)
+    print_wrapped(f"Chosen plan:\n\n{plan.content}")
 
     return state
 
