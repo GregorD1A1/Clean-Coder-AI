@@ -3,9 +3,7 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("Create new WorkPage in memorial profiel view. use common styles from assets/scss/MemorialProfile.scss"
-        "Use background image from assets/images. "
-        "Take a look at EducationPage (mem prof folder) to understand how to style your page.")
+task = ("look at homepage and do nothing")
 
 files, file_contents, images = research_task(task)
 

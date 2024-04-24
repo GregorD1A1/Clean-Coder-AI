@@ -54,11 +54,11 @@ voter_system_message = SystemMessage(
 def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
-    plan_propositions_str = "Here are plan propositions:\n\n##\n\n"
+    plan_propositions_str = "Here are plan propositions:"
     print(f"\nGenerating plan propositions...")
     plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
-        plan_propositions_str += f"Proposition nr {i+1}:\n\n" + proposition.content
+        plan_propositions_str += f"\n\n###\n\nProposition nr {i+1}:\n\n" + proposition.content
 
     print("Choosing the best plan...")
     state["voter_messages"].append(HumanMessage(content=plan_propositions_str))
@@ -78,22 +78,16 @@ def call_model_corrector(state):
     return state
 
 
-def ask_human_with_plan_printing(state):
-    last_message = state["messages"][-1]
-    print_wrapped(last_message.content, 100)
-    return ask_human(state)
-
-
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
 researcher_workflow.add_node("planers", call_planers)
-researcher_workflow.add_node("corrector", call_model_corrector)
-researcher_workflow.add_node("human", ask_human_with_plan_printing)
+researcher_workflow.add_node("agent", call_model_corrector)
+researcher_workflow.add_node("human", ask_human)
 researcher_workflow.set_entry_point("planers")
 
 researcher_workflow.add_edge("planers", "human")
-researcher_workflow.add_edge("corrector", "human")
+researcher_workflow.add_edge("agent", "human")
 researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
 researcher = researcher_workflow.compile()
