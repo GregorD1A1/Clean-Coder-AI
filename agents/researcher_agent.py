@@ -47,14 +47,15 @@ project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
         content="You are expert in filesystem research and choosing right files."
-                "Your research is very careful - rather check more files then less. If you not if you need to check some file or not - you check it. "
+                "Your research is very careful - rather check more files then less."
                 "Good practice you follow is when found important dependencies that point from file you checking to "
                 "other file, you check other file also. "
-                "At your final response, you choosing only needed files, while leaving that not needed. "
-                "some files do not require modification, but can be used as a template - also include them."
+                "At your final response, you choosing only needed files, while leaving behind that not needed. "
+                "Files which will not be modified but needed to programmer to look on them are also needed."
                 "Do filesystem research and provide existing files that executor will need to change or take a look at "
                 "in order to do his task. NEVER recommend file you haven't seen yet. "
                 "Never recommend files that not exist but need to be created."
+                "Do not get suggested by file names - you don't know while you didn't checked."
                 "Start your research from '/' dir.\n"
                 "Knowledge about project:\n"
                 f"{project_knowledge}\n\n"

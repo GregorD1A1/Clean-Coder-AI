@@ -3,7 +3,7 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("look at homepage and do nothing")
+task = ("main.py: AttributeError: 'User' object has no attribute 'id'")
 
 files, file_contents, images = research_task(task)
 
