@@ -4,6 +4,8 @@ import re
 import json
 import os
 from dotenv import load_dotenv, find_dotenv
+import xml.etree.ElementTree as ET
+from xml.dom.minidom import parse, parseString
 
 
 load_dotenv(find_dotenv())
@@ -34,6 +36,25 @@ def find_tool_json(response):
         json_str = match.group(1).strip()
         json_obj = json.loads(json_str)
         return json_obj
+    else:
+        return None
+
+
+def find_tool_xml(input_str):
+    match = re.search('```xml(.*?)```', input_str, re.DOTALL)
+    if match:
+        root = ET.fromstring(match.group(1).strip())
+        tool = root.find('tool').text.strip()
+        tool_input_element = root.find('tool_input')
+        tool_input = {}
+        for child in tool_input_element:
+            child.text = child.text.strip()
+            if list(child):
+                tool_input[child.tag] = [item.text for item in child]
+            else:
+                tool_input[child.tag] = child.text
+        #output = {child.tag: child.text for child in root}
+        return {"tool": tool, "tool_input": tool_input}
     else:
         return None
 

@@ -10,7 +10,7 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs
+from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_xml
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 
 
@@ -38,21 +38,23 @@ class AgentState(TypedDict):
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are senior programmer. You need to improve existing code using provided tools. Introduce changes "
-                "from plan one by one, means you can write only one json with change in that step."
-                "You are working with smaller parts of code - modify single functions or lines rather then entire file."
-                "\n\n"
-                "You have access to following tools:\n"
-                f"{rendered_tools}"
-                "\n\n"
-                "To use tool, strictly follow json blob:"
-                "```json"
-                "{"
-                " 'reasoning': '$STEP_BY_STEP_REASONING_ABOUT_WHICH_TOOL_TO_USE_AND_WITH_WHICH_PARAMETERS',"
-                " 'tool': '$TOOL_NAME',"
-                " 'tool_input': '$TOOL_PARAMETERS',"
-                "}"
-                "```"
+        content=f"""You are a senior programmer tasked with refining an existing codebase. Your goal is to incrementally 
+        introduce improvements using a set of provided tools. Each change should be implemented step by step, 
+        meaning you make one modification at a time. Focus on enhancing individual functions or lines of code 
+        rather than rewriting entire files at once.
+        \n\n
+        Tools to your disposal:\n
+        {rendered_tools}
+        \n\n
+        First, write your thinking process. Think step by step about what do you need to do to accomplish the task. 
+        Next, call one tool using template:
+        ```json
+        {{
+            "tool": "$TOOL_NAME",
+            "tool_input": "$TOOL_PARAMS",
+        }}
+        ```
+        """
     )
 
 
@@ -82,12 +84,13 @@ class Executor():
         state, _ = call_model(state, llm)
         return state
 
+
     def call_tool_executor(self, state):
         last_message = state["messages"][-1]
         state = call_tool(state, tool_executor)
         if last_message.tool_call["tool"] == "create_file_with_code":
             self.files.append(last_message.tool_call["tool_input"]["filename"])
-        if last_message.tool_call["tool"] in ["insert_code", "modify_code", "create_file_with_code"]:
+        if last_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
             state = self.exchange_file_contents(state)
         return state
 

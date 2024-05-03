@@ -3,7 +3,9 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("main.py: AttributeError: 'User' object has no attribute 'id'")
+task = """
+Let's make "edytuj" button in the dashboard to make it edit the profile actually.
+"""
 
 files, file_contents, images = research_task(task)
 

@@ -1,8 +1,9 @@
-langchain==0.1.11
-langchain-core==0.1.45
-langgraph==0.0.26
+langchain==0.1.17
+langchain-core==0.1.50
+langchain_mistralai==0.1.6
+langgraph==0.0.40
 python-dotenv==1.0.1
 langchain_openai==0.0.8
 langchain_anthropic==0.1.11
-playwright==1.42.0
+playwright==1.43.0
 xmltodict==0.13.0

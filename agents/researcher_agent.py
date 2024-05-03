@@ -1,4 +1,6 @@
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_mistralai.chat_models import ChatMistralAI
+from langchain_community.chat_models import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -6,25 +8,24 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
-from langchain_community.chat_models import ChatOllama
 from tools.tools import list_dir, see_file, see_image
-from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped, read_project_knowledge
+from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
+import os
 
 
 load_dotenv(find_dotenv())
+mistral_api_key = os.getenv("MISTRAL_API_KEY")
 
 
 @tool
-def final_response(reasoning, files_to_work_on, template_images):
+def final_response(files_to_work_on, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
-    'tool_input': {
-        "reasoning": "Reasoning what files will be needed.",
-        "files_to_work_on": ["List", "of", "files."],
-        "template_images": ["List of image paths", "that be used as graphical patterns."]
-    }
+    tool input:
+    :param files_to_work_on: ["List", "of", "files"],
+    :param template_images: ["List of", "template", "images"],
     """
     pass
 
@@ -34,6 +35,7 @@ rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
 #llm = ChatOllama(model="openchat") #, temperature=0)
+#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 
 
 class AgentState(TypedDict):
@@ -46,30 +48,24 @@ bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and '
 project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are expert in filesystem research and choosing right files."
-                "Your research is very careful - rather check more files then less."
-                "Good practice you follow is when found important dependencies that point from file you checking to "
-                "other file, you check other file also. "
-                "At your final response, you choosing only needed files, while leaving behind that not needed. "
-                "Files which will not be modified but needed to programmer to look on them are also needed."
-                "Do filesystem research and provide existing files that executor will need to change or take a look at "
-                "in order to do his task. NEVER recommend file you haven't seen yet. "
-                "Never recommend files that not exist but need to be created."
-                "Do not get suggested by file names - you don't know while you didn't checked."
-                "Start your research from '/' dir.\n"
-                "Knowledge about project:\n"
-                f"{project_knowledge}\n\n"
-                "You have access to following tools:\n"
-                f"{rendered_tools}"
-                "\n\n"
-                "Generate response using next json blob (strictly follow it!)."
-                "You are not allowed to return response without json tool call.\n"
-                "```json\n"
-                "{"
-                " 'tool': '$TOOL_NAME',"
-                " 'tool_input': '$TOOL_PARAMS',"
-                "}\n"
-                "```"
+        content=f"""
+        As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
+        When you discover significant dependencies from one file to another, ensure to inspect both. 
+        Your final selection should only include files needed to be modified or needed as reference to programmer. 
+        Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
+        Knowledge about project:
+        {project_knowledge}\n
+        You have access to following tools:
+        {rendered_tools}\n
+        First, provide step by step reasoning about what do you need to find in order to accomplish the task.
+        Next, generate response using json template: Choose only one tool to use.
+        ```json
+        {{
+            "tool": "$TOOL_NAME",
+            "tool_input": "$TOOL_PARAMS",
+        }}
+        ```
+        """
     )
 
 
@@ -126,6 +122,7 @@ def research_task(task):
     inputs = {"messages": [system_message, HumanMessage(content=f"task: {task}")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
+    #tool_json = find_tool_xml(researcher_response.content)
     tool_json = find_tool_json(researcher_response.content)
     text_files = tool_json["tool_input"]["files_to_work_on"]
     file_contents = check_file_contents(text_files)
@@ -147,6 +144,7 @@ def research_task(task):
                 },
             }
         )
+        # images for claude
         '''
         images.append(
             {
