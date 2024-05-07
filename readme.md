@@ -36,9 +36,9 @@ In `clean_coder_pipeline.py`, modify the task variable. Describe your task in de
 
 ### 2. Launch
 
-Launch Clean Coder by running
+Launch Clean Coder by running:
 
-`python clean_coder_pipeline.py`.
+`python clean_coder_pipeline.py`
 
 ### 3. Researcher Agent
 

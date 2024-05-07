@@ -34,7 +34,8 @@ system_message = SystemMessage(
     Plan should not include library installation or tests or anything else unrelated to code modifications. 
     Do not ask to ensure about something or double-check - do it by yourself.
     At every your message, you providing proposition of all changes, not just some.
-    If you think you lack some project files to create a comprehensive plan, please tell me about it.
+    If you think you lack some project files to create a comprehensive plan, write "It seems here lack of ..." at the 
+    end of your response.
     """
 )
 

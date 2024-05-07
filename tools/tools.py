@@ -34,10 +34,11 @@ def see_file(filename):
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-        formatted_lines = [f"<{i+1}>{line[:-1]}</{i+1}>\n" for i, line in enumerate(lines)]
-        file_contents = "".join(formatted_lines)
+        formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
+        file_content = "".join(formatted_lines)
+        file_content = filename + ":\n\n" + file_content
 
-        return file_contents
+        return file_content
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
@@ -65,7 +66,7 @@ def insert_code(filename, line_number, code):
      <filename>Name and path of file to change.</filename>
      <line_number>Line number to insert new code after.</line_number>
      <code>
-      Code to insert in the file.
+      Code to insert into the file. Start it with appropriate indentation.
      </code>
     </tool_input>
     """
@@ -98,7 +99,7 @@ def replace_code(filename, start_line, end_line, new_code):
         Be very vigilant about this - never forget to include the last line with the closing bracket while replacing
         an entire function or code block.</end_line>
      <new_code>
-      New piece of code to replace old one.
+      New piece of code to replace old one. Start it with appropriate indentation.
      </new_code>
     </tool_input>
     """

@@ -19,12 +19,13 @@ mistral_api_key = os.getenv("MISTRAL_API_KEY")
 
 
 @tool
-def final_response(files_to_work_on, template_images):
+def final_response(files_to_work_on, reference_files, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
     tool input:
     :param files_to_work_on: ["List", "of", "files"],
+    :param reference_files: ["List", "of", "files"],
     :param template_images: ["List of", "template", "images"],
     """
     pass
@@ -124,7 +125,7 @@ def research_task(task):
 
     #tool_json = find_tool_xml(researcher_response.content)
     tool_json = find_tool_json(researcher_response.content)
-    text_files = tool_json["tool_input"]["files_to_work_on"]
+    text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
     file_contents = check_file_contents(text_files)
 
     image_paths = tool_json["tool_input"]["template_images"]

@@ -7,3 +7,4 @@ langchain_openai==0.0.8
 langchain_anthropic==0.1.11
 playwright==1.43.0
 xmltodict==0.13.0
+termcolor==2.4.0
