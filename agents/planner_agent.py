@@ -25,17 +25,14 @@ class AgentState(TypedDict):
 
 system_message = SystemMessage(
     content="""
-    You are scrum master expert. You guiding your code monkey friend about what changes need to be done in code in order 
+    You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
     to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
     to execute task. Your recomendations should include in details:
     - Details about functions modifications,
     - Details about movement lines and functionalities from file to file,
     - Details about new file creation,
-    Plan should not include library installation or tests or anything else unrelated to code modifications. 
-    Do not ask to ensure about something or double-check - do it by yourself.
+    Plan should not include library installation or tests or anything else unrelated to code modifications.
     At every your message, you providing proposition of all changes, not just some.
-    If you think you lack some project files to create a comprehensive plan, write "It seems here lack of ..." at the 
-    end of your response.
     """
 )
 
@@ -48,8 +45,7 @@ voter_system_message = SystemMessage(
     1. The primary criterion is the effectiveness of the plan in executing the task. It is most important.
     2. A secondary criterion is simplicity. If two plans are equally good, chose one described more concise and required 
     less modifications.
-    3. Another secondary criterion is concreteness, lack of ambiguity. Good plan exactly describes what to change in 
-    code, without any conditional statements or asking to ensure about sth.
+    3. The third criterion is consistency with existing code in other files. Prefer plan with code more similar to existing codebase.
     
     Respond in xml:
     ```xml
@@ -63,6 +59,24 @@ voter_system_message = SystemMessage(
     </response>
     ```
     """
+)
+
+secretary_system_message = SystemMessage(
+    content="""
+You are secretary of lead developer. You have provided plan proposed by lead developer. Analyze the plan and find if all proposed changes are related to provided list of project files only, or lead dev need to check other files also.
+
+Return in:
+```xml
+<response>
+<reasoning>
+Think step by step if some additional files are needed for that plan or not.
+</reasoning>
+<message_to_file_researcher>
+Write 'No any additional files needed.' if all the proposed plan changes are in given files; write custom message with request to check out files in filesystem if plan assumes changes in another files than provided or lead dev wants to ensure about something in another files.
+</message_to_file_researcher>
+<response>
+```
+"""
 )
 
 

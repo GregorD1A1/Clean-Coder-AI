@@ -66,7 +66,7 @@ def insert_code(filename, line_number, code):
      <filename>Name and path of file to change.</filename>
      <line_number>Line number to insert new code after.</line_number>
      <code>
-      Code to insert into the file. Start it with appropriate indentation.
+      Code to insert into the file. Start it with appropriate indentation if needed.
      </code>
     </tool_input>
     """
@@ -87,7 +87,7 @@ def insert_code(filename, line_number, code):
 
 
 @tool
-def replace_code(filename, start_line, end_line, new_code):
+def replace_code(filename, start_line,  new_code, end_line):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
     Important: Pay extra attention to brackets when you are replacing an entire function or code block. Ensure that you
@@ -95,12 +95,12 @@ def replace_code(filename, start_line, end_line, new_code):
     <tool_input>
      <filename>Name and path of file to change.</filename>
      <start_line>Start line number to replace with new code. Inclusive - means start_line will be first line to change.</start_line>
+     <new_code>
+      New piece of code to replace old one. Start it with appropriate indentation if needed.
+     </new_code>
      <end_line>End line number to replace with new code. Inclusive - means end_line will be last line to change.
         Be very vigilant about this - never forget to include the last line with the closing bracket while replacing
         an entire function or code block.</end_line>
-     <new_code>
-      New piece of code to replace old one. Start it with appropriate indentation.
-     </new_code>
     </tool_input>
     """
     try:
@@ -140,6 +140,19 @@ def create_file_with_code(filename, code):
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
+
+@tool
+def ask_human_tool(prompt):
+    """
+    Use that tool to ask human if you need any external information or actions.
+    tool input:
+    :param prompt: question to human.
+    """
+    try:
+        human_message = input(prompt)
+        return human_message
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
 
 @tool
 def image_to_code(prompt):

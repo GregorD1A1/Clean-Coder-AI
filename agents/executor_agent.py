@@ -1,5 +1,5 @@
 import os
-from tools.tools import see_file, replace_code, insert_code, create_file_with_code
+from tools.tools import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -19,13 +19,13 @@ log_file_path = os.getenv("LOG_FILE")
 
 
 @tool
-def final_response(dummy_argument):
+def final_response():
     """Call that tool when all changes are implemented to tell the job is done. If you have no idea which tool to call,
     call that."""
     pass
 
 
-tools = [see_file, insert_code, replace_code, create_file_with_code, final_response]
+tools = [see_file, insert_code, replace_code, create_file_with_code, final_response, ask_human_tool]
 rendered_tools = render_text_description(tools)
 
 checker_llm = ChatOpenAI(model="gpt-4-turbo", temperature=0).with_config({"run_name": "Checker"})

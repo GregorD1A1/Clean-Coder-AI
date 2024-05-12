@@ -19,19 +19,18 @@ mistral_api_key = os.getenv("MISTRAL_API_KEY")
 
 
 @tool
-def final_response(files_to_work_on, reference_files, template_images):
+def final_response(files_to_work_on, reference_files):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
     tool input:
-    :param files_to_work_on: ["List", "of", "files", "to potentially introduce", "changes"],
-    :param reference_files: ["List", "of", "files", "useful to code reference"],
-    :param template_images: ["List of", "template", "images"],
+    :param files_to_work_on: ["List", "of", "files"],
+    :param reference_files: ["List", "of", "files"],
     """
     pass
 
 
-tools = [list_dir, see_file, final_response]
+tools = [list_dir, see_file]
 rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
@@ -48,30 +47,30 @@ bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and '
 
 project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
-system_message = SystemMessage(
-        content=f"""
-        As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
-        When you discover significant dependencies from one file to another, ensure to inspect both. 
-        Your final selection should include files needed to be modified or needed as reference for a programmer 
-        (for example to see how code in similar file implemented). 
-        Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
-        
-        Knowledge about project (not so important):
-        {project_knowledge}
-        
-        You have access to following tools:
-        {rendered_tools}
-        
-        First, provide step by step reasoning about what do you need to find in order to accomplish the task.
-        Next, generate response using json template: Choose only one tool to use.
-        ```json
-        {{
-            "tool": "$TOOL_NAME",
-            "tool_input": "$TOOL_PARAMS",
-        }}
-        ```
-        """
-    )
+system_message = SystemMessage(content=f"""
+As a scrum master expert, you need is to divide general task in small unit tasks.
+To do it you need to get context of the project first, so examine files thoroughly, prioritizing comprehensive checks. 
+When you discover significant dependencies from one file to another, ensure to inspect both. 
+Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
+After file research is done, write a complete list of unit tasks. Unit tasks should be related to code changes -
+do not write any tests or documentation or other non-code tasks. For Every task write comprehensive and 
+unambiguous description. Number of unit tasks may vary, from 1 in case of simple general task to 10 in case of 
+complex one. Never invent things you don't know about the project - continue file research if you lack of some 
+information to write a plan. 
+If you want to propose some change, think first if it didn't already implemented in some project file.
+
+You have access to following tools:
+{rendered_tools}\n
+First, provide step by step reasoning about what do you need to find in order to accomplish the task.
+Next, generate response using json template: Choose only one tool to use.
+```json
+{{
+    "tool": "$TOOL_NAME",
+    "tool_input": "$TOOL_PARAMS",
+}}
+```
+"""
+)
 
 
 # node functions
@@ -124,7 +123,7 @@ researcher = researcher_workflow.compile()
 
 def research_task(task):
     print("Researcher starting its work")
-    inputs = {"messages": [system_message, HumanMessage(content=f"task: {task}")]}
+    inputs = {"messages": [system_message, HumanMessage(content=f"General task: {task}")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
     #tool_json = find_tool_xml(researcher_response.content)
@@ -132,35 +131,15 @@ def research_task(task):
     text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
     file_contents = check_file_contents(text_files)
 
-    image_paths = tool_json["tool_input"]["template_images"]
-    images = []
-    for image_path in image_paths:
-        images.append(
-            {
-                "type": "text",
-                "text": image_path,
-            }
-        )
-        images.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/png;base64,{see_image(image_path)}",
-                },
-            }
-        )
-        # images for claude
-        '''
-        images.append(
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": see_image(image_path),
-                },
-            }
-        )
-        '''
 
-    return text_files, file_contents, images
+
+
+    return text_files, file_contents
+
+if __name__ == "__main__":
+    task = """
+    Let's create an additional page with searcher of memorial profiles. Searcher should be able to filter profiles by 
+    year of birth, year of death, number of children. talk with appropriate backend endpoint.
+    """
+
+    research_task(task)
