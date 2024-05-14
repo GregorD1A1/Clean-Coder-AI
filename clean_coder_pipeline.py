@@ -3,7 +3,9 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 
 
-task = ("main.py: AttributeError: 'User' object has no attribute 'id'")
+task = """
+    In SecondPage.vue, replace .location-arrow icon with <v-icon class="icon"> containing mdi-map-marker icon.
+"""
 
 files, file_contents, images = research_task(task)
 

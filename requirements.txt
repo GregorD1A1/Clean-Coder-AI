@@ -1,8 +1,10 @@
-langchain==0.1.11
+langchain==0.1.16
 langchain-core==0.1.45
-langgraph==0.0.26
+langgraph==0.0.38
 python-dotenv==1.0.1
 langchain_openai==0.0.8
 langchain_anthropic==0.1.11
 playwright==1.42.0
 xmltodict==0.13.0
+# beautifulsoup4==4.12.3
+# esprima==4.0.1
