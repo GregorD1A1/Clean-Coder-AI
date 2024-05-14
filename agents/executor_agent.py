@@ -25,12 +25,11 @@ def final_response():
     pass
 
 
-tools = [see_file, insert_code, replace_code, create_file_with_code, final_response, ask_human_tool]
+tools = [see_file, insert_code, replace_code, create_file_with_code, final_response]
 rendered_tools = render_text_description(tools)
 
-checker_llm = ChatOpenAI(model="gpt-4-turbo", temperature=0).with_config({"run_name": "Checker"})
-llm = ChatOpenAI(model="gpt-4-turbo", temperature=0).with_config({"run_name": "Executor"})
-#llm = ChatAnthropic(model='claude-3-opus-20240229').with_config({"run_name": "Executor"})
+#llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 
 
@@ -51,7 +50,8 @@ Tools to your disposal:\n
 {rendered_tools}
 \n\n
 First, write your thinking process. Think step by step about what do you need to do to accomplish the task. 
-Next, call one tool using template:
+Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
+rest will be possibility to do later.
 ```json
 {{
     "tool": "$TOOL_NAME",

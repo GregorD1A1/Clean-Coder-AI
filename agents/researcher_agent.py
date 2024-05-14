@@ -34,9 +34,15 @@ def final_response(files_to_work_on, reference_files, template_images):
 tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 #llm = ChatOllama(model="openchat") #, temperature=0)
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
+'''llm = ChatOpenAI(
+    model='deepseek-chat',
+    openai_api_key='',
+    openai_api_base='https://api.deepseek.com/v1',
+    temperature=0.2
+)'''
 
 
 class AgentState(TypedDict):

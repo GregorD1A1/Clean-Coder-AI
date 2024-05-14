@@ -12,22 +12,24 @@ from utilities.langgraph_common_functions import call_model, ask_human, after_as
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3)
+llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3).with_config({"run_name": "Planer"})
 #llm_voter = ChatAnthropic(model='claude-3-opus-20240229')
 #llm = ChatOllama(model="mixtral") #, temperature=0)
-llm_voter = llm
+llm_voter = llm.with_config({"run_name": "Voter"})
+llm_secretary = llm
 
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
     voter_messages: Sequence[BaseMessage]
+    secretary_messages: Sequence[BaseMessage]
 
 
 system_message = SystemMessage(
     content="""
     You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
     to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
-    to execute task. Your recomendations should include in details:
+    to execute task. When possible, plan consistent code with other files. Your recommendations should include in details:
     - Details about functions modifications,
     - Details about movement lines and functionalities from file to file,
     - Details about new file creation,
@@ -63,7 +65,8 @@ voter_system_message = SystemMessage(
 
 secretary_system_message = SystemMessage(
     content="""
-You are secretary of lead developer. You have provided plan proposed by lead developer. Analyze the plan and find if all proposed changes are related to provided list of project files only, or lead dev need to check other files also.
+You are secretary of lead developer. You have provided plan proposed by lead developer. Analyze the plan and find if all 
+proposed changes are related to provided list of project files only, or lead dev need to check other files also.
 
 Return in:
 ```xml
@@ -72,7 +75,9 @@ Return in:
 Think step by step if some additional files are needed for that plan or not.
 </reasoning>
 <message_to_file_researcher>
-Write 'No any additional files needed.' if all the proposed plan changes are in given files; write custom message with request to check out files in filesystem if plan assumes changes in another files than provided or lead dev wants to ensure about something in another files.
+Write 'No any additional files needed.' if all the proposed plan changes are in given files; write custom message with 
+request to check out files in filesystem if plan assumes changes in another files than provided or lead dev wants to 
+ensure about something in another files.
 </message_to_file_researcher>
 <response>
 ```
@@ -98,6 +103,23 @@ def call_planers(state):
     plan = plan_propositions_messages[choice - 1]
     state["messages"].append(plan)
     print_wrapped(f"Chosen plan:\n\n{plan.content}")
+
+    '''
+    print("Checking files completeness...")
+    files = "['MemorialProfile.vue', 'WorkPage.vue']"   # dummy files for now
+    chain = llm_secretary | XMLOutputParser()
+    state["secretary_messages"].append(HumanMessage(
+        content=f"""
+        Plan:\n\n{plan.content}\n\n###\n\nFiles:\n\n{files}\n
+    """
+    ))
+    secretary_response = chain.invoke(state["secretary_messages"])
+    print(secretary_response)
+    msg_to_file_researcher = secretary_response["response"][1]["message_to_file_researcher"]
+
+    if msg_to_file_researcher != "No any additional files needed.":
+        pass
+    '''
 
     return state
 
@@ -130,7 +152,8 @@ def planning(task, file_contents, images):
 
     inputs = {
         "messages": [system_message, message_without_imgs, message_images],
-        "voter_messages": [voter_system_message, message_without_imgs]
+        "voter_messages": [voter_system_message, message_without_imgs],
+        "secretary_messages": [secretary_system_message]
     }
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
 

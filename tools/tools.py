@@ -46,9 +46,8 @@ def see_file(filename):
 @tool
 def see_image(filename):
     """Sees the image.
-    <tool_input>
-     <filename>Name and path of image to check.</filename>
-    </tool_input>
+    tool input:
+    :param filename: Name and path of image to check.
     """
     try:
         with open(work_dir + filename, 'rb') as image_file:
@@ -62,13 +61,10 @@ def see_image(filename):
 def insert_code(filename, line_number, code):
     """Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
     Proper indentation is important.
-    <tool_input>
-     <filename>Name and path of file to change.</filename>
-     <line_number>Line number to insert new code after.</line_number>
-     <code>
-      Code to insert into the file. Start it with appropriate indentation if needed.
-     </code>
-    </tool_input>
+    tool input:
+    :param filename: Name and path of file to change.
+    :param line_number: Line number to insert new code after.
+    :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
@@ -87,21 +83,16 @@ def insert_code(filename, line_number, code):
 
 
 @tool
-def replace_code(filename, start_line,  new_code, end_line):
+def replace_code(filename, start_line,  code, end_line):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
     Important: Pay extra attention to brackets when you are replacing an entire function or code block. Ensure that you
     include the closing bracket too in the 'end_line'. If you miss it, the program will not run correctly.
-    <tool_input>
-     <filename>Name and path of file to change.</filename>
-     <start_line>Start line number to replace with new code. Inclusive - means start_line will be first line to change.</start_line>
-     <new_code>
-      New piece of code to replace old one. Start it with appropriate indentation if needed.
-     </new_code>
-     <end_line>End line number to replace with new code. Inclusive - means end_line will be last line to change.
-        Be very vigilant about this - never forget to include the last line with the closing bracket while replacing
-        an entire function or code block.</end_line>
-    </tool_input>
+    tool input:
+    :param filename: Name and path of file to change.
+    :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
+    :param code: New piece of code to replace old one. Without backticks around. Start it with appropriate indentation if needed.
+    :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
@@ -110,7 +101,7 @@ def replace_code(filename, start_line,  new_code, end_line):
 
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
-            file_contents[start_line - 1:end_line] = [new_code + '\n']
+            file_contents[start_line - 1:end_line] = [code + '\n']
             file.seek(0)
             file.truncate()
             file.write("".join(file_contents))
@@ -122,12 +113,9 @@ def replace_code(filename, start_line,  new_code, end_line):
 @tool
 def create_file_with_code(filename, code):
     """Create new file with provided code.
-    <tool_input>
-     <filename>Name and path of file to create.</filename>
-     <code>
-      Code to write in the file.
-     </code>
-    </tool_input>
+    tool input:
+    :param filename: Name and path of file to create.
+    :param code: Code to write in the file.
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
