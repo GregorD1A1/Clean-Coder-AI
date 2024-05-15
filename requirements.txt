@@ -6,5 +6,5 @@ langchain_openai==0.0.8
 langchain_anthropic==0.1.11
 playwright==1.42.0
 xmltodict==0.13.0
-# beautifulsoup4==4.12.3
-# esprima==4.0.1
+beautifulsoup4==4.12.3
+esprima==4.0.1
