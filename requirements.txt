@@ -8,3 +8,5 @@ langchain_anthropic==0.1.11
 playwright==1.43.0
 xmltodict==0.13.0
 termcolor==2.4.0
+beautifulsoup4==4.12.3
+esprima==4.0.1

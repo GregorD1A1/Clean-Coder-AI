@@ -201,4 +201,3 @@ def make_screenshot(endpoint, login_needed, commands):
 
     page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
-
