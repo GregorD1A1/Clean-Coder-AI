@@ -12,7 +12,7 @@ from utilities.langgraph_common_functions import call_model, ask_human, after_as
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3).with_config({"run_name": "Planer"})
+llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
 #llm_voter = ChatAnthropic(model='claude-3-opus-20240229')
 #llm = ChatOllama(model="mixtral") #, temperature=0)
 llm_voter = llm.with_config({"run_name": "Voter"})

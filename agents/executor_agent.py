@@ -112,28 +112,6 @@ class Executor():
         state, _ = call_model(state, llm)
         return state
 
-    def call_model_checker(self, state):
-        last_message = state["messages"][-1]
-        exector_message = HumanMessage(content=last_message.content)
-        checker_messages = [
-            checker_system_message, exector_message
-        ]
-
-        # adding file content
-        if getattr(last_message, "tool_call", None) and last_message.tool_call["tool"] in ["insert_code", "replace_code"]:
-            file = last_message.tool_call["tool_input"]["filename"]
-            file_content = see_file(file)
-            file_content_message = HumanMessage(content=file_content)
-            checker_messages.insert(1, file_content_message)
-
-        response = checker_llm.invoke(checker_messages)
-        print_wrapped(f"Checker response:  {response.content}", color="red")
-        message = find_tool_json(response.content)["response"]
-        state["checker_response"] = message
-        if message != "Everything ok.":
-            state["messages"].append(HumanMessage(content=f"Execution interrupted. Checker message: {message}"))
-        return state
-
 
     def call_tool_executor(self, state):
         last_message = state["messages"][-1]

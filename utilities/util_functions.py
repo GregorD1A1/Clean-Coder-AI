@@ -1,11 +1,12 @@
-import textwrap
-from tools.tools import see_file
 import re
 import json
 import os
+import textwrap
+from tools.tools import see_file
 from dotenv import load_dotenv, find_dotenv
 import xml.etree.ElementTree as ET
 from termcolor import colored
+import ast
 
 
 load_dotenv(find_dotenv())
@@ -30,12 +31,17 @@ def check_file_contents(files):
 
 
 def find_tool_json(response):
-    match = re.search(r'```json(.*?)```', response, re.DOTALL)
+    matches = re.findall(r'```json(.*?)```', response, re.DOTALL)
 
-    if match:
-        json_str = match.group(1).strip()
-        json_obj = json.loads(json_str)
-        return json_obj
+    if len(matches) == 1:
+        json_str = matches[0].strip()
+        try:
+            json_obj = json.loads(json_str)
+            return json_obj
+        except json.JSONDecodeError:
+            return "Invalid json."
+    elif len(matches) > 1:
+        return "Multiple jsons found."
     else:
         return None
 
@@ -81,3 +87,22 @@ def read_project_knowledge():
         project_knowledge = "None"
 
     return project_knowledge
+
+
+def check_syntax(file_content, filename):
+    parts = filename.split(".")
+    extension = parts[-1] if len(parts) > 1 else ''
+    if extension == "py":
+        return check_syntax_python(file_content)
+    else:
+        return "Valid syntax"
+
+
+def check_syntax_python(code):
+    try:
+        ast.parse(code)
+        return "Valid syntax"
+    except SyntaxError as e:
+        return f"Syntax Error: {e.msg} (line {e.lineno - 1})"
+    except Exception as e:
+        return f"Error: {e}"

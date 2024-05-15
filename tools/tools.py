@@ -104,7 +104,8 @@ def replace_code(filename, start_line,  code, end_line):
             file_contents[start_line - 1:end_line] = [code + '\n']
             file.seek(0)
             file.truncate()
-            file.write("".join(file_contents))
+            file_contents = "".join(file_contents)
+            file.write(file_contents)
         return "Code modified"
     except Exception as e:
         return f"{type(e).__name__}: {e}"
