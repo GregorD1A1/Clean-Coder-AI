@@ -1,5 +1,5 @@
 import os
-from tools.tools import see_file, replace_code, insert_code, create_file_with_code
+from tools.tools import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -10,7 +10,7 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs
+from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 
 
@@ -20,40 +20,68 @@ log_file_path = os.getenv("LOG_FILE")
 
 @tool
 def final_response():
-    """Call that tool when all planned changes are implemented."""
+    """Call that tool when all changes are implemented to tell the job is done. If you have no idea which tool to call,
+    call that."""
     pass
 
 
 tools = [see_file, insert_code, replace_code, create_file_with_code, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0)
-#llm = ChatAnthropic(model='claude-3-opus-20240229')
-#llm = ChatOllama(model="mixtral"), temperature=0)
+#llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0).with_config({"run_name": "Executor"})
+#llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
+    checker_response: str
 
 
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content="You are senior programmer. You need to improve existing code using provided tools. Introduce changes "
-                "from plan one by one, means you can write only one json with change in that step."
-                "You are working with smaller parts of code - modify single functions or lines rather then entire file."
-                "\n\n"
-                "You have access to following tools:\n"
-                f"{rendered_tools}"
-                "\n\n"
-                "To use tool, strictly follow json blob:"
-                "```json"
-                "{"
-                " 'reasoning': '$STEP_BY_STEP_REASONING_ABOUT_WHICH_TOOL_TO_USE_AND_WITH_WHICH_PARAMETERS',"
-                " 'tool': '$TOOL_NAME',"
-                " 'tool_input': '$TOOL_PARAMETERS',"
-                "}"
-                "```"
+        content=f"""
+You are a senior programmer tasked with refining an existing codebase. Your goal is to incrementally 
+introduce improvements using a set of provided tools. Each change should be implemented step by step, 
+meaning you make one modification at a time. Focus on enhancing individual functions or lines of code 
+rather than rewriting entire files at once.
+\n\n
+Tools to your disposal:\n
+{rendered_tools}
+\n\n
+First, write your thinking process. Think step by step about what do you need to do to accomplish the task. 
+Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
+rest will be possibility to do later.
+```json
+{{
+    "tool": "$TOOL_NAME",
+    "tool_input": "$TOOL_PARAMS",
+}}
+```
+"""
     )
+
+checker_system_message = SystemMessage(
+    content=f"""
+You are senior programmer. Your task is to check out work of a junior programmer. Junior will propose modifications into
+existing file in order to execute task. Check out if his modifications not include mistakes.
+
+Possible scenarios:
+1. Line numbers for code insertion or replacement are mistaken. A common error involves forgetting to include the 
+existing closing bracket when replacing an entire function or code block, resulting in writing the ending line number 
+right before the closing bracket. Check out line numbers produced by junior carefully.
+2. Junior forgot to add indent (spaces) on the beginning of his code. If there are some spaces, everything ok.
+3. Provided line numbers are correct and indents are in place. Code is valid.
+
+Return your answer as json:
+```json
+{{
+    "reasoning": "Reasoning if junior made some mistakes or not. Discuss here function/piece of code we work on.",
+    "response": "Write 'Everything ok.' only if no mistakes mentioned. Otherwise, explain the problem for your teammate",
+}}
+```
+"""
+)
 
 
 class Executor():
@@ -64,16 +92,18 @@ class Executor():
         executor_workflow = StateGraph(AgentState)
 
         executor_workflow.add_node("agent", self.call_model_executor)
+        #executor_workflow.add_node("checker", self.call_model_checker)
         executor_workflow.add_node("tool", self.call_tool_executor)
         executor_workflow.add_node("check_log", self.check_log)
         executor_workflow.add_node("human", ask_human)
 
         executor_workflow.set_entry_point("agent")
 
-        executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
-        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition,)
-        executor_workflow.add_conditional_edges("human", after_ask_human_condition)
+        #executor_workflow.add_edge("agent", "checker")
         executor_workflow.add_edge("tool", "agent")
+        executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
+        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
+        executor_workflow.add_conditional_edges("human", after_ask_human_condition)
 
         self.executor = executor_workflow.compile()
 
@@ -82,12 +112,35 @@ class Executor():
         state, _ = call_model(state, llm)
         return state
 
+    def call_model_checker(self, state):
+        last_message = state["messages"][-1]
+        exector_message = HumanMessage(content=last_message.content)
+        checker_messages = [
+            checker_system_message, exector_message
+        ]
+
+        # adding file content
+        if getattr(last_message, "tool_call", None) and last_message.tool_call["tool"] in ["insert_code", "replace_code"]:
+            file = last_message.tool_call["tool_input"]["filename"]
+            file_content = see_file(file)
+            file_content_message = HumanMessage(content=file_content)
+            checker_messages.insert(1, file_content_message)
+
+        response = checker_llm.invoke(checker_messages)
+        print_wrapped(f"Checker response:  {response.content}", color="red")
+        message = find_tool_json(response.content)["response"]
+        state["checker_response"] = message
+        if message != "Everything ok.":
+            state["messages"].append(HumanMessage(content=f"Execution interrupted. Checker message: {message}"))
+        return state
+
+
     def call_tool_executor(self, state):
         last_message = state["messages"][-1]
         state = call_tool(state, tool_executor)
         if last_message.tool_call["tool"] == "create_file_with_code":
-            self.files.append(last_message.tool_call["tool_input"]["filename"])
-        if last_message.tool_call["tool"] in ["insert_code", "modify_code", "create_file_with_code"]:
+            self.files.add(last_message.tool_call["tool_input"]["filename"])
+        if last_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
             state = self.exchange_file_contents(state)
         return state
 
@@ -104,14 +157,12 @@ class Executor():
         last_message = state["messages"][-1]
 
         if not last_message.tool_call:
-            return "human"
-        if last_message.tool_call["tool"] == "final_response":
-            if log_file_path:
-                return "check_log"
-            else:
-                return "human"
-        else:
+            return "agent"
+        elif last_message.tool_call["tool"] != "final_response":
             return "tool"
+        else:
+            print("inside of final response condition")
+            return "check_log" if log_file_path else "human"
 
     def after_check_log_condition(self, state):
         last_message = state["messages"][-1]

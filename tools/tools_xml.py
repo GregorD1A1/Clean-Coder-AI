@@ -15,8 +15,9 @@ OAIclient = OpenAI()
 @tool
 def list_dir(directory):
     """List files in directory.
-    tool input:
-    :param directory: Name of directory to list files in.
+    <tool_input>
+     <directory>Directory to check.</directory>
+    </tool_input>
     """
     try:
         files = os.listdir(work_dir + directory)
@@ -28,17 +29,17 @@ def list_dir(directory):
 @tool
 def see_file(filename):
     """Check contents of file.
-    tool input:
-    :param filename: Name and path of file to check.
+    <tool_input>
+     <filename>Name and path of file to check.</filename>
+    </tool_input>
     """
     try:
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
-        formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
-        file_content = "".join(formatted_lines)
-        file_content = filename + ":\n\n" + file_content
+        formatted_lines = [f"<{i+1}>{line[:-1]}</{i+1}>\n" for i, line in enumerate(lines)]
+        file_contents = "".join(formatted_lines)
 
-        return file_content
+        return file_contents
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
@@ -46,8 +47,9 @@ def see_file(filename):
 @tool
 def see_image(filename):
     """Sees the image.
-    tool input:
-    :param filename: Name and path of image to check.
+    <tool_input>
+     <filename>Name and path of image to check.</filename>
+    </tool_input>
     """
     try:
         with open(work_dir + filename, 'rb') as image_file:
@@ -61,10 +63,13 @@ def see_image(filename):
 def insert_code(filename, line_number, code):
     """Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
     Proper indentation is important.
-    tool input:
-    :param filename: Name and path of file to change.
-    :param line_number: Line number to insert new code after.
-    :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
+    <tool_input>
+     <filename>Name and path of file to change.</filename>
+     <line_number>Line number to insert new code after.</line_number>
+     <code>
+      Code to insert in the file.
+     </code>
+    </tool_input>
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
@@ -83,16 +88,21 @@ def insert_code(filename, line_number, code):
 
 
 @tool
-def replace_code(filename, start_line,  code, end_line):
+def replace_code(filename, start_line, end_line, new_code):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
     Important: Pay extra attention to brackets when you are replacing an entire function or code block. Ensure that you
     include the closing bracket too in the 'end_line'. If you miss it, the program will not run correctly.
-    tool input:
-    :param filename: Name and path of file to change.
-    :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
-    :param code: New piece of code to replace old one. Without backticks around. Start it with appropriate indentation if needed.
-    :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
+    <tool_input>
+     <filename>Name and path of file to change.</filename>
+     <start_line>Start line number to replace with new code. Inclusive - means start_line will be first line to change.</start_line>
+     <end_line>End line number to replace with new code. Inclusive - means end_line will be last line to change.
+        Be very vigilant about this - never forget to include the last line with the closing bracket while replacing
+        an entire function or code block.</end_line>
+     <new_code>
+      New piece of code to replace old one.
+     </new_code>
+    </tool_input>
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
@@ -101,7 +111,7 @@ def replace_code(filename, start_line,  code, end_line):
 
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
-            file_contents[start_line - 1:end_line] = [code + '\n']
+            file_contents[start_line - 1:end_line] = [new_code + '\n']
             file.seek(0)
             file.truncate()
             file.write("".join(file_contents))
@@ -113,9 +123,12 @@ def replace_code(filename, start_line,  code, end_line):
 @tool
 def create_file_with_code(filename, code):
     """Create new file with provided code.
-    tool input:
-    :param filename: Name and path of file to create.
-    :param code: Code to write in the file.
+    <tool_input>
+     <filename>Name and path of file to create.</filename>
+     <code>
+      Code to write in the file.
+     </code>
+    </tool_input>
     """
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
@@ -128,19 +141,6 @@ def create_file_with_code(filename, code):
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
-
-@tool
-def ask_human_tool(prompt):
-    """
-    Use that tool to ask human if you need any external information or actions.
-    tool input:
-    :param prompt: question to human.
-    """
-    try:
-        human_message = input(prompt)
-        return human_message
-    except Exception as e:
-        return f"{type(e).__name__}: {e}"
 
 @tool
 def image_to_code(prompt):
@@ -200,3 +200,4 @@ def make_screenshot(endpoint, login_needed, commands):
 
     page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
+

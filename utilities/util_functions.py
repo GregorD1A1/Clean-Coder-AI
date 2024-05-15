@@ -4,6 +4,8 @@ import re
 import json
 import os
 from dotenv import load_dotenv, find_dotenv
+import xml.etree.ElementTree as ET
+from termcolor import colored
 from bs4 import BeautifulSoup
 import esprima
 
@@ -13,18 +15,18 @@ work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
 
 
-def print_wrapped(content, width=160):
+def print_wrapped(content, width=160, color="black"):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
-    print(wrapped_content)
+    print(colored(wrapped_content, color))
 
 
 def check_file_contents(files):
     file_contents = str()
     for file_name in files:
         file_content = see_file(file_name)
-        file_contents += "File: " + file_name + ":\n\n" + file_content + "\n\n###\n\n"
+        file_contents += file_content + "\n\n###\n\n"
 
     return file_contents
 
@@ -40,6 +42,25 @@ def find_tool_json(response):
         return None
 
 
+def find_tool_xml(input_str):
+    match = re.search('```xml(.*?)```', input_str, re.DOTALL)
+    if match:
+        root = ET.fromstring(match.group(1).strip())
+        tool = root.find('tool').text.strip()
+        tool_input_element = root.find('tool_input')
+        tool_input = {}
+        for child in tool_input_element:
+            child.text = child.text.strip()
+            if list(child):
+                tool_input[child.tag] = [item.text for item in child]
+            else:
+                tool_input[child.tag] = child.text
+        #output = {child.tag: child.text for child in root}
+        return {"tool": tool, "tool_input": tool_input}
+    else:
+        return None
+
+
 def check_application_logs():
     """Check out logs to see if application works correctly."""
     try:
@@ -47,7 +68,7 @@ def check_application_logs():
             logs = file.read()
         if logs.strip().endswith("No messages found"):
             print("Logs are correct")
-            return "ok"
+            return "Logs are correct"
         else:
             return logs
     except Exception as e:
