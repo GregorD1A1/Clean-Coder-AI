@@ -4,6 +4,8 @@ import re
 import json
 import os
 from dotenv import load_dotenv, find_dotenv
+from bs4 import BeautifulSoup
+import esprima
 
 
 load_dotenv(find_dotenv())
@@ -60,3 +62,36 @@ def read_project_knowledge():
         project_knowledge = "None"
 
     return project_knowledge
+
+
+def parse_html(html_content):
+    try:
+        soup = BeautifulSoup(html_content, 'html.parser')
+        str(soup)  # This forces BS4 to parse and check for errors
+        print("HTML syntax appears to be valid.")
+    except Exception as e:
+        print(f"HTML syntax error: {e}")
+
+
+def parse_javascript(js_content):
+    try:
+        esprima.parseScript(js_content)
+        print("JavaScript syntax appears to be valid.")
+    except esprima.Error as e:
+        print(f"JavaScript syntax error: {e}")
+
+
+def check_vue_file(content):
+    # Assuming standard .vue structure
+    soup = BeautifulSoup(content, 'html.parser')
+
+    # Extract and check HTML template
+    template = soup.find('template')
+    if template:
+        parse_html(str(template))
+
+    # Extract and check JavaScript
+    script = soup.find('script')
+
+    if script:
+        parse_javascript(script.text)

@@ -5,10 +5,7 @@ import base64
 import playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
-from bs4 import BeautifulSoup
-import esprima
-import sys
-import subprocess
+
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
@@ -55,26 +52,6 @@ def see_image(filename):
         return f"{type(e).__name__}: {e}"
 
 
-def lint_code(code):
-    """
-    Lints the provided code using ESLint. Returns True if linting is successful, False otherwise.
-    """
-    try:
-        # Write code to a temporary file
-        with open('temp_code.js', 'w', encoding='utf-8') as file:
-            file.write(code)
-
-        # Run ESLint on the temporary file
-        result = subprocess.run(['npx eslint', 'temp_code.js'], capture_output=True, text=True)
-        if result.returncode == 0:
-            return True
-        else:
-            print("Linting errors:", result.stdout)
-            return False
-    except Exception as e:
-        print(f"Error during linting: {e}")
-        return False
-
 
 @tool
 def insert_code(filename, line_number, code):
@@ -119,9 +96,6 @@ def replace_code(filename, start_line, end_line, new_code):
         }
     }
     """
-    if not lint_code(new_code):
-        return "Code has linting errors. Fix the errors and try again."
-
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
         if human_message != 'ok':
@@ -144,9 +118,6 @@ def create_file_with_code(filename, code):
     :param filename: Name and path of file to create.
     :param code: Code to write in the file.
     """
-    if not lint_code(code):
-        return "Code has linting errors. Fix the errors and try again."
-
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
         if human_message != 'ok':
@@ -215,41 +186,3 @@ def make_screenshot(endpoint, login_needed, commands):
 
     page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
-
-
-# @tool
-# def parse_html(html_content):
-#     try:
-#         soup = BeautifulSoup(html_content, 'html.parser')
-#         str(soup)  # This forces BS4 to parse and check for errors
-#         print("HTML syntax appears to be valid.")
-#     except Exception as e:
-#         print(f"HTML syntax error: {e}")
-#
-#
-# @tool
-# def parse_javascript(js_content):
-#     try:
-#         esprima.parseScript(js_content)
-#         print("JavaScript syntax appears to be valid.")
-#     except esprima.Error as e:
-#         print(f"JavaScript syntax error: {e}")
-#
-#
-# @tool
-# def check_vue_file(file_path):
-#     with open(file_path, 'r', encoding='utf-8') as file:
-#         content = file.read()
-#
-#     # Assuming standard .vue structure
-#     soup = BeautifulSoup(content, 'html.parser')
-#
-#     # Extract and check HTML template
-#     template = soup.find('template')
-#     if template:
-#         parse_html(str(template))
-#
-#     # Extract and check JavaScript
-#     script = soup.find('script')
-#     if script:
-#         parse_javascript(script.text)
