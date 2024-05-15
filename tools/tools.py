@@ -52,7 +52,6 @@ def see_image(filename):
         return f"{type(e).__name__}: {e}"
 
 
-
 @tool
 def insert_code(filename, line_number, code):
     """Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
@@ -73,7 +72,6 @@ def insert_code(filename, line_number, code):
             file_contents.insert(line_number, code + '\n')
             file.seek(0)
             file.truncate()
-
             file.write("".join(file_contents))
         return "Code inserted"
     except Exception as e:
@@ -157,7 +155,7 @@ def image_to_code(prompt):
             ],
             max_tokens=1000,
         )
-        return lint_code(response.choices[0].message.content)
+        return response.choices[0].message.content
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
