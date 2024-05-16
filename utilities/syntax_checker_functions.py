@@ -34,11 +34,11 @@ def parse_html(html_content):
     parser = etree.HTMLParser(recover=True)  # Enable recovery mode
     try:
         html_tree = etree.fromstring(html_content, parser)
-        # Shut down some error types to be able to parse html from vue
         significant_errors = [
             error for error in parser.error_log
-            if not error.message.startswith('Tag')
-            and "error parsing attribute name" not in error.message
+            # Shut down some error types to be able to parse html from vue
+            #if not error.message.startswith('Tag')
+            #and "error parsing attribute name" not in error.message
         ]
         if not significant_errors:
             return "Valid syntax"
@@ -48,12 +48,45 @@ def parse_html(html_content):
     except etree.XMLSyntaxError as e:
         return f"Html error occurred: {e}"
 
+
+def parse_vue_template_part(code):
+    for tag in ['div', 'p', 'span']:
+        function_response = check_tag_balance(code, f'<{tag}', f'</{tag}>')
+        if function_response != "Valid syntax":
+            return function_response
+    return "Valid syntax"
+
+
 def parse_javascript(js_content):
     try:
         esprima.parseScript(js_content)
         return "Valid syntax"
     except esprima.Error as e:
         return f"JavaScript syntax error: {e}"
+
+
+def check_tag_balance(code, open_tag, close_tag):
+    opened_tags_count = 0
+    open_tag_len = len(open_tag)
+    close_tag_len = len(close_tag)
+
+    i = 0
+    while i < len(code):
+        if code[i:i + open_tag_len] == open_tag:
+            opened_tags_count += 1
+            i += open_tag_len
+        elif code[i:i + close_tag_len] == close_tag:
+            opened_tags_count -= 1
+            i += close_tag_len
+            if opened_tags_count < 0:
+                return f"Invalid syntax, mismatch of {open_tag} and {close_tag}"
+        else:
+            i += 1
+
+    if opened_tags_count == 0:
+        return "Valid syntax"
+    else:
+        return f"Invalid syntax, mismatch of {open_tag} and {close_tag}"
 
 
 def parse_scss(scss_code):
@@ -63,52 +96,176 @@ def parse_scss(scss_code):
     except sass.CompileError as e:
        return f"CSS/SCSS syntax error: {e}"
 
-def parse_vue(content):
-    soup = BeautifulSoup(content, 'html.parser')
 
-    # Extract and check HTML template
-    template = soup.find('template')
-    script = soup.find('script')
-    style = soup.find('style')
-    if template:
-        parse_html(str(template))
-    if script:
-        parse_javascript(script.text)
-    if style:
-        parse_scss(style.text)
+# That function does not guarantee finding all the syntax errors in template and script part
+def parse_vue_basic(content):
+    import re
+    soup = BeautifulSoup(content, 'html.parser')
+    start_tag = re.search(r'<template>', content).end()
+    end_tag = content.rindex('</template>')
+
+    template = content[start_tag:end_tag]
+
+    script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
+    style_match = re.search(r'<style>(.*?)</style>', content, re.DOTALL)
+    print(script)
+
+
+    template_part_response = parse_vue_template_part(template)
+    if template_part_response != "Valid syntax":
+        return template_part_response
+
+    script_part_response = check_tag_balance(script, "{", "}")
+    if script_part_response != "Valid syntax":
+        return script_part_response
+
+    if style_match:
+        style_part_response = parse_scss(style_match.group(1))
+        if style_part_response != "Valid syntax":
+            return style_part_response
+
+    return "Valid syntax"
+
+# working on implementing eslint
+def lint_vue_code(code_string):
+    import subprocess
+    import os
+    eslint_config_path = '.eslintrc.js'
+    temp_file_path = "dzik.vue"
+    # Create a temporary file
+    with open(temp_file_path, 'w', encoding='utf-8') as file:
+        file.write(code_string)
+    try:
+        # Run ESLint on the temporary file
+        result = subprocess.run(['D:\\NodeJS\\npx.cmd', 'eslint', '--config', eslint_config_path, temp_file_path, '--fix'], check=True, text=True, capture_output=True)
+        print("Linting successful:", result.stdout)
+    except subprocess.CalledProcessError as e:
+        print("Error during linting:", e.stderr)
+    finally:
+        # Clean up by deleting the temporary file
+        os.remove(temp_file_path)
+
 
 
 code = """
-window.onload = function() {
-    const image = document.getElementById('sourceImage');
-    const canvas = document.getElementById('imageCanvas');
-    const ctx = canvas.getContext('2d');
+<template>
+  <div>
+    <div class="scroll-container">
+      <CoverPage :profile-data="post" @scroll-to-second-page="handleScrollToSecondPage"/>
+      <SecondPage :profile-data="post"/>
+      <EducationPage
+          v-for="educationItem in (post.sections || []).find(section => section.key === 'education')?.items || []"
+          :key="educationItem.id"
+          :education-data="educationItem"
+      />
+      <template>
+      dzik
+      </template>
+      <AchievementsPage
+        :achievement-items="(post.sections || []).find(section => section.key === 'achievements')?.items || []"
+        v-if="(post.sections || []).find(section => section.key === 'achievements')?.items.length > 0"
+      />
+      <WorkPage/>
+      <AdditionalDescriptionPage
+        v-for="additionalDescriptionItem in (post.sections || []).find(section => section.key === 'additional_description')?.items || []"
+        :key="additionalDescriptionItem.id"
+        :additional-description-data="additionalDescriptionItem"
+      />
+<FamilyPage :family-data="(post.sections || []).find(section => section.key === 'family')?.items || []"/>
+      <FinalPage :profile-data="post" @scroll-to-top="handleScrollToTop"/>
+    </div>
+  </div>
+  <div>
+</template>
 
-    image.onload = function() {
-        // Set canvas size equal to image size
-        canvas.width = image.width;
-        canvas.height = image.height;
 
-        // Draw the image onto the canvas
-        ctx.drawImage(image, 0, 0);
+<script>
+import axios from 'axios';
+import CoverPage from '@/views/MemorialProfilePages/CoverPage.vue';
+import SecondPage from '@/views/MemorialProfilePages/SecondPage.vue';
+import EducationPage from '@/views/MemorialProfilePages/EducationPage.vue';
+import AchievementsPage from '@/views/MemorialProfilePages/AchievementsPage.vue';
+import WorkPage from '@/views/MemorialProfilePages/WorkPage.vue';
+import FinalPage from '@/views/MemorialProfilePages/FinalPage.vue';
+import AdditionalDescriptionPage from '@/views/MemorialProfilePages/AdditionalDescriptionPage.vue';
+import FamilyPage from '@/views/MemorialProfilePages/FamilyPage.vue';
 
-        // Get the image data from the canvas
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const data = imageData.data;
-
-        // Convert each pixel to grayscale
-        for (let i = 0; i < data.length; i += 4) {
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            data[i] = avg;     // Red
-            data[i + 1] = avg; // Green
-            data[i + 2] = avg; // Blue
-        }
-
-        // Put the modified data back to the canvas
-        ctx.putImageData(imageData, 0, 0);
+export default {
+  components: {
+    CoverPage,
+    SecondPage,
+    EducationPage,
+    FamilyPage,
+    FinalPage,
+    AdditionalDescriptionPage,
+    WorkPage,
+    AchievementsPage,
+  },
+  data() {
+    return {
+      post: {
+        title: '',
+        description: '',
+      },
+      apiUrl: process.env.VUE_APP_API_URL,
+      error: null,
     };
+  },
+  mounted() {
+    this.fetchPost();
+    this.setupScrollSnap();
+  },
+  methods: {
+    async fetchPost() {
+      try {
+        const slotNumber = this.$route.params.slotNumber;
+        const response = await axios.get(`${this.apiUrl}mem_profile/${slotNumber}`);
+
+        this.post = {
+          ...this.post, // Spread existing properties
+          ...response.data, // Spread response data
+        };
+      } catch (error) {
+        console.error(error);
+      }
+    },
+    setupScrollSnap() {
+      const scrollContainer = document.querySelector('.scroll-container');
+      scrollContainer.style.scrollSnapType = 'y mandatory';
+      scrollContainer.style.overflowY = 'scroll';
+      scrollContainer.style.height = '100vh';
+      Array.from(scrollContainer.children).forEach(child => {
+        child.style.scrollSnapAlign = 'start';
+      });
+    },
+    handleScrollToTop() {
+      const scrollContainer = document.querySelector('.scroll-container');
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    handleScrollToSecondPage() {
+      const secondPageElement = document.querySelector('.second-page-class'); // Use the actual class or ID of the second page
+      if (secondPageElement) {
+        secondPageElement.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+  },
 };
+</script>
+
+
+<style scoped>
+.scroll-container {
+  height: 100vh; /* Full height of the viewport */
+  overflow-y: scroll; /* Enable vertical scrolling */
+  scroll-snap-type: y mandatory; /* Enable full section scroll snapping */
+}
+
+.scroll-container > * {
+  scroll-snap-align: start; /* Align children to the start */
+}
+</style>
+
 """
 
 if __name__ == "__main__":
-    parse_javascript(code)
+    print(parse_vue_basic(code))
