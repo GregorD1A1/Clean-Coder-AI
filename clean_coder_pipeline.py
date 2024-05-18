@@ -11,8 +11,7 @@ Example json:
 """
 
 task = """
-Create "Hobbyes" page of memorial profile. Take a look at design and make it look similar. Take a look at osiągnięcia page and do similar. Here is json from backend:
-{'id': '018f7b24-e01c-72a6-837c-799e779eae4e', 'isPrivate': False, 'firstName': 'Zointeresowny zinteresowaniami', 'secondName': '', 'lastName': '', 'familyName': '', 'birthDate': {'day': '', 'month': '', 'year': ''}, 'birthPlace': '', 'deathDate': {'day': '', 'month': '', 'year': ''}, 'deathPlace': '', 'mainPhotoUrl': '', 'sections': [{'id': '018f7b25-34ac-7e04-baa3-b813ee0123e6', 'key': 'interests', 'items': [{'id': '018f7b25-34ac-7e04-baa3-b8143f9e6912', 'category': '', 'name': 'Wędkarstwo', 'description': 'Złowił suma wąsatego', 'photoUrl': 'static\\018f7b24-e01c-72a6-837c-799e779eae4e\\interests_018f7b25-34ac-7e04-baa3-b8143f9e6912_10d90d95c7844b1db74ad8571ca1b50ba28607d3250ab88b53c6fedab4b16b00.jpg', 'interests': 'hobby'}, {'id': '018f7b25-b915-768f-bafe-49a166ee746a', 'category': '', 'name': 'Przyroda i dziki', 'description': 'Lubił oglądać ten film', 'photoUrl': 'static\\018f7b24-e01c-72a6-837c-799e779eae4e\\interests_018f7b25-b915-768f-bafe-49a166ee746a_3bb1ccf699797d0e35ef429f7184630aa875d3069c202b559144dd4dad689606.jpg', 'interests': 'movie'}, {'id': '018f7b26-1d74-7ba6-aa1b-d99495b43e30', 'category': '', 'name': 'Hodowla psów', 'description': '', 'photoUrl': 'static\\018f7b24-e01c-72a6-837c-799e779eae4e\\interests_018f7b26-1d74-7ba6-aa1b-d99495b43e30_10d90d95c7844b1db74ad8571ca1b50ba28607d3250ab88b53c6fedab4b16b00.jpg', 'interests': 'hobby'}]}], 'owner': '663a0eec22b346aad0dde283', 'slot_number': '75-69-79'}
+make tooltip in the dashboard page to be showing slighly above "udestępnij button and on the right side.
 """
 
 

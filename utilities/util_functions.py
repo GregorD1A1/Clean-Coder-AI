@@ -42,6 +42,7 @@ def find_tool_json(response):
     elif len(matches) > 1:
         return "Multiple jsons found."
     else:
+        print("No json found in response.")
         return None
 
 

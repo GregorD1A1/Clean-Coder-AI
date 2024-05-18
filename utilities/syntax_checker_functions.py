@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import esprima
 import sass
 from lxml import etree
+import re
 
 
 def check_syntax(file_content, filename):
@@ -16,6 +17,8 @@ def check_syntax(file_content, filename):
         return parse_javascript(file_content)
     elif extension in ["css", "scss"]:
         return parse_scss(file_content)
+    elif extension == "vue":
+        return parse_vue_basic(file_content)
     else:
         return "Valid syntax"
 
@@ -99,26 +102,22 @@ def parse_scss(scss_code):
 
 # That function does not guarantee finding all the syntax errors in template and script part
 def parse_vue_basic(content):
-    import re
-    soup = BeautifulSoup(content, 'html.parser')
-    start_tag = re.search(r'<template>', content).end()
-    end_tag = content.rindex('</template>')
-
-    template = content[start_tag:end_tag]
-
-    script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
-    style_match = re.search(r'<style>(.*?)</style>', content, re.DOTALL)
-    print(script)
-
-
+    start_tag_template = re.search(r'<template>', content).end()
+    end_tag_template = content.rindex('</template>')
+    template = content[start_tag_template:end_tag_template]
     template_part_response = parse_vue_template_part(template)
     if template_part_response != "Valid syntax":
         return template_part_response
 
+    try:
+        script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
+    except AttributeError:
+        return "Script part has no valid open/closing tags."
     script_part_response = check_tag_balance(script, "{", "}")
     if script_part_response != "Valid syntax":
         return script_part_response
 
+    style_match = re.search(r'<style[^>]*>(.*?)</style>', content, re.DOTALL)
     if style_match:
         style_part_response = parse_scss(style_match.group(1))
         if style_part_response != "Valid syntax":
@@ -175,7 +174,6 @@ code = """
       <FinalPage :profile-data="post" @scroll-to-top="handleScrollToTop"/>
     </div>
   </div>
-  <div>
 </template>
 
 
@@ -251,6 +249,7 @@ export default {
   },
 };
 </script>
+
 
 
 <style scoped>

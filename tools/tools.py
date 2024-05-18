@@ -5,13 +5,25 @@ import base64
 import playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
+from utilities.syntax_checker_functions import check_syntax
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
 OAIclient = OpenAI()
 
-
+syntax_error_insert_code = """
+Can not execute that action, as it causes next error: {error_response}. Probably you:
+- Provided a wrong line number to insert code, or
+- Forgot to add an indents on beginning of code.
+Please analyse and correct your change proposition.
+"""
+syntax_error_modify_code = """
+Can not execute that action, as it causes next error: {error_response}. Probably you:
+- Provided a end or beginning line number (end code line happens more often), or
+- Forgot to add an indents on beginning of code.
+Please analyse and correct your change proposition.
+"""
 @tool
 def list_dir(directory):
     """List files in directory.
@@ -67,16 +79,19 @@ def insert_code(filename, line_number, code):
     :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
     """
     try:
-        human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
-        if human_message != 'ok':
-            return f"Action wasn't executed because of human interruption. He said: {human_message}"
-
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
             file_contents.insert(line_number, code + '\n')
+            file_contents = "".join(file_contents)
+            check_syntax_response = check_syntax(file_contents, filename)
+            if check_syntax_response != "Valid syntax":
+                return syntax_error_insert_code.format(error_response=check_syntax_response)
+            human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+            if human_message != 'ok':
+                return f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
-            file.write("".join(file_contents))
+            file.write(file_contents)
         return "Code inserted"
     except Exception as e:
         return f"{type(e).__name__}: {e}"
@@ -86,8 +101,6 @@ def insert_code(filename, line_number, code):
 def replace_code(filename, start_line,  code, end_line):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
     Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
-    Important: Pay extra attention to brackets when you are replacing an entire function or code block. Ensure that you
-    include the closing bracket too in the 'end_line'. If you miss it, the program will not run correctly.
     tool input:
     :param filename: Name and path of file to change.
     :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
@@ -95,16 +108,18 @@ def replace_code(filename, start_line,  code, end_line):
     :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
     """
     try:
-        human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
-        if human_message != 'ok':
-            return f"Action wasn't executed because of human interruption. He said: {human_message}"
-
         with open(work_dir + filename, 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
             file_contents[start_line - 1:end_line] = [code + '\n']
+            file_contents = "".join(file_contents)
+            check_syntax_response = check_syntax(file_contents, filename)
+            if check_syntax_response != "Valid syntax":
+                return syntax_error_modify_code.format(error_response=check_syntax_response)
+            human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+            if human_message != 'ok':
+                return f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
-            file_contents = "".join(file_contents)
             file.write(file_contents)
         return "Code modified"
     except Exception as e:

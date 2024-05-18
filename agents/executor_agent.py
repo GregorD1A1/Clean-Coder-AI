@@ -12,6 +12,8 @@ from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
+from langchain_groq import ChatGroq
+from langchain_together import ChatTogether
 
 
 load_dotenv(find_dotenv())
@@ -28,8 +30,10 @@ def final_response():
 tools = [see_file, insert_code, replace_code, create_file_with_code, final_response]
 rendered_tools = render_text_description(tools)
 
-#llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
-llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0).with_config({"run_name": "Executor"})
+#llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=1500).with_config({"run_name": "Executor"})
+#llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
+#llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 
 
@@ -168,3 +172,8 @@ class Executor():
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
         self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
+
+if __name__ == "__main__":
+    files = set()
+    executor = Executor(files)
+    executor.do_task(task, plan, file_contents)

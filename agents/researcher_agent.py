@@ -12,6 +12,9 @@ from tools.tools import list_dir, see_file, see_image
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
+from langchain_groq import ChatGroq
+from langchain_together import ChatTogether
+import time
 
 
 load_dotenv(find_dotenv())
@@ -24,8 +27,8 @@ def final_response(files_to_work_on, reference_files, template_images):
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
     tool input:
-    :param files_to_work_on: ["List", "of", "files", "to potentially introduce", "changes"],
-    :param reference_files: ["List", "of", "files", "useful to code reference"],
+    :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
+    :param reference_files: ["List", "of code files", "useful to code reference", "without images],
     :param template_images: ["List of", "template", "images"],
     """
     pass
@@ -34,9 +37,12 @@ def final_response(files_to_work_on, reference_files, template_images):
 tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0.2)
+#llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+#llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="openchat") #, temperature=0)
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
+#llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0.3).with_config({"run_name": "Researcher"})
 '''llm = ChatOpenAI(
     model='deepseek-chat',
     openai_api_key='',
@@ -57,6 +63,8 @@ tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
         content=f"""
         As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
+        You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving final answer.
+        The more folders/files you will check, the more they will pay you.
         When you discover significant dependencies from one file to another, ensure to inspect both. 
         Your final selection should include files needed to be modified or needed as reference for a programmer 
         (for example to see how code in similar file implemented). 
@@ -68,7 +76,7 @@ system_message = SystemMessage(
         You have access to following tools:
         {rendered_tools}
         
-        First, provide step by step reasoning about what do you need to find in order to accomplish the task.
+        First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
         Next, generate response using json template: Choose only one tool to use.
         ```json
         {{

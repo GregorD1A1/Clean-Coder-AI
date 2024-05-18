@@ -12,3 +12,5 @@ beautifulsoup4==4.12.3
 esprima==4.0.1
 cssutils==2.11.0
 libsass==0.23.0
+langchain_groq==0.1.4
+openai=1.12.0
