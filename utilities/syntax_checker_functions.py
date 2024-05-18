@@ -100,7 +100,7 @@ def parse_scss(scss_code):
        return f"CSS/SCSS syntax error: {e}"
 
 
-# That function does not guarantee finding all the syntax errors in template and script part
+# That function does not guarantee finding all the syntax errors in template and script part; but mostly works
 def parse_vue_basic(content):
     start_tag_template = re.search(r'<template>', content).end()
     end_tag_template = content.rindex('</template>')
@@ -125,7 +125,7 @@ def parse_vue_basic(content):
 
     return "Valid syntax"
 
-# working on implementing eslint
+# Function under development
 def lint_vue_code(code_string):
     import subprocess
     import os
@@ -146,125 +146,7 @@ def lint_vue_code(code_string):
 
 
 
-code = """
-<template>
-  <div>
-    <div class="scroll-container">
-      <CoverPage :profile-data="post" @scroll-to-second-page="handleScrollToSecondPage"/>
-      <SecondPage :profile-data="post"/>
-      <EducationPage
-          v-for="educationItem in (post.sections || []).find(section => section.key === 'education')?.items || []"
-          :key="educationItem.id"
-          :education-data="educationItem"
-      />
-      <template>
-      dzik
-      </template>
-      <AchievementsPage
-        :achievement-items="(post.sections || []).find(section => section.key === 'achievements')?.items || []"
-        v-if="(post.sections || []).find(section => section.key === 'achievements')?.items.length > 0"
-      />
-      <WorkPage/>
-      <AdditionalDescriptionPage
-        v-for="additionalDescriptionItem in (post.sections || []).find(section => section.key === 'additional_description')?.items || []"
-        :key="additionalDescriptionItem.id"
-        :additional-description-data="additionalDescriptionItem"
-      />
-<FamilyPage :family-data="(post.sections || []).find(section => section.key === 'family')?.items || []"/>
-      <FinalPage :profile-data="post" @scroll-to-top="handleScrollToTop"/>
-    </div>
-  </div>
-</template>
-
-
-<script>
-import axios from 'axios';
-import CoverPage from '@/views/MemorialProfilePages/CoverPage.vue';
-import SecondPage from '@/views/MemorialProfilePages/SecondPage.vue';
-import EducationPage from '@/views/MemorialProfilePages/EducationPage.vue';
-import AchievementsPage from '@/views/MemorialProfilePages/AchievementsPage.vue';
-import WorkPage from '@/views/MemorialProfilePages/WorkPage.vue';
-import FinalPage from '@/views/MemorialProfilePages/FinalPage.vue';
-import AdditionalDescriptionPage from '@/views/MemorialProfilePages/AdditionalDescriptionPage.vue';
-import FamilyPage from '@/views/MemorialProfilePages/FamilyPage.vue';
-
-export default {
-  components: {
-    CoverPage,
-    SecondPage,
-    EducationPage,
-    FamilyPage,
-    FinalPage,
-    AdditionalDescriptionPage,
-    WorkPage,
-    AchievementsPage,
-  },
-  data() {
-    return {
-      post: {
-        title: '',
-        description: '',
-      },
-      apiUrl: process.env.VUE_APP_API_URL,
-      error: null,
-    };
-  },
-  mounted() {
-    this.fetchPost();
-    this.setupScrollSnap();
-  },
-  methods: {
-    async fetchPost() {
-      try {
-        const slotNumber = this.$route.params.slotNumber;
-        const response = await axios.get(`${this.apiUrl}mem_profile/${slotNumber}`);
-
-        this.post = {
-          ...this.post, // Spread existing properties
-          ...response.data, // Spread response data
-        };
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    setupScrollSnap() {
-      const scrollContainer = document.querySelector('.scroll-container');
-      scrollContainer.style.scrollSnapType = 'y mandatory';
-      scrollContainer.style.overflowY = 'scroll';
-      scrollContainer.style.height = '100vh';
-      Array.from(scrollContainer.children).forEach(child => {
-        child.style.scrollSnapAlign = 'start';
-      });
-    },
-    handleScrollToTop() {
-      const scrollContainer = document.querySelector('.scroll-container');
-      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-    },
-    handleScrollToSecondPage() {
-      const secondPageElement = document.querySelector('.second-page-class'); // Use the actual class or ID of the second page
-      if (secondPageElement) {
-        secondPageElement.scrollIntoView({ behavior: 'smooth' });
-      }
-    },
-  },
-};
-</script>
-
-
-
-<style scoped>
-.scroll-container {
-  height: 100vh; /* Full height of the viewport */
-  overflow-y: scroll; /* Enable vertical scrolling */
-  scroll-snap-type: y mandatory; /* Enable full section scroll snapping */
-}
-
-.scroll-container > * {
-  scroll-snap-align: start; /* Align children to the start */
-}
-</style>
-
-"""
 
 if __name__ == "__main__":
-    print(parse_vue_basic(code))
+    #print(parse_vue_basic(code))
+    pass
