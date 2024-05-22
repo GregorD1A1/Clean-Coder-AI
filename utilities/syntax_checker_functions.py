@@ -93,6 +93,9 @@ def check_tag_balance(code, open_tag, close_tag):
 
 
 def parse_scss(scss_code):
+    # removing import statements as they cousing error, because function has no access to filesystem
+    scss_code = re.sub(r'@import\s+[\'"].*?[\'"];', '', scss_code)
+
     try:
         sass.compile(string=scss_code)
         return "Valid syntax"
@@ -146,7 +149,22 @@ def lint_vue_code(code_string):
 
 
 
+code = """
+<template>\n  <div class=\"profile-page-container\">\n    <div class=\"header\">\n      <span class=\"icon\">💼</span>\n      <div class=\"title
+small-text\">Praca</div>\n    </div>\n    <div v-if=\"workData.photoUrl\" class=\"photo-frame\">\n      <img :src=\"apiUrl + workData.photoUrl.replace(/\\\\/g,
+'/')\" alt=\"Work Photo\" class=\"photo-frame\"/>\n    </div>\n    <h2 class=\"big-text\">{{ workData.startYear }} - {{ workData.endYear }}</h2>\n    <p
+class=\"small-text\">{{ workData.description }}</p>\n    <div class=\"location-arrow\">\n      <span class=\"icon\">👇</span>\n    </div>\n    <div
+class=\"location-name small-text\">{{ workData.place }}</div>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'WorkPage',\n  props: {\n
+workData: {\n      type: Object,\n      required: true\n    }\n  },\n  data() {\n    return {\n      apiUrl: process.env.VUE_APP_API_URL\n    };\n
+}\n};\n</script>\n\n<style lang=\"scss\" scoped>\n@import '@/assets/scss/MemorialProfile.scss';\n\n.profile-page-container {\n  background-image:
+url('@/assets/images/profile_work_background.png');\n  padding-top: 8px; /* Reduced padding to decrease space at the top */\n}\n\n.header .icon {\n  font-size:
+24px;\n}\n\n.title {\n  margin-top: 8px;\n  // Inherits small-text styles from profile.scss\n}\n\n.photo-frame {\n  margin-top: 16px;\n  border: 1px solid
+#000;\n  height: 16rem; /* Further reduced height */\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n\n.location-arrow .icon {\n
+font-size: 24px; // Adjust size as needed\n  display: block; // Ensure the icon is centered\n  margin: 16px auto; // Center the icon horizontally and add some margin
+\n}\n\n.location-name {\n  margin-top: 8px;\n  // Inherits small-text styles from profile.scss\n}\n\n/* Additional styles can be added as needed to match
+the design */\n</style>
+"""
 
 if __name__ == "__main__":
-    #print(parse_vue_basic(code))
+    print(parse_vue_basic(code))
     pass

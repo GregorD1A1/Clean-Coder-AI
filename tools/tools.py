@@ -13,16 +13,16 @@ work_dir = os.getenv("WORK_DIR")
 OAIclient = OpenAI()
 
 syntax_error_insert_code = """
-Can not execute that action, as it causes next error: {error_response}. Probably you:
+Action is not executed, as it will cause next error: {error_response}. Probably you:
 - Provided a wrong line number to insert code, or
 - Forgot to add an indents on beginning of code.
-Please analyse and correct your change proposition.
+Please analyze and rewrite your change proposition.
 """
 syntax_error_modify_code = """
-Can not execute that action, as it causes next error: {error_response}. Probably you:
-- Provided a end or beginning line number (end code line happens more often), or
+Action is not executed, as it will cause next error: {error_response}. Probably you:
+- Provided a wrong end or beginning line number (end code line happens more often), or
 - Forgot to add an indents on beginning of code.
-Please analyse and correct your change proposition.
+Please analyze and rewrite your change proposition.
 """
 @tool
 def list_dir(directory):
@@ -85,6 +85,7 @@ def insert_code(filename, line_number, code):
             file_contents = "".join(file_contents)
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
+                print("Wrong syntax provided, asking to correct.")
                 return syntax_error_insert_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
@@ -114,6 +115,7 @@ def replace_code(filename, start_line,  code, end_line):
             file_contents = "".join(file_contents)
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
+                print("Wrong syntax provided, asking to correct.")
                 return syntax_error_modify_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
