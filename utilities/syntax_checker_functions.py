@@ -54,7 +54,7 @@ def parse_html(html_content):
 
 def parse_vue_template_part(code):
     for tag in ['div', 'p', 'span']:
-        function_response = check_tag_balance(code, f'<{tag}', f'</{tag}>')
+        function_response = check_template_tag_balance(code, f'<{tag}', f'</{tag}>')
         if function_response != "Valid syntax":
             return function_response
     return "Valid syntax"
@@ -62,20 +62,22 @@ def parse_vue_template_part(code):
 
 def parse_javascript(js_content):
     try:
-        esprima.parseScript(js_content)
+        esprima.parseModule(js_content)
         return "Valid syntax"
     except esprima.Error as e:
+        print(f"Esprima syntax error: {e}")
         return f"JavaScript syntax error: {e}"
 
 
-def check_tag_balance(code, open_tag, close_tag):
+def check_template_tag_balance(code, open_tag, close_tag):
     opened_tags_count = 0
     open_tag_len = len(open_tag)
     close_tag_len = len(close_tag)
 
     i = 0
     while i < len(code):
-        if code[i:i + open_tag_len] == open_tag:
+        # check for open tag plus '>' or space after
+        if code[i:i + open_tag_len] == open_tag and code[i + open_tag_len] in [' ', '>']:
             opened_tags_count += 1
             i += open_tag_len
         elif code[i:i + close_tag_len] == close_tag:
@@ -90,6 +92,23 @@ def check_tag_balance(code, open_tag, close_tag):
         return "Valid syntax"
     else:
         return f"Invalid syntax, mismatch of {open_tag} and {close_tag}"
+
+
+def check_bracket_balance(code):
+    opened_brackets_count = 0
+
+    for char in code:
+        if char == '{':
+            opened_brackets_count += 1
+        elif char == '}':
+            opened_brackets_count -= 1
+            if opened_brackets_count < 0:
+                return "Invalid syntax, mismatch of { and }"
+
+    if opened_brackets_count == 0:
+        return "Valid syntax"
+    else:
+        return "Invalid syntax, mismatch of { and }"
 
 
 def parse_scss(scss_code):
@@ -116,7 +135,7 @@ def parse_vue_basic(content):
         script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
     except AttributeError:
         return "Script part has no valid open/closing tags."
-    script_part_response = check_tag_balance(script, "{", "}")
+    script_part_response = check_bracket_balance(script)
     if script_part_response != "Valid syntax":
         return script_part_response
 
@@ -150,21 +169,365 @@ def lint_vue_code(code_string):
 
 
 code = """
-<template>\n  <div class=\"profile-page-container\">\n    <div class=\"header\">\n      <span class=\"icon\">💼</span>\n      <div class=\"title
-small-text\">Praca</div>\n    </div>\n    <div v-if=\"workData.photoUrl\" class=\"photo-frame\">\n      <img :src=\"apiUrl + workData.photoUrl.replace(/\\\\/g,
-'/')\" alt=\"Work Photo\" class=\"photo-frame\"/>\n    </div>\n    <h2 class=\"big-text\">{{ workData.startYear }} - {{ workData.endYear }}</h2>\n    <p
-class=\"small-text\">{{ workData.description }}</p>\n    <div class=\"location-arrow\">\n      <span class=\"icon\">👇</span>\n    </div>\n    <div
-class=\"location-name small-text\">{{ workData.place }}</div>\n  </div>\n</template>\n\n<script>\nexport default {\n  name: 'WorkPage',\n  props: {\n
-workData: {\n      type: Object,\n      required: true\n    }\n  },\n  data() {\n    return {\n      apiUrl: process.env.VUE_APP_API_URL\n    };\n
-}\n};\n</script>\n\n<style lang=\"scss\" scoped>\n@import '@/assets/scss/MemorialProfile.scss';\n\n.profile-page-container {\n  background-image:
-url('@/assets/images/profile_work_background.png');\n  padding-top: 8px; /* Reduced padding to decrease space at the top */\n}\n\n.header .icon {\n  font-size:
-24px;\n}\n\n.title {\n  margin-top: 8px;\n  // Inherits small-text styles from profile.scss\n}\n\n.photo-frame {\n  margin-top: 16px;\n  border: 1px solid
-#000;\n  height: 16rem; /* Further reduced height */\n  display: flex;\n  justify-content: center;\n  align-items: center;\n}\n\n\n.location-arrow .icon {\n
-font-size: 24px; // Adjust size as needed\n  display: block; // Ensure the icon is centered\n  margin: 16px auto; // Center the icon horizontally and add some margin
-\n}\n\n.location-name {\n  margin-top: 8px;\n  // Inherits small-text styles from profile.scss\n}\n\n/* Additional styles can be added as needed to match
-the design */\n</style>
+<template>
+  <div class="post-creation-page">
+    <v-breadcrumbs :items="['Profil', 'Edycja profilu pamięci']"></v-breadcrumbs>
+
+    <h1 class="steps-header">Edycja profilu pamięci</h1>
+
+    <post-creation-step1
+        v-if="currentStep === 1"
+        :profile-data="profileData"
+        @update:profile-data="setProfileData"
+    ></post-creation-step1>
+    <post-creation-step2
+        v-if="currentStep === 2"
+        :profile-data="profileData"
+        @update:profile-data="setProfileData"
+        @profile-image-uploaded="setProfileImageUrl"
+        @profile-image-deleted="setProfileImageUrl(null)"
+        @update:is-form-valid="setIsFormValid"
+    ></post-creation-step2>
+    <post-creation-step3
+        v-if="currentStep === 3"
+        :profile-data="profileData"
+        @add-section="addSection"
+        @add-section-item="addSectionItem"
+        @remove-section="removeSection"
+        @remove-section-item="removeSectionItem"
+        @update-section-item-image="updateSectionItemImage"
+        @remove-section-item-image="removeSectionItemImage"
+        @gallery-images-updated="handleGalleryImagesUpdated"
+    ></post-creation-step3>
+
+    <div class="steps-footer">
+      <v-btn
+          v-if="currentStep !== 3"
+          :disabled="isNextButtonDisabled"
+          class="step-button"
+          type="submit"
+          @click="goToNextStep"
+      >
+        <span>Przejdź dalej</span>
+        <v-icon>mdi-arrow-right</v-icon>
+      </v-btn>
+
+      <v-btn
+          v-if="currentStep === 3"
+          class="step-button"
+          type="submit"
+          @click="saveAndGoToPreview"
+      >
+        <span>Podgląd profilu</span>
+        <v-icon>mdi-arrow-right</v-icon>
+      </v-btn>
+
+      <v-btn v-if="currentStep !== 1" class="step-button outline" @click="goToPreviousStep">
+        <v-icon>mdi-arrow-left</v-icon>
+        <span>Poprzedni krok</span>
+      </v-btn>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from "axios";
+import PostCreationStep1 from './PostCreationStep1.vue';
+import PostCreationStep2 from './PostCreationStep2.vue';
+import PostCreationStep3 from './PostCreationStep3.vue';
+import {uuidv7} from "uuidv7";
+
+export default {
+  components: {
+    PostCreationStep1,
+    PostCreationStep2,
+    PostCreationStep3,
+  },
+  data() {
+    return {
+      isFormValid: true,
+      isNextButtonDisabled: false,
+      apiUrl: process.env.VUE_APP_API_URL,
+      currentStep: 1,
+      profileData: {
+        id: uuidv7(),
+        isPrivate: false,
+        firstName: '',
+        secondName: '',
+        lastName: '',
+        familyName: '',
+        birthDate: {
+          day: '',
+          month: '',
+          year: '',
+        },
+        birthPlace: '',
+        deathDate: {
+          day: '',
+          month: '',
+          year: '',
+        },
+        deathPlace: '',
+        mainPhotoUrl: '',
+        sections: [],
+      },
+    };
+  },
+  mounted() {
+    document.addEventListener("keyup", this.handleKeyUp);
+
+    this.slotNumber = this.$route.params.slotNumber;
+
+    if (this.slotNumber) {
+      this.fetchProfileData(this.slotNumber);
+    } else {
+      this.setProfileData(this.profileData);
+    }
+  },
+  unmounted() {
+    document.removeEventListener("keyup", this.handleKeyUp);
+  },
+  methods: {
+    handleKeyUp(event) {
+      if (event.key === "Enter") {
+        if (this.currentStep !== 3) {
+          this.goToNextStep();
+        } else {
+          this.saveAndGoToPreview();
+        }
+      }
+    },
+    setIsFormValid(value) {
+      this.isFormValid = value;
+      this.setIsNextButtonDisabled(value);
+    },
+    fetchProfileData() {
+      if (!this.slotNumber) {
+        return;
+      }
+
+      axios.get(`${this.apiUrl}mem_profile/${this.slotNumber}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+        }
+      }).then((response) => {
+        this.profileData = {
+          id: response.data.id || '',
+          isPrivate: response.data.isPrivate || false,
+          firstName: response.data.firstName || '',
+          secondName: response.data.secondName || '',
+          lastName: response.data.lastName || '',
+          familyName: response.data.familyName || '',
+          birthDate: {
+            day: response.data.birthDate?.day || '',
+            month: response.data.birthDate?.month || '',
+            year: response.data.birthDate?.year || '',
+          },
+          birthPlace: response.data.birthPlace || '',
+          deathDate: {
+            day: response.data.deathDate?.day || '',
+            month: response.data.deathDate?.month || '',
+            year: response.data.deathDate?.year || '',
+          },
+          deathPlace: response.data.deathPlace || '',
+          mainPhotoUrl: response.data.mainPhotoUrl || '',
+          sections: response.data.sections || [],
+        };
+      });
+    },
+    setProfileData(data) {
+      if (!this.profileData) {
+        return;
+      }
+
+      this.profileData = {...this.profileData, ...data};
+
+      sessionStorage.setItem('profileId', JSON.stringify(this.profileData.id));
+    },
+    setIsNextButtonDisabled(isFormValid) {
+      this.isNextButtonDisabled = this.currentStep === 2 && !isFormValid;
+    },
+    addSection(section) {
+      if (!this.profileData) {
+        return;
+      }
+
+      this.profileData.sections.push(section);
+
+      this.save();
+    },
+    addSectionItem({category, newSectionItem}) {
+      const sections = this.profileData.sections.map((section) => {
+        if (section.id === category.id) {
+          section.items.push(newSectionItem);
+        }
+
+        return section;
+      });
+
+      this.profileData = {
+        ...this.profileData,
+        sections,
+      };
+
+      this.save();
+    },
+    removeSection(sectionId) {
+      if (!this.profileData) {
+        return;
+      }
+
+      const filteredSections = this.profileData.sections.filter((section) => section.id !== sectionId);
+
+      this.profileData = {
+        ...this.profileData,
+        sections: filteredSections,
+      }
+    },
+    removeSectionItem(sectionId, itemId) {
+      if (!this.profileData) {
+        return;
+      }
+
+      this.profileData.sections = this.profileData.sections.map((section) => {
+        if (section?.id === sectionId) {
+          section.items = section.items.filter((item) => item?.id !== itemId);
+        }
+
+        return section;
+      });
+    },
+    updateSectionItemImage(filePath, sectionId, itemId) {
+      this.profileData.sections = this.profileData.sections.map((section) => {
+        if (section.id === sectionId) {
+          section.items = section.items.map((item) => {
+            if (item.id === itemId) {
+              item.photoUrl = filePath;
+            }
+
+            return item;
+          });
+        }
+
+        return section;
+      });
+
+      this.save();
+    },
+    removeSectionItemImage(itemId) {
+      this.profileData.sections = this.profileData.sections.map((section) => {
+        section.items = section.items.map((item) => {
+          if (item.id !== itemId) {
+            return item;
+          }
+
+          item.photoUrl = '';
+          return item;
+        });
+
+        return section;
+      });
+
+      this.save();
+    },
+    handleGalleryImagesUpdated(imagePaths) {
+      this.profileData.sections = this.profileData.sections.map((section) => {
+        if (section.key === 'gallery') {
+          section.items = imagePaths;
+        }
+
+        return section;
+      });
+
+      this.save();
+    },
+    goToPreviousStep() {
+      if (this.currentStep === 1) {
+        return;
+      }
+
+      this.currentStep = this.currentStep - 1;
+      this.setIsNextButtonDisabled(this.isFormValid);
+    },
+    goToNextStep() {
+      this.currentStep = this.currentStep + 1;
+      this.setIsNextButtonDisabled(this.isFormValid);
+    },
+    setProfileImageUrl(imageUrl) {
+      if (!this.profileData) {
+        return;
+      }
+
+      this.profileData.mainPhotoUrl = imageUrl || '';
+
+      this.save();
+    },
+    saveAndGoToPreview() {
+      this.save(true);
+    },
+    save(isPreview = false) {
+      try {
+        if (this.slotNumber) {
+          this.updateProfile(isPreview);
+        } else {
+          this.createProfile(isPreview);
+        }
+      } catch (error) {
+        console.error('Wystąpił błąd:', error);
+        this.isError = true;
+        this.errorMessage = 'Wystapił błąd. Spróbuj ponownie.';
+      }
+    },
+    createProfile(isPreview) {
+      axios.post(`${this.apiUrl}post_creation`, JSON.stringify(this.profileData), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+        }
+      }).then((response) => {
+        if (!isPreview) {
+          return;
+        }
+
+        this.goToMemorialProfileView(response.data.slotNr);
+      });
+    },
+    updateProfile(isPreview) {
+      axios.put(`${this.apiUrl}mem_profile/${this.slotNumber}`, JSON.stringify(this.profileData), {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
+        }
+      }).then(() => {
+        if (!isPreview) {
+          return;
+        }
+
+        this.goToMemorialProfileView(this.slotNumber);
+      });
+    },
+    goToMemorialProfileView(slotNumber) {
+      this.$router.push({name: 'memorial-profile-view', params: {slotNumber}});
+    },
+  },
+};
+</script>
+
+<style lang="scss" scoped>
+.post-creation-page {
+  max-width: 600px;
+  margin: 32px auto;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+}
+</style>
+
 """
 
 if __name__ == "__main__":
     print(parse_vue_basic(code))
-    pass

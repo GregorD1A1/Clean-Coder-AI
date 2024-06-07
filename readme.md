@@ -8,9 +8,10 @@ Work of a programmer is often about making minor improvements to existing applic
 ## Key advantages:
 
 - Well-designed context pipeline: The LLM only receives necessary information into its context. This significantly improves the LLM's attention and reduces costs.
-- Automatic context updates after file modifications: There's no need to manually reload the file into the LLM context after adding a few lines.
-- Well-designed tools: These are specially designed to exchange appropriate parts of the code and navigate the file system. A human approval feature is added as a safety measure in case of code interference tools.
 - Ability to create a frontend based on images with designs.
+- Automatic context updates after file modifications: There's no need to manually reload the file into the LLM context after adding a few lines.
+- Automatic code linting and log check to ensure corectness of inserted code.
+- Well-designed tools: These are specially designed to exchange appropriate parts of the code and navigate the file system. A human approval feature is added as a safety measure in case of code interference tools.
 
 # How to work with Clean Coder
 

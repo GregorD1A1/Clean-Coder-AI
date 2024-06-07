@@ -12,17 +12,19 @@ load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
 OAIclient = OpenAI()
 
+WRONG_EXECUTION_WORD = "Changes have not been introduced. "
+
 syntax_error_insert_code = """
-Action is not executed, as it will cause next error: {error_response}. Probably you:
+Changes can cause next error: {error_response}. Probably you:
 - Provided a wrong line number to insert code, or
 - Forgot to add an indents on beginning of code.
-Please analyze and rewrite your change proposition.
+Please analyze which place is correct to introduce the code before calling a tool.
 """
 syntax_error_modify_code = """
-Action is not executed, as it will cause next error: {error_response}. Probably you:
+Changes can cause next error: {error_response}. Probably you:
 - Provided a wrong end or beginning line number (end code line happens more often), or
 - Forgot to add an indents on beginning of code.
-Please analyze and rewrite your change proposition.
+Think step by step which function/code block you want to change before proposing improved change.
 """
 @tool
 def list_dir(directory):
@@ -86,14 +88,14 @@ def insert_code(filename, line_number, code):
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
                 print("Wrong syntax provided, asking to correct.")
-                return syntax_error_insert_code.format(error_response=check_syntax_response)
+                return WRONG_EXECUTION_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
-                return f"Action wasn't executed because of human interruption. He said: {human_message}"
+                return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
             file.write(file_contents)
-        return "Code inserted"
+        return "Code inserted."
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
@@ -115,15 +117,15 @@ def replace_code(filename, start_line,  code, end_line):
             file_contents = "".join(file_contents)
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
-                print("Wrong syntax provided, asking to correct.")
-                return syntax_error_modify_code.format(error_response=check_syntax_response)
+                print(check_syntax_response)
+                return WRONG_EXECUTION_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
-                return f"Action wasn't executed because of human interruption. He said: {human_message}"
+                return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
             file.write(file_contents)
-        return "Code modified"
+        return "Code modified."
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
@@ -138,11 +140,11 @@ def create_file_with_code(filename, code):
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
         if human_message != 'ok':
-            return f"Action wasn't executed because of human interruption. He said: {human_message}"
+            return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         with open(work_dir + filename, 'w', encoding='utf-8') as file:
             file.write(code)
-        return "File been created successfully"
+        return "File been created successfully."
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 

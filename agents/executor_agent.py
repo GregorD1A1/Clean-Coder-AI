@@ -1,5 +1,6 @@
 import os
 from tools.tools import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool
+from tools.tools import WRONG_EXECUTION_WORD
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -14,6 +15,7 @@ from utilities.util_functions import check_file_contents, print_wrapped, check_a
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 from langchain_groq import ChatGroq
 from langchain_together import ChatTogether
+from agents.researcher_agent import bad_json_format_msg
 
 
 load_dotenv(find_dotenv())
@@ -41,7 +43,6 @@ llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=15
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
-    checker_response: str
 
 
 tool_executor = ToolExecutor(tools)
@@ -66,28 +67,6 @@ rest will be possibility to do later.
 ```
 """
     )
-
-checker_system_message = SystemMessage(
-    content=f"""
-You are senior programmer. Your task is to check out work of a junior programmer. Junior will propose modifications into
-existing file in order to execute task. Check out if his modifications not include mistakes.
-
-Possible scenarios:
-1. Line numbers for code insertion or replacement are mistaken. A common error involves forgetting to include the 
-existing closing bracket when replacing an entire function or code block, resulting in writing the ending line number 
-right before the closing bracket. Check out line numbers produced by junior carefully.
-2. Junior forgot to add indent (spaces) on the beginning of his code. If there are some spaces, everything ok.
-3. Provided line numbers are correct and indents are in place. Code is valid.
-
-Return your answer as json:
-```json
-{{
-    "reasoning": "Reasoning if junior made some mistakes or not. Discuss here function/piece of code we work on.",
-    "response": "Write 'Everything ok.' only if no mistakes mentioned. Otherwise, explain the problem for your teammate",
-}}
-```
-"""
-)
 
 
 class Executor():
@@ -116,17 +95,40 @@ class Executor():
     # node functions
     def call_model_executor(self, state):
         #stop_sequence = None
-        state, _ = call_model(state, llm, stop_sequence_to_add=stop_sequence)
+        state, response = call_model(state, llm, stop_sequence_to_add=stop_sequence)
+        # safety mechanism for a bad json
+        tool_call = response.tool_call
+        if tool_call is None or "tool" not in tool_call:
+            state["messages"].append(HumanMessage(content=bad_json_format_msg))
+            print("\nBad json provided, asked to provide again.")
+        elif tool_call == "Multiple jsons found.":
+            state["messages"].append(HumanMessage(content="You written multiple jsons at once. If you want to execute multiple "
+                                                 "actions, choose only one for now; rest you can execute later."))
+            print("\nToo many jsons provided, asked to provide one.")
+        elif tool_call == "No json found in response.":
+            state["messages"].append(HumanMessage(content="Good. Please provide a json tool call to execute an action."))
+            print("\nNo json provided, asked to provide one.")
         return state
 
-
     def call_tool_executor(self, state):
-        last_message = state["messages"][-1]
+        last_ai_message = state["messages"][-1]
         state = call_tool(state, tool_executor)
-        if last_message.tool_call["tool"] == "create_file_with_code":
-            self.files.add(last_message.tool_call["tool_input"]["filename"])
-        if last_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
-            state = self.exchange_file_contents(state)
+        if last_ai_message.tool_call["tool"] == "create_file_with_code":
+            self.files.add(last_ai_message.tool_call["tool_input"]["filename"])
+        if last_ai_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
+            # marking messages if they haven't introduced changes
+            if last_ai_message.content.startswith(WRONG_EXECUTION_WORD):
+                # last tool response message
+                state["messages"][-1].to_remove = True
+            else:
+                state = self.exchange_file_contents(state)
+            # checking if we have at least 3 "to_remove" messages in state and then calling human
+            if len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]) >= 3:
+                # remove all messages (with and without "to_remove") since first "to_remove" message
+                state["messages"] = state["messages"][:state["messages"].index([msg for msg in state["messages"] if hasattr(msg, "to_remove")][0])]
+                human_input = input("Please suggest AI how to introduce that change correctly:")
+                state.append(HumanMessage(content=human_input))
+
         return state
 
     def check_log(self, state):
@@ -141,7 +143,7 @@ class Executor():
     def after_agent_condition(self, state):
         last_message = state["messages"][-1]
 
-        if not last_message.tool_call:
+        if last_message.content == bad_json_format_msg:
             return "agent"
         elif last_message.tool_call["tool"] != "final_response":
             return "tool"

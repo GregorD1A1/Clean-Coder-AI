@@ -9,22 +9,8 @@ def call_model(state, llm, stop_sequence_to_add=None):
     messages = state["messages"]
     response = llm.invoke(messages)
     response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
-    tool_call = find_tool_json(response.content)
+    response.tool_call = find_tool_json(response.content)
     print_wrapped(response.content)
-    if tool_call == "Multiple jsons found.":
-        messages.append(HumanMessage(content="You written multiple jsons at once. If you want to execute multiple "
-                                             "actions, choose only one for now; rest you can execute later."))
-        response = llm.invoke(messages)
-        print_wrapped(response.content)
-        print("\nToo many jsons provided, asked to provide one.")
-        tool_call = find_tool_json(response.content)
-    elif tool_call == "No json found in response.":
-        messages.append(HumanMessage(content="Good. Please provide a json tool call to execute an action."))
-        response = llm.invoke(messages)
-        print_wrapped(response.content)
-        print("\nNo json provided, asked to provide one.")
-        tool_call = find_tool_json(response.content)
-    response.tool_call = tool_call
     state["messages"].append(response)
     return state, response
 

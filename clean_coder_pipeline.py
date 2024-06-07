@@ -4,7 +4,8 @@ from agents.executor_agent import Executor
 
 
 task = """
-Improve gallery page (memorial profile) to look like in the design. make images bigger, and look like in design, in two lines. improve writing.
+I changed name of "Post" folder to "MemorialProfileCreationForm". Names of all files started previousely with "Post" now starting from "MemProf".
+Also "PostCreationCategories" folder changed to "MemorialProfileCreationCategories". Introduce changes to the files to make app work again.
 """
 
 
