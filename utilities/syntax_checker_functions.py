@@ -77,7 +77,7 @@ def check_template_tag_balance(code, open_tag, close_tag):
     i = 0
     while i < len(code):
         # check for open tag plus '>' or space after
-        if code[i:i + open_tag_len] == open_tag and code[i + open_tag_len] in [' ', '>']:
+        if code[i:i + open_tag_len] == open_tag and code[i + open_tag_len] in [' ', '>', '\n']:
             opened_tags_count += 1
             i += open_tag_len
         elif code[i:i + close_tag_len] == close_tag:
@@ -170,360 +170,207 @@ def lint_vue_code(code_string):
 
 code = """
 <template>
-  <div class="post-creation-page">
-    <v-breadcrumbs :items="['Profil', 'Edycja profilu pamięci']"></v-breadcrumbs>
+  <div class="dashboard content">
+    <div class="container">
+      <h1 class="dashboard-title">Panel użytkownika</h1>
 
-    <h1 class="steps-header">Edycja profilu pamięci</h1>
+      <ul class="mem-profile-list">
+        <li v-for="mem_profile in mem_profiles" :key="mem_profile.slot_number" class="mem-profile-item">
+          <span class="mem-profile-name">
+            {{ mem_profile.firstName }} {{ mem_profile.secondName }} {{ mem_profile.lastName }}</span>
+          (Numer profilu: {{ mem_profile.slot_number }})
+          <div class="button-container">
+            <button class="edit-button" @click="editMemProfile(mem_profile.slot_number)">Edytuj</button>
+            <button class="share-button" @click="copyProfileLink(mem_profile.slot_number)">Udostępnij</button>
+            <span
+                v-show="showTooltip && tooltipSlotNumber === mem_profile.slot_number"
+                class="tooltip"
+            >Link skopiowany</span>
+            <button class="profile-button" @click="redirectToProfile(mem_profile.slot_number)">Zobacz profil</button>
+          </div>
+        </li>
+      </ul>
 
-    <post-creation-step1
-        v-if="currentStep === 1"
-        :profile-data="profileData"
-        @update:profile-data="setProfileData"
-    ></post-creation-step1>
-    <post-creation-step2
-        v-if="currentStep === 2"
-        :profile-data="profileData"
-        @update:profile-data="setProfileData"
-        @profile-image-uploaded="setProfileImageUrl"
-        @profile-image-deleted="setProfileImageUrl(null)"
-        @update:is-form-valid="setIsFormValid"
-    ></post-creation-step2>
-    <post-creation-step3
-        v-if="currentStep === 3"
-        :profile-data="profileData"
-        @add-section="addSection"
-        @add-section-item="addSectionItem"
-        @remove-section="removeSection"
-        @remove-section-item="removeSectionItem"
-        @update-section-item-image="updateSectionItemImage"
-        @remove-section-item-image="removeSectionItemImage"
-        @gallery-images-updated="handleGalleryImagesUpdated"
-    ></post-creation-step3>
-
-    <div class="steps-footer">
-      <v-btn
-          v-if="currentStep !== 3"
-          :disabled="isNextButtonDisabled"
-          class="step-button"
-          type="submit"
-          @click="goToNextStep"
-      >
-        <span>Przejdź dalej</span>
-        <v-icon>mdi-arrow-right</v-icon>
-      </v-btn>
-
-      <v-btn
-          v-if="currentStep === 3"
-          class="step-button"
-          type="submit"
-          @click="saveAndGoToPreview"
-      >
-        <span>Podgląd profilu</span>
-        <v-icon>mdi-arrow-right</v-icon>
-      </v-btn>
-
-      <v-btn v-if="currentStep !== 1" class="step-button outline" @click="goToPreviousStep">
-        <v-icon>mdi-arrow-left</v-icon>
-        <span>Poprzedni krok</span>
-      </v-btn>
+      <button class="button create-button" @click="goToCreateMemProfile">Kup nowy profil</button>
     </div>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-import PostCreationStep1 from './PostCreationStep1.vue';
-import PostCreationStep2 from './PostCreationStep2.vue';
-import PostCreationStep3 from './PostCreationStep3.vue';
-import {uuidv7} from "uuidv7";
+import '@/assets/scss/common.scss';
+import axios from 'axios';
 
 export default {
-  components: {
-    PostCreationStep1,
-    PostCreationStep2,
-    PostCreationStep3,
-  },
+  name: 'DashboardPage',
   data() {
     return {
-      isFormValid: true,
-      isNextButtonDisabled: false,
-      apiUrl: process.env.VUE_APP_API_URL,
-      currentStep: 1,
-      profileData: {
-        id: uuidv7(),
-        isPrivate: false,
-        firstName: '',
-        secondName: '',
-        lastName: '',
-        familyName: '',
-        birthDate: {
-          day: '',
-          month: '',
-          year: '',
-        },
-        birthPlace: '',
-        deathDate: {
-          day: '',
-          month: '',
-          year: '',
-        },
-        deathPlace: '',
-        mainPhotoUrl: '',
-        sections: [],
-      },
+      mem_profiles: [],
+      apiUrl: process.env.VUE_APP_API_URL, // Ensure this is set in your .env file
+      showTooltip: false,
+      tooltipSlotNumber: null,
     };
   },
-  mounted() {
-    document.addEventListener("keyup", this.handleKeyUp);
-
-    this.slotNumber = this.$route.params.slotNumber;
-
-    if (this.slotNumber) {
-      this.fetchProfileData(this.slotNumber);
-    } else {
-      this.setProfileData(this.profileData);
-    }
-  },
-  unmounted() {
-    document.removeEventListener("keyup", this.handleKeyUp);
+  async created() {
+    await this.fetchMemProfiles();
   },
   methods: {
-    handleKeyUp(event) {
-      if (event.key === "Enter") {
-        if (this.currentStep !== 3) {
-          this.goToNextStep();
-        } else {
-          this.saveAndGoToPreview();
-        }
-      }
-    },
-    setIsFormValid(value) {
-      this.isFormValid = value;
-      this.setIsNextButtonDisabled(value);
-    },
-    fetchProfileData() {
-      if (!this.slotNumber) {
-        return;
-      }
-
-      axios.get(`${this.apiUrl}mem_profile/${this.slotNumber}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-        }
-      }).then((response) => {
-        this.profileData = {
-          id: response.data.id || '',
-          isPrivate: response.data.isPrivate || false,
-          firstName: response.data.firstName || '',
-          secondName: response.data.secondName || '',
-          lastName: response.data.lastName || '',
-          familyName: response.data.familyName || '',
-          birthDate: {
-            day: response.data.birthDate?.day || '',
-            month: response.data.birthDate?.month || '',
-            year: response.data.birthDate?.year || '',
-          },
-          birthPlace: response.data.birthPlace || '',
-          deathDate: {
-            day: response.data.deathDate?.day || '',
-            month: response.data.deathDate?.month || '',
-            year: response.data.deathDate?.year || '',
-          },
-          deathPlace: response.data.deathPlace || '',
-          mainPhotoUrl: response.data.mainPhotoUrl || '',
-          sections: response.data.sections || [],
-        };
-      });
-    },
-    setProfileData(data) {
-      if (!this.profileData) {
-        return;
-      }
-
-      this.profileData = {...this.profileData, ...data};
-
-      sessionStorage.setItem('profileId', JSON.stringify(this.profileData.id));
-    },
-    setIsNextButtonDisabled(isFormValid) {
-      this.isNextButtonDisabled = this.currentStep === 2 && !isFormValid;
-    },
-    addSection(section) {
-      if (!this.profileData) {
-        return;
-      }
-
-      this.profileData.sections.push(section);
-
-      this.save();
-    },
-    addSectionItem({category, newSectionItem}) {
-      const sections = this.profileData.sections.map((section) => {
-        if (section.id === category.id) {
-          section.items.push(newSectionItem);
-        }
-
-        return section;
-      });
-
-      this.profileData = {
-        ...this.profileData,
-        sections,
-      };
-
-      this.save();
-    },
-    removeSection(sectionId) {
-      if (!this.profileData) {
-        return;
-      }
-
-      const filteredSections = this.profileData.sections.filter((section) => section.id !== sectionId);
-
-      this.profileData = {
-        ...this.profileData,
-        sections: filteredSections,
-      }
-    },
-    removeSectionItem(sectionId, itemId) {
-      if (!this.profileData) {
-        return;
-      }
-
-      this.profileData.sections = this.profileData.sections.map((section) => {
-        if (section?.id === sectionId) {
-          section.items = section.items.filter((item) => item?.id !== itemId);
-        }
-
-        return section;
-      });
-    },
-    updateSectionItemImage(filePath, sectionId, itemId) {
-      this.profileData.sections = this.profileData.sections.map((section) => {
-        if (section.id === sectionId) {
-          section.items = section.items.map((item) => {
-            if (item.id === itemId) {
-              item.photoUrl = filePath;
-            }
-
-            return item;
-          });
-        }
-
-        return section;
-      });
-
-      this.save();
-    },
-    removeSectionItemImage(itemId) {
-      this.profileData.sections = this.profileData.sections.map((section) => {
-        section.items = section.items.map((item) => {
-          if (item.id !== itemId) {
-            return item;
-          }
-
-          item.photoUrl = '';
-          return item;
-        });
-
-        return section;
-      });
-
-      this.save();
-    },
-    handleGalleryImagesUpdated(imagePaths) {
-      this.profileData.sections = this.profileData.sections.map((section) => {
-        if (section.key === 'gallery') {
-          section.items = imagePaths;
-        }
-
-        return section;
-      });
-
-      this.save();
-    },
-    goToPreviousStep() {
-      if (this.currentStep === 1) {
-        return;
-      }
-
-      this.currentStep = this.currentStep - 1;
-      this.setIsNextButtonDisabled(this.isFormValid);
-    },
-    goToNextStep() {
-      this.currentStep = this.currentStep + 1;
-      this.setIsNextButtonDisabled(this.isFormValid);
-    },
-    setProfileImageUrl(imageUrl) {
-      if (!this.profileData) {
-        return;
-      }
-
-      this.profileData.mainPhotoUrl = imageUrl || '';
-
-      this.save();
-    },
-    saveAndGoToPreview() {
-      this.save(true);
-    },
-    save(isPreview = false) {
+    async fetchMemProfiles() {
       try {
-        if (this.slotNumber) {
-          this.updateProfile(isPreview);
-        } else {
-          this.createProfile(isPreview);
-        }
+        const token = localStorage.getItem('userToken'); // Retrieve token from localStorage
+        const response = await axios.get(`${this.apiUrl}dashboard/`, {
+          headers: {
+            'Authorization': `Bearer ${token}` // Use the token for authorization
+          }
+        });
+        this.mem_profiles = response.data.mem_profiles;
       } catch (error) {
-        console.error('Wystąpił błąd:', error);
-        this.isError = true;
-        this.errorMessage = 'Wystapił błąd. Spróbuj ponownie.';
+        console.error('Error fetching memorial profiles:', error);
       }
     },
-    createProfile(isPreview) {
-      axios.post(`${this.apiUrl}post_creation`, JSON.stringify(this.profileData), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-        }
-      }).then((response) => {
-        if (!isPreview) {
-          return;
-        }
-
-        this.goToMemorialProfileView(response.data.slotNr);
+    editMemProfile(slotNumber) {
+      this.$router.push({name: 'memorial-profile-edit', params: {slotNumber: slotNumber}});
+    },
+    goToCreateMemProfile() {
+      this.$router.push({name: 'create-mem-profile'});
+    },
+    copyProfileLink(slotNumber) {
+      const link = `https://takzyli.pl/memorial_profile/${slotNumber}`;
+      navigator.clipboard.writeText(link).then(() => {
+        this.showTooltip = true;
+        this.tooltipSlotNumber = slotNumber;
+        setTimeout(() => {
+          this.showTooltip = false;
+          this.tooltipSlotNumber = null;
+        }, 2000);
+      }, (err) => {
+        console.error('Could not copy text: ', err);
       });
     },
-    updateProfile(isPreview) {
-      axios.put(`${this.apiUrl}mem_profile/${this.slotNumber}`, JSON.stringify(this.profileData), {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('userToken')}`
-        }
-      }).then(() => {
-        if (!isPreview) {
-          return;
-        }
-
-        this.goToMemorialProfileView(this.slotNumber);
-      });
+    redirectToProfile(slotNumber) {
+      this.$router.push({path: `/memorial_profile/${slotNumber}`});
     },
-    goToMemorialProfileView(slotNumber) {
-      this.$router.push({name: 'memorial-profile-view', params: {slotNumber}});
-    },
-  },
+  }
 };
 </script>
 
 <style lang="scss" scoped>
-.post-creation-page {
-  max-width: 600px;
-  margin: 32px auto;
+.dashboard {
   padding: 20px;
-  border-radius: 8px;
+  background-color: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.footer {
+.dashboard-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+}
+
+.mem-profile-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.mem-profile-item {
+  position: relative;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.mem-profile-name {
+  font-weight: bold;
+}
+
+.edit-button, .create-button {
+  width: 100%;
+  background-color: black;
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 5px; /* Rounded edges */
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  align-self: center;
+
+  @media (min-width: 768px) {
+    width: fit-content;
+  }
+}
+
+.edit-button {
+  margin: 0 5px 5px;
+}
+
+.edit-button:hover, .create-button:hover {
+  background-color: #333;
+}
+
+.share-button {
+  color: DeepSkyBlue;
+  border: 1px solid DeepSkyBlue;
+  background-color: transparent;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin: 0 5px 5px;
+}
+
+.share-button:hover {
+  background-color: DeepSkyBlue;
+  color: white;
+}
+
+.profile-button {
+  background-color: #808080; // Gray color
+  color: white;
+  border: none;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 5px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  margin: 0 5px 5px;
+}
+
+@media (max-width: 768px) {
+  .mem-profile-item {
+    flex-direction: column;
+    align-items: center;
+  }
+  .edit-button, .share-button, .profile-button {
+    width: calc(100% - 20px); /* Adjust width to allow for margin */
+  }
+}
+
+
+.profile-button:hover {
+  background-color: #696969; // Slightly darker shade on hover
+}
+
+.tooltip {
+  position: absolute;
+  top: -30px;
+  right: 50%;
+  transform: translateX(100%);
+  background-color: gray;
+  color: white;
+  padding: 5px;
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 0.7em;
+}
+
+.button-container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
 }
 </style>
 

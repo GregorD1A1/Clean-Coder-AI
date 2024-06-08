@@ -4,8 +4,7 @@ from agents.executor_agent import Executor
 
 
 task = """
-I changed name of "Post" folder to "MemorialProfileCreationForm". Names of all files started previousely with "Post" now starting from "MemProf".
-Also "PostCreationCategories" folder changed to "MemorialProfileCreationCategories". Introduce changes to the files to make app work again.
+In dashboard, there is a button "kup profil" make it unclickable. add dymek with "Lista dostępnych domów pogrzebowach będzie dostępna już wkrótce" text when hover over it.
 """
 
 

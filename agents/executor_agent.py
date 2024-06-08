@@ -34,7 +34,7 @@ rendered_tools = render_text_description(tools)
 
 stop_sequence = "\n```\n"
 
-#llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0).with_config({"run_name": "Executor"})
+#llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
 llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
