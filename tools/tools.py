@@ -103,7 +103,7 @@ def insert_code(filename, line_number, code):
 @tool
 def replace_code(filename, start_line,  code, end_line):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
-    Do not use that function when want to insert new code without removing old one - use insert_code tool instead.
+    Use that tool
     tool input:
     :param filename: Name and path of file to change.
     :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
@@ -132,7 +132,7 @@ def replace_code(filename, start_line,  code, end_line):
 
 @tool
 def create_file_with_code(filename, code):
-    """Create new file with provided code.
+    """Create new file with provided code. Use that tool when want to insert some additional lines into code.
     tool input:
     :param filename: Name and path of file to create.
     :param code: Code to write in the file.

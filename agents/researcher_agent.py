@@ -39,10 +39,12 @@ tools = [list_dir, see_file, final_response]
 rendered_tools = render_text_description(tools)
 
 stop_sequence = "\n```\n"
+stop_sequence = None
 
 #llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0.2)
-llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Researcher"})
+#llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Researcher"})
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="openchat") #, temperature=0)
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
@@ -65,30 +67,30 @@ bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and '
 project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message = SystemMessage(
-        content=f"""
-        As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
-        You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving final answer.
-        The more folders/files you will check, the more they will pay you.
-        When you discover significant dependencies from one file to another, ensure to inspect both. 
-        Your final selection should include files needed to be modified or needed as reference for a programmer 
-        (for example to see how code in similar file implemented). 
-        Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
-        
-        Knowledge about project (not so important):
-        {project_knowledge}
-        
-        You have access to following tools:
-        {rendered_tools}
-        
-        First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
-        Next, generate response using json template: Choose only one tool to use.
-        ```json
-        {{
-            "tool": "$TOOL_NAME",
-            "tool_input": "$TOOL_PARAMS",
-        }}
-        ```
-        """
+        content=f"""As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
+You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving the final answer.
+The more folders/files you will check, the more they will pay you.
+When you discover significant dependencies from one file to another, ensure to inspect both. 
+Your final selection should include files needed to be modified or needed as reference for a programmer 
+(for example to see how code in similar file implemented). 
+Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
+
+Knowledge about project (not so important):
+{project_knowledge}
+
+You have access to following tools:
+{rendered_tools}
+
+As a researcher, you are not allowed to make any code modifications. 
+First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
+Next, generate response using json template: Choose only one tool to use.
+```json
+{{
+    "tool": "$TOOL_NAME",
+    "tool_input": "$TOOL_PARAMS",
+}}
+```
+"""
     )
 
 

@@ -4,7 +4,7 @@ from agents.executor_agent import Executor
 
 
 task = """
-In dashboard, there is a button "kup profil" make it unclickable. add dymek with "Lista dostępnych domów pogrzebowach będzie dostępna już wkrótce" text when hover over it.
+at login responce, add parameter "newest_regulamin_accepted".
 """
 
 

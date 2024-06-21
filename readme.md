@@ -27,9 +27,6 @@ Install required dependencies by running:
 
 ## Working process
 
-Check out the demonstration video:
-
-[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
 
 ### 1. Define Task
 
@@ -54,3 +51,10 @@ The Planner is the most responsible agent - it drafts the plan for code modifica
 ### 5. Executor Agent
 
 This is where the actual magic happens. The Executor will implement the planned changes to your project files. It will call tools in sequence, which will either modify files or create new ones. For tools that interact with the project, a safety mechanism is introduced - you need to confirm the tool execution by writing 'ok'. It's recommended to first check what change it intends to make and provide feedback if you think it might break something. After all changes are implemented, it will check the log file (if you set it up) and make further changes if there are issues with the logs. Next, it will ask you to confirm if everything is done as intended - provide feedback if you want it to improve something or type 'ok' to end the pipeline.
+
+
+## Demo videos
+
+[![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/maxresdefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
+
+[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")

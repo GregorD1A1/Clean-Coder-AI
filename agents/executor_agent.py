@@ -15,7 +15,6 @@ from utilities.util_functions import check_file_contents, print_wrapped, check_a
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 from langchain_groq import ChatGroq
 from langchain_together import ChatTogether
-from agents.researcher_agent import bad_json_format_msg
 
 
 load_dotenv(find_dotenv())
@@ -35,7 +34,8 @@ rendered_tools = render_text_description(tools)
 stop_sequence = "\n```\n"
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
-llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
+#llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
@@ -68,6 +68,8 @@ rest will be possibility to do later.
 """
     )
 
+bad_json_format_msg = """Bad json format. Json should be enclosed with '```json', '```' tags.
+Code inside of json should be provided in the way that not makes json invalid."""
 
 class Executor():
     def __init__(self, files):
