@@ -6,6 +6,7 @@ import playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
+from rag.retrieval import retrieve
 
 
 load_dotenv(find_dotenv())
@@ -55,6 +56,17 @@ def see_file(filename):
         return file_content
     except Exception as e:
         return f"{type(e).__name__}: {e}"
+
+
+@tool
+def retrieve_files_by_semantic_query(query):
+    """Use that function to find files or folders in the app by text search.
+    You can search for example for common styles, endpoint with user data, etc.
+    Useful, when you know what do you look for, but don't know where.
+    tool input:
+    :param query: Semantic query describing subject you looking for in one sentence. Ask for a singe thing only.
+    """
+    return retrieve(query)
 
 
 @tool
@@ -152,9 +164,9 @@ def create_file_with_code(filename, code):
 @tool
 def ask_human_tool(prompt):
     """
-    Use that tool to ask human if you need any external information or actions.
+    Ask human to provide debug actions or observations you're not available to do.
     tool input:
-    :param prompt: question to human.
+    :param prompt: prompt to human.
     """
     try:
         human_message = input(prompt)

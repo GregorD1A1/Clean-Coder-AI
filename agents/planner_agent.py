@@ -13,7 +13,8 @@ from langchain_groq import ChatGroq
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3).with_config({"run_name": "Planer"})
+llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
+#llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3).with_config({"run_name": "Planer"})
 #llm_voter = ChatAnthropic(model='claude-3-opus-20240229')
 #llm = ChatOllama(model="mixtral") #, temperature=0)
 llm_voter = llm.with_config({"run_name": "Voter"})
@@ -31,7 +32,7 @@ system_message = SystemMessage(
     You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
     to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
     to execute task. When possible, plan consistent code with other files. Your recommendations should include in details:
-    - Details about functions modifications,
+    - Details about functions modifications - provide only functions you want to replace, without rest of the file,
     - Details about movement lines and functionalities from file to file,
     - Details about new file creation,
     Plan should not include library installation or tests or anything else unrelated to code modifications.

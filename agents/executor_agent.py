@@ -28,7 +28,7 @@ def final_response():
     pass
 
 
-tools = [see_file, insert_code, replace_code, create_file_with_code, final_response]
+tools = [see_file, insert_code, replace_code, create_file_with_code, ask_human_tool, final_response]
 rendered_tools = render_text_description(tools)
 
 stop_sequence = "\n```\n"

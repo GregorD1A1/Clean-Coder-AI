@@ -4,8 +4,8 @@ from agents.executor_agent import Executor
 
 
 task = """
-Currently page with terms and conditions acceptance shows to the user after login, if he has not done it yet (according to backend flag).
-Make it show during login; do not login user until he accepts the terms and conditions.
+Make tooltip in the home page showing above the finder window. Also rename it to make name more understandable:
+profileUnavailabeTooltip for example. also rename redirectToPost function to seeMemProfile. 
 """
 
 

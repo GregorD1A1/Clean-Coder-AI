@@ -15,15 +15,29 @@ Work of a programmer is often about making minor improvements to existing applic
 
 # How to work with Clean Coder
 
-## Setup
+## Minimal Setup
 
-Change name of `.env.template` file to `.env` and open it with text editor. Provide your OpenAI api key and path to project directory you will be working on.
+Change name of `.env.template` file to `.env` and open it with text editor. Provide your OpenAI and Anthropic api keys, and path to project directory you will be working on.
 
-It's very recommended to set up your project to write logs to file - that way executor agent will be able to check logs after changes are introduced and improve possible bugs. Provide full path to your log file after `LOG_FILE=` in .env to activate that feature.
-
-Install required dependencies by running:
+Net, install required dependencies by running:
 
 `pip install -r requirements.txt`
+
+## Recommended setup
+
+### Bugs self-correction
+To allow AI correct it's own mistakes automatically, set up saving logs to the text file in your project. Next, provide path to log file `LOG_FILE=` in .env file.
+
+### Retrieval tool for Researcher agent
+Sometimes just looking on the file system is not enough to Researcher agent been able to provide other agents with all necesary files; especially if your project contains a lot of files with code. Then retreival tool becoming handy: it allows Researcher to find needed files semantically, using generated descriptions and vector search.
+
+To set it up, run 
+
+`python rag/write_descriptions.py`
+
+file to create descriptions of all code files in your project and save them in vector starage. Eventually, you can provide subfolders with code files "subfolders_with_files" argument of "write_descriptions" function if you don't want it to describe all code files in your project.
+
+Next, get api key for cohere and provide it on .env after `COHERE_API_KEY=`.
 
 ## Working process
 

@@ -8,7 +8,7 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
-from tools.tools import list_dir, see_file, see_image
+from tools.tools import list_dir, see_file, see_image, retrieve_files_by_semantic_query
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
@@ -27,6 +27,7 @@ def final_response(files_to_work_on, reference_files, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
+    Include only the files you convinced will be useful.
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
     :param reference_files: ["List", "of code files", "useful to code reference", "without images],
@@ -36,6 +37,8 @@ def final_response(files_to_work_on, reference_files, template_images):
 
 
 tools = [list_dir, see_file, final_response]
+if os.getenv("COHERE_API_KEY"):
+    tools.append(retrieve_files_by_semantic_query)
 rendered_tools = render_text_description(tools)
 
 #stop_sequence = "\n```\n"

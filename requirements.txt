@@ -3,7 +3,6 @@ langchain-core==0.1.50
 langchain_mistralai==0.1.6
 langgraph==0.0.40
 python-dotenv==1.0.1
-langchain_openai==0.0.8
 langchain_anthropic==0.1.11
 playwright==1.43.0
 xmltodict==0.13.0
@@ -13,4 +12,6 @@ esprima==4.0.1
 cssutils==2.11.0
 libsass==0.23.0
 langchain_groq==0.1.4
-openai=1.12.0
+openai==1.12.0
+cohere==5.5.8
+chromadb==0.4.21
