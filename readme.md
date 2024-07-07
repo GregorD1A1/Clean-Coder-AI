@@ -17,16 +17,16 @@ Work of a programmer is often about making minor improvements to existing applic
 
 ## Minimal Setup
 
-Change name of `.env.template` file to `.env` and open it with text editor. Provide your OpenAI and Anthropic api keys, and path to project directory you will be working on.
+Change name of `.env.template` file to `.env` and open it with text editor. Provide your OpenAI and Anthropic api keys, and path to project directory you will be working on with trailing slash.
 
-Net, install required dependencies by running:
+Next, install required dependencies by running:
 
 `pip install -r requirements.txt`
 
 ## Recommended setup
 
 ### Bugs self-correction
-To allow AI correct it's own mistakes automatically, set up saving logs to the text file in your project. Next, provide path to log file `LOG_FILE=` in .env file.
+To allow AI correct it's own mistakes automatically, set up saving logs to the text file in your project. Next, provide path to log file `LOG_FILE=` in .env file. Use trailing slash.
 
 ### Retrieval tool for Researcher agent
 Sometimes just looking on the file system is not enough to Researcher agent been able to provide other agents with all necesary files; especially if your project contains a lot of files with code. Then retreival tool becoming handy: it allows Researcher to find needed files semantically, using generated descriptions and vector search.

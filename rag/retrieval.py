@@ -7,12 +7,17 @@ from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+cohere_key = os.getenv("COHERE_API_KEY")
 
-chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '.clean_coder/chroma_base')
-collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
-collection = chroma_client.get_collection(name=collection_name)
+if cohere_key:
+    chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '.clean_coder/chroma_base')
+    collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
+    try:
+        collection = chroma_client.get_collection(name=collection_name)
+    except ValueError:
+        raise Exception("Vector database does not exist. Please create it by running rag/write_descriptions.py")
 
-cohere_client = cohere.Client(os.getenv("YOUR_COHERE_API_KEY"))
+    cohere_client = cohere.Client(cohere_key)
 
 
 def retrieve(question):
@@ -38,6 +43,7 @@ def retrieve(question):
     return response
 
 if __name__ == "__main__":
-    question = "Place where client can register"
+    question = "Common styles, used in the main page"
     results = retrieve(question)
+    print("\n\n")
     print("results: ", results)

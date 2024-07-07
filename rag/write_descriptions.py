@@ -54,7 +54,7 @@ Write what file is responsible for.\n\n'''\n{code}'''
         print(descriptions)
 
         for file_path, description in zip(files_iteration, descriptions):
-            file_name = file_name = file_path.relative_to(work_dir).as_posix().replace('/', '=')
+            file_name = file_path.relative_to(work_dir).as_posix().replace('/', '=')
             output_path = Path(work_dir + '.clean_coder/files_and_folders_descriptions') / f"{file_name}.txt"
             output_path.parent.mkdir(parents=True, exist_ok=True)
 

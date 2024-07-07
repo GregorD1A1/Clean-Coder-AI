@@ -4,8 +4,8 @@ from agents.executor_agent import Executor
 
 
 task = """
-Make tooltip in the home page showing above the finder window. Also rename it to make name more understandable:
-profileUnavailabeTooltip for example. also rename redirectToPost function to seeMemProfile. 
+Refractor code. find redundant or ugly-written pieces of code and improve them. Remove unnecesary code.
+ find variables, that should be named more clear. Make files and functions shorter and more clear.
 """
 
 
