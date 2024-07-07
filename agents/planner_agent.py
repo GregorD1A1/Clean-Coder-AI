@@ -29,15 +29,23 @@ class AgentState(TypedDict):
 
 system_message = SystemMessage(
     content="""
-    You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
-    to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
-    to execute task. When possible, plan consistent code with other files. Your recommendations should include in details:
-    - Details about functions modifications - provide only functions you want to replace, without rest of the file,
-    - Details about movement lines and functionalities from file to file,
-    - Details about new file creation,
-    Plan should not include library installation or tests or anything else unrelated to code modifications.
-    At every your message, you providing proposition of all changes, not just some.
-    """
+You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
+to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
+to execute task. When possible, plan consistent code with other files. Your recommendations should include in details:
+- Details about functions modifications - provide only functions you want to replace, without rest of the file,
+- Details about movement lines and functionalities from file to file,
+- Details about new file creation,
+Plan should not include library installation or tests or anything else unrelated to code modifications.
+At every your message, you providing proposition of all changes, not just some.
+
+Do not rewrite full code, instead only write changes and point places where they need to be inserted. 
+Show with pluses (+) and minuses (-), where you want to add/remove code.
+Example:
+- self.id_number = str(ObjectId())
++ self.user_id = str(ObjectId())
++ self.email = email
+
+"""
 )
 
 
@@ -54,12 +62,16 @@ voter_system_message = SystemMessage(
     Respond in xml:
     ```xml
     <response>
-       <reasoning>
-           Explain your decision process in detail. Provide pros and cons of every proposition.
-       </reasoning>
-       <choice>
+        <evaluating>
+            Neatly summarize characteristics of plan propositions. Impartially evaluate pros and cons of every of them.
+        </evaluating>
+        <weighting>
+           Think step by step about why one proposition is better than another. Make final decision which of them is the
+           best according to provided criteria.
+        </weighting>
+        <choice>
            Provide here nr of plan you chosen. Only the number and nothing more.
-       </choice>
+        </choice>
     </response>
     ```
     """
@@ -101,7 +113,7 @@ def call_planers(state):
     chain = llm_voter | XMLOutputParser()
     response = chain.invoke(state["voter_messages"])
 
-    choice = int(response["response"][1]["choice"])
+    choice = int(response["response"][2]["choice"])
     plan = plan_propositions_messages[choice - 1]
     state["messages"].append(plan)
     print_wrapped(f"Chosen plan:\n\n{plan.content}")
