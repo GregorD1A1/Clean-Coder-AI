@@ -1,6 +1,7 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -45,13 +46,13 @@ rendered_tools = render_text_description(tools)
 stop_sequence = None
 
 #llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0.2)
-#llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Researcher"})
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="openchat") #, temperature=0)
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0.3).with_config({"run_name": "Researcher"})
+#llm = ChatNVIDIA(model="nvidia/llama3-chatqa-1.5-70b")
 '''llm = ChatOpenAI(
     model='deepseek-chat',
     openai_api_key='',
@@ -150,7 +151,7 @@ researcher = researcher_workflow.compile()
 def research_task(task):
     print("Researcher starting its work")
     system_message = system_message_content.format(task=task)
-    inputs = {"messages": [system_message, HumanMessage(content=f"Go")]}
+    inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=f"Go")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
     #tool_json = find_tool_xml(researcher_response.content)

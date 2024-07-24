@@ -13,11 +13,11 @@ work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
 
 
-def print_wrapped(content, width=160, color="black"):
+def print_wrapped(content, width=160):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
-    print(colored(wrapped_content, color))
+    print(wrapped_content)
 
 
 def check_file_contents(files):

@@ -11,6 +11,8 @@ from rag.retrieval import retrieve
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+forbidden_files_list = os.getenv("FORBIDDEN_FILES").split(',')
+print(forbidden_files_list)
 OAIclient = OpenAI()
 
 WRONG_EXECUTION_WORD = "Changes have not been introduced. "
@@ -47,6 +49,8 @@ def see_file(filename):
     :param filename: Name and path of file to check.
     """
     try:
+        if filename in forbidden_files_list:
+            return "You are not allowed to see into this file."
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
         formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]

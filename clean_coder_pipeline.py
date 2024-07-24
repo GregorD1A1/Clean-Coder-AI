@@ -4,8 +4,7 @@ from agents.executor_agent import Executor
 
 
 task = """
-Refractor code. find redundant or ugly-written pieces of code and improve them. Remove unnecesary code.
- find variables, that should be named more clear. Make files and functions shorter and more clear.
+Propose code improvements.ok
 """
 
 

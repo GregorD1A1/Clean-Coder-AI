@@ -34,8 +34,7 @@ rendered_tools = render_text_description(tools)
 stop_sequence = "\n```\n"
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
-#llm = ChatAnthropic(model='claude-3-opus-20240229', temperature=0, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=1500, model_kwargs={"stop_sequences": [stop_sequence]}).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=1500, stop=[stop_sequence]).with_config({"run_name": "Executor"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
@@ -56,7 +55,8 @@ rather than rewriting entire files at once.
 Tools to your disposal:\n
 {rendered_tools}
 \n\n
-First, write your thinking process. Think step by step about what do you need to do to accomplish the task. 
+First, write your thinking process. Think step by step about what do you need to do to accomplish the task.
+Reasoning part of your response is very important, never miss it! Even if the next step seems to be obvious.
 Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
 rest will be possibility to do later.
 ```json
@@ -124,8 +124,10 @@ class Executor():
                 state["messages"][-1].to_remove = True
             else:
                 state = self.exchange_file_contents(state)
+            print("to_removes: ", len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]))
             # checking if we have at least 3 "to_remove" messages in state and then calling human
             if len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]) >= 3:
+                print("more than 3 repeats")
                 # remove all messages (with and without "to_remove") since first "to_remove" message
                 state["messages"] = state["messages"][:state["messages"].index([msg for msg in state["messages"] if hasattr(msg, "to_remove")][0])]
                 human_input = input("Please suggest AI how to introduce that change correctly:")
