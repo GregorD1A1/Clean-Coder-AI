@@ -12,7 +12,6 @@ from rag.retrieval import retrieve
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
 forbidden_files_list = os.getenv("FORBIDDEN_FILES").split(',')
-print(forbidden_files_list)
 OAIclient = OpenAI()
 
 WRONG_EXECUTION_WORD = "Changes have not been introduced. "
@@ -67,6 +66,9 @@ def retrieve_files_by_semantic_query(query):
     """Use that function to find files or folders in the app by text search.
     You can search for example for common styles, endpoint with user data, etc.
     Useful, when you know what do you look for, but don't know where.
+
+    Use that function at least once BEFORE calling final response to ensure you found all appropriate files.
+
     tool input:
     :param query: Semantic query describing subject you looking for in one sentence. Ask for a singe thing only.
     """

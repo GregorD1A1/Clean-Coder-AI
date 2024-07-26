@@ -2,6 +2,11 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from llamaapi import LlamaAPI
+from langchain_experimental.llms import ChatLlamaAPI
+from langchain_anthropic import ChatAnthropic
+from langchain_groq import ChatGroq
+from langchain_together import ChatTogether
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -13,10 +18,6 @@ from tools.tools import list_dir, see_file, see_image, retrieve_files_by_semanti
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
-from langchain_anthropic import ChatAnthropic
-from langchain_groq import ChatGroq
-from langchain_together import ChatTogether
-import time
 
 
 load_dotenv(find_dotenv())
@@ -29,6 +30,7 @@ def final_response(files_to_work_on, reference_files, template_images):
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research.
     Include only the files you convinced will be useful.
+
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
     :param reference_files: ["List", "of code files", "useful to code reference", "without images],
@@ -45,14 +47,15 @@ rendered_tools = render_text_description(tools)
 #stop_sequence = "\n```\n"
 stop_sequence = None
 
-#llm = ChatOpenAI(model="gpt-4-turbo-2024-04-09", temperature=0.2)
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
-#llm = ChatOllama(model="openchat") #, temperature=0)
+#llm = ChatOllama(model="llama3.1")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatNVIDIA(model="nvidia/llama3-chatqa-1.5-70b")
+#llama = LlamaAPI(os.getenv("LLAMA_API_KEY"))
+#llm = ChatLlamaAPI(client=llama)
 '''llm = ChatOpenAI(
     model='deepseek-chat',
     openai_api_key='',
@@ -160,34 +163,25 @@ def research_task(task):
     file_contents = check_file_contents(text_files)
 
     image_paths = tool_json["tool_input"]["template_images"]
-    images = []
-    for image_path in image_paths:
-        images.append(
-            {
-                "type": "text",
-                "text": image_path,
-            }
-        )
-        images.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": f"data:image/png;base64,{see_image(image_path)}",
-                },
-            }
-        )
-        # images for claude
-        '''
-        images.append(
-            {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": see_image(image_path),
-                },
-            }
-        )
-        '''
+    images = [
+                 {"type": "text", "text": image_path}
+                 for image_path in image_paths
+        ] + [
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{see_image(image_path)}"}}
+        for image_path in image_paths
+    ]
+    # images for claude
+    '''
+    images.append(
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": see_image(image_path),
+            },
+        }
+    )
+    '''
 
     return text_files, file_contents, images

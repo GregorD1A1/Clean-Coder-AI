@@ -7,35 +7,26 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from langchain.tools import tool
-from tools.tools import list_dir, see_file, see_image
+from tools.tools_project_manager import (get_project_tasks, add_task, modify_task, delete_task, mark_task_as_done,
+                                         ask_programmer_to_execute_task, ask_tester_to_check_if_change_been_implemented_correctly)
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
 
 
 load_dotenv(find_dotenv())
-mistral_api_key = os.getenv("MISTRAL_API_KEY")
-
-
-@tool
-def final_response(files_to_work_on, reference_files):
-    """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
-    Use that tool only when you 100% sure you found all the files Executor will need to modify.
-    If not, do additional research.
-    tool input:
-    :param files_to_work_on: ["List", "of", "files"],
-    :param reference_files: ["List", "of", "files"],
-    """
-    pass
-
-
-tools = [list_dir, see_file]
+tools = [
+    get_project_tasks,
+    add_task,
+    modify_task,
+    delete_task,
+    mark_task_as_done,
+    ask_programmer_to_execute_task,
+    ask_tester_to_check_if_change_been_implemented_correctly,
+]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4-turbo-preview", temperature=0.2)
-#llm = ChatOllama(model="openchat") #, temperature=0)
-#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
+llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Planer"})
 
 
 class AgentState(TypedDict):
@@ -45,19 +36,15 @@ class AgentState(TypedDict):
 bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
                        "and enclosed with '```json', '```' tags.")
 
-project_knowledge = read_project_knowledge()
+project_description = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
+
 system_message = SystemMessage(content=f"""
-As a scrum master expert, you need is to divide general task in small unit tasks.
-To do it you need to get context of the project first, so examine files thoroughly, prioritizing comprehensive checks. 
-When you discover significant dependencies from one file to another, ensure to inspect both. 
-Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
-After file research is done, write a complete list of unit tasks. Unit tasks should be related to code changes -
-do not write any tests or documentation or other non-code tasks. For Every task write comprehensive and 
-unambiguous description. Number of unit tasks may vary, from 1 in case of simple general task to 10 in case of 
-complex one. Never invent things you don't know about the project - continue file research if you lack of some 
-information to write a plan. 
-If you want to propose some change, think first if it didn't already implemented in some project file.
+You are project manager that guides programmer in his work, plan future tasks, checks quality of their execution and 
+replans over and over until project is finished.
+
+Here is description of the project you work on:
+{project_description}
 
 You have access to following tools:
 {rendered_tools}\n
@@ -74,7 +61,7 @@ Next, generate response using json template: Choose only one tool to use.
 
 
 # node functions
-def call_model_researcher(state):
+def call_model_manager(state):
     state, response = call_model(state, llm)
     # safety mechanism for a bad json
     tool_call = response.tool_call
@@ -102,7 +89,7 @@ def after_agent_condition(state):
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("agent", call_model_researcher)
+researcher_workflow.add_node("agent", call_model_manager)
 researcher_workflow.add_node("tool", call_tool_researcher)
 researcher_workflow.add_node("human", ask_human)
 

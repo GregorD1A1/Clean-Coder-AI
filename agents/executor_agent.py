@@ -34,7 +34,7 @@ rendered_tools = render_text_description(tools)
 stop_sequence = "\n```\n"
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=1500, stop=[stop_sequence]).with_config({"run_name": "Executor"})
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, stop=[stop_sequence]).with_config({"run_name": "Executor"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
@@ -122,6 +122,7 @@ class Executor():
             if last_ai_message.content.startswith(WRONG_EXECUTION_WORD):
                 # last tool response message
                 state["messages"][-1].to_remove = True
+                print("check if to_remove flag saved: ", state["messages"][-1], state["messages"][-1].to_remove)
             else:
                 state = self.exchange_file_contents(state)
             print("to_removes: ", len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]))
