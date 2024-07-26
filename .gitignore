@@ -3,3 +3,4 @@
 .cache/
 __pycache__/
 env/
+.clean_coder/
