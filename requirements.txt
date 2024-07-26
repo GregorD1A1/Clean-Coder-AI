@@ -15,3 +15,4 @@ openai==1.35.7
 cohere==5.5.8
 langchain-cohere==0.1.8
 chromadb==0.4.21
+todoist-api-python==2.1.5

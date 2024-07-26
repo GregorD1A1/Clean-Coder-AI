@@ -15,6 +15,7 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from tools.tools import list_dir, see_file, see_image, retrieve_files_by_semantic_query
+from rag.retrieval import vdb_availabe
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
@@ -40,7 +41,7 @@ def final_response(files_to_work_on, reference_files, template_images):
 
 
 tools = [list_dir, see_file, final_response]
-if os.getenv("COHERE_API_KEY"):
+if vdb_availabe:
     tools.append(retrieve_files_by_semantic_query)
 rendered_tools = render_text_description(tools)
 

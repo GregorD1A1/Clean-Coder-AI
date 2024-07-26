@@ -14,8 +14,10 @@ if cohere_key:
     collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
     try:
         collection = chroma_client.get_collection(name=collection_name)
+        vdb_availabe = True
     except ValueError:
-        raise Exception("Vector database does not exist. Please create it by running rag/write_descriptions.py")
+        print("Vector database does not exist. Please create it by running rag/write_descriptions.py")
+        vdb_availabe = False
 
     cohere_client = cohere.Client(cohere_key)
 

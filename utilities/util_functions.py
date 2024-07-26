@@ -80,12 +80,16 @@ def check_application_logs():
 
 
 def read_project_knowledge():
-    if os.path.exists(work_dir + ".clean_coder"):
-        print(work_dir + ".clean_coder")
-        with open(work_dir + ".clean_coder/researcher_project_knowledge.prompt", "r") as f:
-            project_knowledge = f.read()
-    else:
-        project_knowledge = "None"
+    file_path = os.path.join(work_dir, ".clean_coder", "researcher_project_knowledge.prompt")
+
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        print(f"File does not exist: {file_path}")
+        return "None"
+
+    # If the file exists, read the file
+    with open(file_path, "r") as f:
+        project_knowledge = f.read()
 
     return project_knowledge
 

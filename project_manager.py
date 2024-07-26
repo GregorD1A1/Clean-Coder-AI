@@ -39,9 +39,12 @@ bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and '
 project_description = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 
+project_description = """Backend for internet shop with skin bags.
+"""
+
 system_message = SystemMessage(content=f"""
 You are project manager that guides programmer in his work, plan future tasks, checks quality of their execution and 
-replans over and over until project is finished.
+replans over and over (if needed) until project is finished.
 
 Here is description of the project you work on:
 {project_description}
@@ -108,25 +111,10 @@ researcher_workflow.add_edge("tool", "agent")
 researcher = researcher_workflow.compile()
 
 
-def research_task(task):
-    print("Researcher starting its work")
-    inputs = {"messages": [system_message, HumanMessage(content=f"General task: {task}")]}
+def research_task():
+    print("Manager starting its work")
+    inputs = {"messages": [system_message, HumanMessage(content="Go")]}
     researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
-    #tool_json = find_tool_xml(researcher_response.content)
-    tool_json = find_tool_json(researcher_response.content)
-    text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
-    file_contents = check_file_contents(text_files)
-
-
-
-
-    return text_files, file_contents
-
 if __name__ == "__main__":
-    task = """
-    Let's create an additional page with searcher of memorial profiles. Searcher should be able to filter profiles by 
-    year of birth, year of death, number of children. talk with appropriate backend endpoint.
-    """
-
-    research_task(task)
+    research_task()

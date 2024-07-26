@@ -180,39 +180,6 @@ def ask_human_tool(prompt):
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
-@tool
-def image_to_code(prompt):
-    """Writes a frontend code based on provided design with visual AI.
-    <tool_input>
-     <prompt>Prompt to use for generation. Provide here that you want to receive code based on image, specify framework,
-     any additional info if needed (as images to use).</prompt>
-    </tool_input>
-    """
-    try:
-        with open(work_dir + "screenshots/template.png", "rb") as image_file:
-            img_encoded = base64.b64encode(image_file.read()).decode("utf-8")
-        response = OAIclient.chat.completions.create(
-            model="gpt-4-vision-preview",
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                      {"type": "text", "text": prompt},
-                      {
-                        "type": "image_url",
-                        "image_url": {
-                          "url": f"data:image/jpeg;base64,{img_encoded}",
-                        },
-                      },
-                    ],
-                }
-            ],
-            max_tokens=1000,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"{type(e).__name__}: {e}"
-
 
 # function under development
 def make_screenshot(endpoint, login_needed, commands):
@@ -238,3 +205,4 @@ def make_screenshot(endpoint, login_needed, commands):
 
     page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
+
