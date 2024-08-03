@@ -36,7 +36,8 @@ to execute task. When possible, plan consistent code with other files. Your reco
 - Details about movement lines and functionalities from file to file,
 - Details about new file creation,
 Plan should not include library installation or tests or anything else unrelated to code modifications.
-At every your message, you providing proposition of all changes, not just some.
+At every your message, you providing proposition of all changes, not just some. Never imagine files you have 
+not provided in context.
 
 Do not rewrite full code, instead only write changes and point places where they need to be inserted. 
 Show with pluses (+) and minuses (-), where you want to add/remove code.

@@ -10,7 +10,7 @@ work_dir = os.getenv("WORK_DIR")
 cohere_key = os.getenv("COHERE_API_KEY")
 
 if cohere_key:
-    chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '.clean_coder/chroma_base')
+    chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '/.clean_coder/chroma_base')
     collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
     try:
         collection = chroma_client.get_collection(name=collection_name)

@@ -5,6 +5,7 @@ from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from llamaapi import LlamaAPI
 from langchain_experimental.llms import ChatLlamaAPI
 from langchain_anthropic import ChatAnthropic
+from langchain_community.llms import Replicate
 from langchain_groq import ChatGroq
 from langchain_together import ChatTogether
 from typing import TypedDict, Sequence
@@ -16,7 +17,7 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from tools.tools import list_dir, see_file, see_image, retrieve_files_by_semantic_query
 from rag.retrieval import vdb_availabe
-from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
+from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 import os
 
@@ -29,8 +30,8 @@ mistral_api_key = os.getenv("MISTRAL_API_KEY")
 def final_response(files_to_work_on, reference_files, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
-    If not, do additional research.
-    Include only the files you convinced will be useful.
+    If not, do additional research. Include only the files you convinced will be useful.
+    Provide only existing files.
 
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
@@ -63,6 +64,7 @@ llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
     openai_api_base='https://api.deepseek.com/v1',
     temperature=0.2
 )'''
+#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 
 
 class AgentState(TypedDict):
@@ -72,7 +74,6 @@ class AgentState(TypedDict):
 bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
                        "and enclosed with '```json', '```' tags.")
 
-project_knowledge = read_project_knowledge()
 tool_executor = ToolExecutor(tools)
 system_message_content = f"""As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
 You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving the final answer.
@@ -81,18 +82,14 @@ When you discover significant dependencies from one file to another, ensure to i
 Your final selection should include files needed to be modified or needed as reference for a programmer 
 (for example to see how code in similar file implemented). 
 Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
-You need to point out all files programmer needed to see to execute task. Task is:
+You need to point out all files programmer needed to see to execute the task and only that task. Task is:
 '''
 {{task}}
 '''
 As a researcher, you are not allowed to make any code modifications. 
 
-Knowledge about project (not so important):
-{project_knowledge}
-
 You have access to following tools:
 {rendered_tools}
-
 
 First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
 Next, generate response using json template: Choose only one tool to use.
@@ -103,6 +100,7 @@ Next, generate response using json template: Choose only one tool to use.
 }}}}
 ```
 """
+
 
 # node functions
 def call_model_researcher(state):

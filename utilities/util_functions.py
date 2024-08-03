@@ -13,10 +13,13 @@ work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
 
 
-def print_wrapped(content, width=160):
+
+def print_wrapped(content, width=160, color=None):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
+    if color:
+        wrapped_content = colored(wrapped_content, color, force_color='True')
     print(wrapped_content)
 
 
@@ -79,8 +82,8 @@ def check_application_logs():
         return f"{type(e).__name__}: {e}"
 
 
-def read_project_knowledge():
-    file_path = os.path.join(work_dir, ".clean_coder", "researcher_project_knowledge.prompt")
+def read_project_description():
+    file_path = os.path.join(work_dir, ".clean_coder", "project_description.txt")
 
     # Check if the file exists
     if not os.path.exists(file_path):
@@ -92,6 +95,3 @@ def read_project_knowledge():
         project_knowledge = f.read()
 
     return project_knowledge
-
-if __name__ == "__main__":
-    print(read_project_knowledge())

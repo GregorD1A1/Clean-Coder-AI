@@ -13,8 +13,7 @@ def run_clean_coder_pipeline(task, self_approve=False):
 
 
 if __name__ == "__main__":
-    task = """In project manager tools file, make project id constant, read it from .env
-
-    """
+    task = """dzik
+"""
 
     run_clean_coder_pipeline(task)

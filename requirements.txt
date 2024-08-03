@@ -16,3 +16,5 @@ cohere==5.5.8
 langchain-cohere==0.1.8
 chromadb==0.4.21
 todoist-api-python==2.1.5
+replicate==0.31.0
+termcolor==2.4.0

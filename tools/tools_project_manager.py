@@ -1,8 +1,10 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-
+from utilities.util_functions import print_wrapped
 from dotenv import load_dotenv, find_dotenv
+from clean_coder_pipeline import run_clean_coder_pipeline
+
 
 load_dotenv(find_dotenv())
 
@@ -17,12 +19,15 @@ def get_project_tasks():
     {}
     """
     tasks = todoist_api.get_tasks(project_id=PROJECT_ID)
-    return [{'id': task.id, 'name': task.content, 'description': task.description} for task in tasks]
+    return [f"'id': {task.id}, 'name': {task.content}, 'description': {task.description}\n" for task in tasks]
 
 
 @tool
 def add_task(task_name, task_description):
     """Add new task to project management platform (Todoist).
+    Think very carefuuly before adding a new task to know what do you want exactly. Explain detailly what needs to be
+    done in order to execute task.
+    Prefer unit tasks over complex ones.
     tool_input:
     :param task_name: name of the task.
     :param task_description: detailed description of what needs to be done in order to implement task.
@@ -61,12 +66,14 @@ def delete_task(task_id):
 
 @tool
 def mark_task_as_done(task_id):
-    """Mark task as done in project management platform (Todoist).
+    """Mark task as done in project management platform (Todoist) and save changes to git.
     tool_input:
     :param task_id: id of the task.
     """
+    # TODO: Implement git upload functionality
+    # push to git after check has been confirmed
     todoist_api.close_task(task_id=task_id)
-    return {"status": "Task marked as done successfully"}
+    return "Task marked as done successfully"
 
 
 @tool
@@ -75,7 +82,21 @@ def ask_programmer_to_execute_task(task_id):
     tool_input:
     :param task_id: id of the task.
     """
-    raise NotImplementedError
+    task = todoist_api.get_task(task_id)
+    task_name_description = f"{task.content}\n{task.description}"
+    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
+    
+    # Execute the main pipeline to implement the task
+    run_clean_coder_pipeline(task_name_description)
+    
+    # Ask tester to check if changes have been implemented correctly
+    tester_query =  f"""Please check if the task has been implemented correctly.
+
+Task: {task_name_description}
+"""
+    tester_response = input(tester_query)
+    
+    return f"Task execution completed. Tester response: {tester_response}"
 
 
 @tool
@@ -84,9 +105,9 @@ def ask_tester_to_check_if_change_been_implemented_correctly(query):
     tool_input:
     :param query: write detailed query to the tester, asking what you want him to test.
     """
-    input(query)
+    return input(query)
     # push to git after check been confirmed
-    raise NotImplementedError
+
 
 
 if __name__ == "__main__":

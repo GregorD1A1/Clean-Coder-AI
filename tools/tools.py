@@ -6,13 +6,14 @@ import playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
+from utilities.coderignore_functions import file_folder_ignored, forbidden_files_and_folders
 from rag.retrieval import retrieve
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
-forbidden_files_list = os.getenv("FORBIDDEN_FILES").split(',')
 OAIclient = OpenAI()
+
 
 WRONG_EXECUTION_WORD = "Changes have not been introduced. "
 
@@ -35,6 +36,8 @@ def list_dir(directory):
     :param directory: Name of directory to list files in.
     """
     try:
+        if file_folder_ignored(directory, forbidden_files_and_folders):
+            return "You are not allowed to work with this directory."
         files = os.listdir(work_dir + directory)
         return files
     except Exception as e:
@@ -48,8 +51,8 @@ def see_file(filename):
     :param filename: Name and path of file to check.
     """
     try:
-        if filename in forbidden_files_list:
-            return "You are not allowed to see into this file."
+        if file_folder_ignored(filename, forbidden_files_and_folders):
+            return "You are not allowed to work with this file."
         with open(work_dir + filename, 'r', encoding='utf-8') as file:
             lines = file.readlines()
         formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
@@ -71,6 +74,7 @@ def retrieve_files_by_semantic_query(query):
 
     tool input:
     :param query: Semantic query describing subject you looking for in one sentence. Ask for a singe thing only.
+    Explain here thing you look only: good query is "<Thing I'm looking for>", bad query is "Find a files containing <thing I'm looking for>"
     """
     return retrieve(query)
 
@@ -150,7 +154,11 @@ def replace_code(filename, start_line,  code, end_line):
 
 @tool
 def create_file_with_code(filename, code):
-    """Create new file with provided code. Use that tool when want to insert some additional lines into code.
+    """Create new file with provided code. If you need to create directory, all directories in provided path will be
+    automatically created.
+
+    Do not write files longer than 1000 words. If you need to create big files, start small, and next add new functions
+    with another tools.
     tool input:
     :param filename: Name and path of file to create.
     :param code: Code to write in the file.
@@ -160,7 +168,14 @@ def create_file_with_code(filename, code):
         if human_message != 'ok':
             return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
-        with open(work_dir + filename, 'w', encoding='utf-8') as file:
+        full_path = os.path.join(work_dir, filename)
+        directory = os.path.dirname(full_path)
+
+        # Create directories if they don't exist
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        with open(full_path, 'w', encoding='utf-8') as file:
             file.write(code)
         return "File been created successfully."
     except Exception as e:
@@ -175,7 +190,7 @@ def ask_human_tool(prompt):
     :param prompt: prompt to human.
     """
     try:
-        human_message = input(prompt)
+        human_message = input(prompt + "\n")
         return human_message
     except Exception as e:
         return f"{type(e).__name__}: {e}"
@@ -206,3 +221,5 @@ def make_screenshot(endpoint, login_needed, commands):
     page.screenshot(path=work_dir + 'screenshots/screenshot.png')
     browser.close()
 
+if __name__ == '__main__':
+    print(see_file("/tools/tools.py"))

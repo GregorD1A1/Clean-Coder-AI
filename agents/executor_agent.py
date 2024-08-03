@@ -51,11 +51,14 @@ You are a senior programmer tasked with refining an existing codebase. Your goal
 introduce improvements using a set of provided tools. Each change should be implemented step by step, 
 meaning you make one modification at a time. Focus on enhancing individual functions or lines of code 
 rather than rewriting entire files at once.
+
+Not overcomplicate the code. Do not introduce sophisticated improvements when code is already working. Avoid improving in endless.
 \n\n
 Tools to your disposal:\n
 {rendered_tools}
 \n\n
 First, write your thinking process. Think step by step about what do you need to do to accomplish the task.
+Do not implement features unrelated to provided task.
 Reasoning part of your response is very important, never miss it! Even if the next step seems to be obvious.
 Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
 rest will be possibility to do later.
@@ -69,7 +72,9 @@ rest will be possibility to do later.
     )
 
 bad_json_format_msg = """Bad json format. Json should be enclosed with '```json', '```' tags.
-Code inside of json should be provided in the way that not makes json invalid."""
+Code inside of json should be provided in the way that not makes json invalid.
+No '```' tags should be inside of json."""
+
 
 class Executor():
     def __init__(self, files):

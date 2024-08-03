@@ -2,12 +2,17 @@ from langchain_core.messages import HumanMessage
 from utilities.util_functions import find_tool_json, find_tool_xml, print_wrapped
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
+from langchain_core.messages.ai import AIMessage
 
 
 # nodes
 def call_model(state, llm, stop_sequence_to_add=None):
     messages = state["messages"]
     response = llm.invoke(messages)
+    # Replicate returns string instead of AI Message, we need to handle it
+    if hasattr(llm, "bound") and 'Replicate' in str(llm.bound):
+        response = AIMessage(content=str(response))
+    # Add stop sequence if needed (sometimes needed for Claude)
     response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
     response.tool_call = find_tool_json(response.content)
     print_wrapped(response.content)

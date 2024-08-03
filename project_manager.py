@@ -1,6 +1,5 @@
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_mistralai.chat_models import ChatMistralAI
-from langchain_community.chat_models import ChatOllama
+from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -8,10 +7,11 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from tools.tools_project_manager import (get_project_tasks, add_task, modify_task, delete_task, mark_task_as_done,
-                                         ask_programmer_to_execute_task, ask_tester_to_check_if_change_been_implemented_correctly)
-from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped, read_project_knowledge
+                                         ask_programmer_to_execute_task)
+from tools.tools import list_dir, see_file, ask_human_tool
+from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped, read_project_description
 from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
-import os
+from langgraph.prebuilt import ToolNode
 
 
 load_dotenv(find_dotenv())
@@ -22,11 +22,14 @@ tools = [
     delete_task,
     mark_task_as_done,
     ask_programmer_to_execute_task,
-    ask_tester_to_check_if_change_been_implemented_correctly,
+    list_dir,
+    see_file,
+    ask_human_tool,
 ]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Planer"})
+llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
+#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 
 
 class AgentState(TypedDict):
@@ -36,22 +39,27 @@ class AgentState(TypedDict):
 bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
                        "and enclosed with '```json', '```' tags.")
 
-project_description = read_project_knowledge()
+project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
-
-project_description = """Backend for internet shop with skin bags.
-"""
 
 system_message = SystemMessage(content=f"""
 You are project manager that guides programmer in his work, plan future tasks, checks quality of their execution and 
 replans over and over (if needed) until project is finished.
+
+Remember to mark tasks as done after they finished and remove when not needed.
+
+Think and plan carefully before asking programmer to implement new features. Do not hesitate to write long reasonings 
+before choosing an action - you are brain worker. Make sure task list is actual before 
+choosing a task programmer need to work on. You can see project files by yourself to be able to define tasks more 
+precisely. Before starting doing new task think, if it could be divided to smaller tasks.
 
 Here is description of the project you work on:
 {project_description}
 
 You have access to following tools:
 {rendered_tools}\n
-First, provide step by step reasoning about what do you need to find in order to accomplish the task.
+First, provide step by step reasoning about what do you need to find in order to accomplish the task. Ensure, you have
+long and thoughtful reasoning before every tool call. Remember, you are brain worker.
 Next, generate response using json template: Choose only one tool to use.
 ```json
 {{
@@ -75,6 +83,9 @@ def call_model_manager(state):
 
 def call_tool_researcher(state):
     return call_tool(state, tool_executor)
+
+
+tool_node = ToolNode(tools)
 
 
 # Logic for conditional edges
@@ -108,13 +119,14 @@ researcher_workflow.add_conditional_edges(
 )
 researcher_workflow.add_edge("tool", "agent")
 
+
 researcher = researcher_workflow.compile()
 
 
 def research_task():
     print("Manager starting its work")
     inputs = {"messages": [system_message, HumanMessage(content="Go")]}
-    researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
+    researcher_response = researcher.invoke(inputs, {"recursion_limit": 200})["messages"][-2]
 
 if __name__ == "__main__":
     research_task()
