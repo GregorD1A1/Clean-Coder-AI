@@ -12,27 +12,25 @@ todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
-@tool
-def get_project_tasks():
-    """Get all tasks from project management platform (Todoist).
-    tool_input:
-    {}
-    """
-    tasks = todoist_api.get_tasks(project_id=PROJECT_ID)
-    return [f"'id': {task.id}, 'name': {task.content}, 'description': {task.description}\n" for task in tasks]
-
 
 @tool
-def add_task(task_name, task_description):
+def add_task(task_name, task_description, order):
     """Add new task to project management platform (Todoist).
-    Think very carefuuly before adding a new task to know what do you want exactly. Explain detailly what needs to be
-    done in order to execute task.
-    Prefer unit tasks over complex ones.
-    tool_input:
-    :param task_name: name of the task.
-    :param task_description: detailed description of what needs to be done in order to implement task.
-    """
-    task = todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description)
+Think very carefully before adding a new task to know what do you want exactly. Explain in detail what needs to be
+done in order to execute task.
+Avoid creating new tasks that have overlapping scope with old ones - modify or delete old tasks first.
+tool_input:
+:param task_name: name of the task. Good name is descriptive, starts with a verb and usually could be fitted in formula
+'To complete this task, I need to $TASK_NAME'.
+:param task_description: detailed description of what needs to be done in order to implement task.
+Good description include:
+- Definition of done (required) - section, describing what need to be done with acceptance criteria.
+- Story - user story for a developer explaining why do we want to do this task, why user needs it.
+- Resources (optional) - Include here all information that will be helpful for developer to complete task. Example code
+you found in internet, files dev need to use, technical details related to existing code dev need to pay attention on.
+:param order: order of the task in project.
+"""
+    task = todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
     return {"status": "Task added successfully", "task_id": task.id}
 
 
@@ -56,10 +54,10 @@ def modify_task(task_id, new_task_name=None, new_task_description=None):
 
 @tool
 def delete_task(task_id):
-    """Delete task in project management platform (Todoist).
-    tool_input:
-    :param task_id: id of the task.
-    """
+    """Delete task from project management platform (Todoist) when it's not needed.
+tool_input:
+:param task_id: id of the task.
+"""
     todoist_api.delete_task(task_id=task_id)
     return {"status": "Task deleted successfully"}
 
@@ -67,14 +65,23 @@ def delete_task(task_id):
 @tool
 def mark_task_as_done(task_id):
     """Mark task as done in project management platform (Todoist) and save changes to git.
-    tool_input:
-    :param task_id: id of the task.
-    """
+tool_input:
+:param task_id: id of the task.
+"""
     # TODO: Implement git upload functionality
     # push to git after check has been confirmed
     todoist_api.close_task(task_id=task_id)
     return "Task marked as done successfully"
 
+
+@tool
+def finish_project_planning():
+    """Call that tool when all task in Todoist correctly reflect work for nearest time. No extra tasks or tasks with
+overlapping scope allowed. Tasks should be in execution order. First task in order will be executed after human acceptance.
+tool_input:
+{}
+"""
+    return "Project planning finished"
 
 @tool
 def ask_programmer_to_execute_task(task_id):
@@ -107,6 +114,16 @@ def ask_tester_to_check_if_change_been_implemented_correctly(query):
     """
     return input(query)
     # push to git after check been confirmed
+
+
+@tool
+def final_response():
+    """Call that tool when task list is complete, ordered, task scopes are not overlapping and first task in order is
+precisely described. First task will be executed.
+tool input:
+{}
+"""
+    return
 
 
 

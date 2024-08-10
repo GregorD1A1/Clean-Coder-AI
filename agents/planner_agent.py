@@ -37,7 +37,7 @@ to execute task. When possible, plan consistent code with other files. Your reco
 - Details about new file creation,
 Plan should not include library installation or tests or anything else unrelated to code modifications.
 At every your message, you providing proposition of all changes, not just some. Never imagine files you have 
-not provided in context.
+not provided in context. Simplicity is a priority - write minimum needed amount of code.
 
 Do not rewrite full code, instead only write changes and point places where they need to be inserted. 
 Show with pluses (+) and minuses (-), where you want to add/remove code.
@@ -160,7 +160,7 @@ researcher = researcher_workflow.compile()
 
 
 def planning(task, file_contents, images):
-    print("Planner starting its work")
+    print("\n\n\nPlanner starting its work")
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"
     message_without_imgs = HumanMessage(content=message_content_without_imgs)
     message_images = HumanMessage(content=images)

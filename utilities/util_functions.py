@@ -6,11 +6,14 @@ from tools.tools import see_file
 from dotenv import load_dotenv, find_dotenv
 import xml.etree.ElementTree as ET
 from termcolor import colored
+from todoist_api_python.api import TodoistAPI
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
+todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
+PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
 
@@ -95,3 +98,10 @@ def read_project_description():
         project_knowledge = f.read()
 
     return project_knowledge
+
+def get_project_tasks():
+    tasks = todoist_api.get_tasks(project_id=PROJECT_ID)
+    tasks_string = "\n".join(
+        f"id: {task.id}, name: {task.content}, description: {task.description}, order: {task.order}" for task in tasks
+    )
+    return "Tasks in Todoist:\n" + tasks_string

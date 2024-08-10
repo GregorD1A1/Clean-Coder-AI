@@ -6,25 +6,27 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from tools.tools_project_manager import (get_project_tasks, add_task, modify_task, delete_task, mark_task_as_done,
-                                         ask_programmer_to_execute_task)
+from tools.tools_project_manager import add_task, modify_task, delete_task, final_response
 from tools.tools import list_dir, see_file, ask_human_tool
-from utilities.util_functions import check_file_contents, find_tool_json, print_wrapped, read_project_description
-from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
+from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
+from langchain_community.tools.tavily_search.tool import TavilySearchResults
+from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks
+from utilities.langgraph_common_functions import call_model, call_tool, after_ask_human_condition
 from langgraph.prebuilt import ToolNode
 
 
 load_dotenv(find_dotenv())
+tavily_api_wrapper = TavilySearchAPIWrapper()
+internet_research = TavilySearchResults(api_wrapper=tavily_api_wrapper)
 tools = [
-    get_project_tasks,
     add_task,
     modify_task,
     delete_task,
-    mark_task_as_done,
-    ask_programmer_to_execute_task,
     list_dir,
     see_file,
+    internet_research,
     ask_human_tool,
+    final_response,
 ]
 rendered_tools = render_text_description(tools)
 
@@ -43,15 +45,11 @@ project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
 
 system_message = SystemMessage(content=f"""
-You are project manager that guides programmer in his work, plan future tasks, checks quality of their execution and 
-replans over and over (if needed) until project is finished.
+You are project manager that plans future tasks for programmer. You need to plan the work task by task in proper order.
+When you unsure how some feature need to be implemented, you doing internet research or asking human.
 
-Remember to mark tasks as done after they finished and remove when not needed.
-
-Think and plan carefully before asking programmer to implement new features. Do not hesitate to write long reasonings 
-before choosing an action - you are brain worker. Make sure task list is actual before 
-choosing a task programmer need to work on. You can see project files by yourself to be able to define tasks more 
-precisely. Before starting doing new task think, if it could be divided to smaller tasks.
+Think and plan carefully. Do not hesitate to write long reasoning before choosing an action - you are brain worker. 
+You can see project files by yourself to be able to define tasks more project content related. 
 
 Here is description of the project you work on:
 {project_description}
@@ -81,7 +79,8 @@ def call_model_manager(state):
     return state
 
 
-def call_tool_researcher(state):
+def call_tool_manager(state):
+    state = exchange_tasks_list(state)
     return call_tool(state, tool_executor)
 
 
@@ -94,39 +93,44 @@ def after_agent_condition(state):
 
     if last_message.content == bad_json_format_msg:
         return "agent"
-    elif last_message.tool_call["tool"] == "final_response":
-        return "human"
     else:
         return "tool"
 
 
+# just functions
+def exchange_tasks_list(state):
+    # Remove old tasks message
+    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "project_tasks_message")]
+    # Add new message
+    project_tasks = get_project_tasks()
+    file_contents_msg = HumanMessage(content=project_tasks, project_tasks_message=True)
+    state["messages"].append(file_contents_msg)
+    return state
+
+
 # workflow definition
-researcher_workflow = StateGraph(AgentState)
+manager_workflow = StateGraph(AgentState)
 
-researcher_workflow.add_node("agent", call_model_manager)
-researcher_workflow.add_node("tool", call_tool_researcher)
-researcher_workflow.add_node("human", ask_human)
+manager_workflow.add_node("agent", call_model_manager)
+manager_workflow.add_node("tool", call_tool_manager)
 
-researcher_workflow.set_entry_point("agent")
+manager_workflow.set_entry_point("agent")
 
-researcher_workflow.add_conditional_edges(
+manager_workflow.add_conditional_edges(
     "agent",
     after_agent_condition,
 )
-researcher_workflow.add_conditional_edges(
-    "human",
-    after_ask_human_condition,
-)
-researcher_workflow.add_edge("tool", "agent")
+manager_workflow.add_edge("tool", "agent")
 
 
-researcher = researcher_workflow.compile()
+manager = manager_workflow.compile()
 
 
-def research_task():
+def run_manager():
     print("Manager starting its work")
-    inputs = {"messages": [system_message, HumanMessage(content="Go")]}
-    researcher_response = researcher.invoke(inputs, {"recursion_limit": 200})["messages"][-2]
+    project_tasks = get_project_tasks()
+    inputs = {"messages": [system_message, HumanMessage(content=project_tasks, project_tasks_message=True)]}
+    manager.invoke(inputs, {"recursion_limit": 200})["messages"][-2]
 
 if __name__ == "__main__":
-    research_task()
+    run_manager()

@@ -125,7 +125,7 @@ def insert_code(filename, line_number, code):
 @tool
 def replace_code(filename, start_line,  code, end_line):
     """Replace old piece of code between start_line and end_line with new one. Proper indentation is important.
-    Use that tool
+    Avoid changing multiple functions at once.
     tool input:
     :param filename: Name and path of file to change.
     :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
@@ -185,12 +185,12 @@ def create_file_with_code(filename, code):
 @tool
 def ask_human_tool(prompt):
     """
-    Ask human to provide debug actions or observations you're not available to do.
+    Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
     tool input:
     :param prompt: prompt to human.
     """
     try:
-        human_message = input(prompt + "\n")
+        human_message = input(prompt)
         return human_message
     except Exception as e:
         return f"{type(e).__name__}: {e}"

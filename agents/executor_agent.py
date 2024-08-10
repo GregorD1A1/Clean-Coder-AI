@@ -22,10 +22,12 @@ log_file_path = os.getenv("LOG_FILE")
 
 
 @tool
-def final_response():
-    """Call that tool when all changes are implemented to tell the job is done. If you have no idea which tool to call,
-    call that."""
-    pass
+def final_response(test_instruction):
+    """Call that tool when all changes are implemented to tell the job is done.
+tool input:
+:param test_instruction: write detailed instruction for human what actions he need to do in order to check if
+implemented changes work correctly."""
+    print_wrapped(test_instruction, color="blue")
 
 
 tools = [see_file, insert_code, replace_code, create_file_with_code, ask_human_tool, final_response]
@@ -49,7 +51,7 @@ system_message = SystemMessage(
         content=f"""
 You are a senior programmer tasked with refining an existing codebase. Your goal is to incrementally 
 introduce improvements using a set of provided tools. Each change should be implemented step by step, 
-meaning you make one modification at a time. Focus on enhancing individual functions or lines of code 
+meaning you make one modification at a time. Focus on individual functions or lines of code 
 rather than rewriting entire files at once.
 
 Not overcomplicate the code. Do not introduce sophisticated improvements when code is already working. Avoid improving in endless.
@@ -179,7 +181,7 @@ class Executor():
         return state
 
     def do_task(self, task, plan, file_contents):
-        print("Executor starting its work")
+        print("\n\n\nExecutor starting its work")
         inputs = {"messages": [
             system_message,
             HumanMessage(content=f"Task: {task}\n\n###\n\nPlan: {plan}"),
