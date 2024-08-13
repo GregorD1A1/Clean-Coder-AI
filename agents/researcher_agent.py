@@ -15,10 +15,11 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
-from tools.tools import list_dir, see_file, see_image, retrieve_files_by_semantic_query
+from tools.tools_coder_pipeline import list_dir, see_file, see_image, retrieve_files_by_semantic_query
 from rag.retrieval import vdb_availabe
 from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped
-from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
+from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
+                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 import os
 
 
@@ -49,8 +50,8 @@ rendered_tools = render_text_description(tools)
 #stop_sequence = "\n```\n"
 stop_sequence = None
 
-#llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+#llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="llama3.1")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
@@ -71,9 +72,6 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
-bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
-                       "and enclosed with '```json', '```' tags.")
-
 tool_executor = ToolExecutor(tools)
 system_message_content = f"""As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
 You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving the final answer.
@@ -81,12 +79,11 @@ The more folders/files you will check, the more they will pay you.
 When you discover significant dependencies from one file to another, ensure to inspect both. 
 Your final selection should include files needed to be modified or needed as reference for a programmer 
 (for example to see how code in similar file implemented). 
-Avoid recommending unseen or non-existent files in final response. Start from '/' directory.
+Avoid recommending unseen or non-existent files in final response. Important: you are not allowed to modify any files!
 You need to point out all files programmer needed to see to execute the task and only that task. Task is:
 '''
 {{task}}
 '''
-As a researcher, you are not allowed to make any code modifications. 
 
 You have access to following tools:
 {rendered_tools}
@@ -120,7 +117,7 @@ def call_tool_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content == bad_json_format_msg:
+    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
         return "agent"
     elif last_message.tool_call["tool"] == "final_response":
         return "human"

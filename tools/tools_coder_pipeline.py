@@ -15,7 +15,8 @@ work_dir = os.getenv("WORK_DIR")
 OAIclient = OpenAI()
 
 
-WRONG_EXECUTION_WORD = "Changes have not been introduced. "
+TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
+#SUCCESSFUL_EXECUTION_WORD = "Tool been executed successfully."
 
 syntax_error_insert_code = """
 Changes can cause next error: {error_response}. Probably you:
@@ -110,10 +111,10 @@ def insert_code(filename, line_number, code):
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
                 print("Wrong syntax provided, asking to correct.")
-                return WRONG_EXECUTION_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
+                return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
-                return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+                return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
             file.write(file_contents)
@@ -140,10 +141,10 @@ def replace_code(filename, start_line,  code, end_line):
             check_syntax_response = check_syntax(file_contents, filename)
             if check_syntax_response != "Valid syntax":
                 print(check_syntax_response)
-                return WRONG_EXECUTION_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
+                return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
             human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
-                return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+                return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
             file.seek(0)
             file.truncate()
             file.write(file_contents)
@@ -166,7 +167,7 @@ def create_file_with_code(filename, code):
     try:
         human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
         if human_message != 'ok':
-            return WRONG_EXECUTION_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+            return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
         full_path = os.path.join(work_dir, filename)
         directory = os.path.dirname(full_path)

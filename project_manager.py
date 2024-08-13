@@ -6,12 +6,13 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from tools.tools_project_manager import add_task, modify_task, delete_task, final_response
-from tools.tools import list_dir, see_file, ask_human_tool
+from tools.tools_project_manager import add_task, modify_task, delete_task, finish_project_planning, reorder_tasks
+from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks
-from utilities.langgraph_common_functions import call_model, call_tool, after_ask_human_condition
+from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
+                                                  no_json_msg)
 from langgraph.prebuilt import ToolNode
 
 
@@ -22,11 +23,12 @@ tools = [
     add_task,
     modify_task,
     delete_task,
+    reorder_tasks,
     list_dir,
     see_file,
     internet_research,
     ask_human_tool,
-    final_response,
+    finish_project_planning,
 ]
 rendered_tools = render_text_description(tools)
 
@@ -37,9 +39,6 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Mana
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
-
-bad_json_format_msg = ("Bad json format. Json should contain fields 'tool' and 'tool_input' "
-                       "and enclosed with '```json', '```' tags.")
 
 project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
@@ -80,8 +79,9 @@ def call_model_manager(state):
 
 
 def call_tool_manager(state):
+    state = call_tool(state, tool_executor)
     state = exchange_tasks_list(state)
-    return call_tool(state, tool_executor)
+    return state
 
 
 tool_node = ToolNode(tools)
@@ -91,8 +91,10 @@ tool_node = ToolNode(tools)
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content == bad_json_format_msg:
+    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
         return "agent"
+    elif last_message.tool_call["tool"] != "finish_project_planning":
+        return "human"
     else:
         return "tool"
 

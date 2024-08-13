@@ -119,23 +119,6 @@ def call_planers(state):
     state["messages"].append(plan)
     print_wrapped(f"Chosen plan:\n\n{plan.content}")
 
-    '''
-    print("Checking files completeness...")
-    files = "['MemorialProfile.vue', 'WorkPage.vue']"   # dummy files for now
-    chain = llm_secretary | XMLOutputParser()
-    state["secretary_messages"].append(HumanMessage(
-        content=f"""
-        Plan:\n\n{plan.content}\n\n###\n\nFiles:\n\n{files}\n
-    """
-    ))
-    secretary_response = chain.invoke(state["secretary_messages"])
-    print(secretary_response)
-    msg_to_file_researcher = secretary_response["response"][1]["message_to_file_researcher"]
-
-    if msg_to_file_researcher != "No any additional files needed.":
-        pass
-    '''
-
     return state
 
 

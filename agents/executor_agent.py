@@ -1,6 +1,5 @@
 import os
-from tools.tools import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool
-from tools.tools import WRONG_EXECUTION_WORD
+from tools.tools_coder_pipeline import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool, TOOL_NOT_EXECUTED_WORD
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -10,11 +9,13 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
-from langchain_anthropic import ChatAnthropic
-from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
-from utilities.langgraph_common_functions import call_model, call_tool, ask_human, after_ask_human_condition
 from langchain_groq import ChatGroq
 from langchain_together import ChatTogether
+from langchain_anthropic import ChatAnthropic
+from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
+from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
+                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
+
 
 
 load_dotenv(find_dotenv())
@@ -73,10 +74,6 @@ rest will be possibility to do later.
 """
     )
 
-bad_json_format_msg = """Bad json format. Json should be enclosed with '```json', '```' tags.
-Code inside of json should be provided in the way that not makes json invalid.
-No '```' tags should be inside of json."""
-
 
 class Executor():
     def __init__(self, files):
@@ -105,18 +102,7 @@ class Executor():
     def call_model_executor(self, state):
         #stop_sequence = None
         state, response = call_model(state, llm, stop_sequence_to_add=stop_sequence)
-        # safety mechanism for a bad json
-        tool_call = response.tool_call
-        if tool_call is None or "tool" not in tool_call:
-            state["messages"].append(HumanMessage(content=bad_json_format_msg))
-            print("\nBad json provided, asked to provide again.")
-        elif tool_call == "Multiple jsons found.":
-            state["messages"].append(HumanMessage(content="You written multiple jsons at once. If you want to execute multiple "
-                                                 "actions, choose only one for now; rest you can execute later."))
-            print("\nToo many jsons provided, asked to provide one.")
-        elif tool_call == "No json found in response.":
-            state["messages"].append(HumanMessage(content="Good. Please provide a json tool call to execute an action."))
-            print("\nNo json provided, asked to provide one.")
+
         return state
 
     def call_tool_executor(self, state):
@@ -125,22 +111,7 @@ class Executor():
         if last_ai_message.tool_call["tool"] == "create_file_with_code":
             self.files.add(last_ai_message.tool_call["tool_input"]["filename"])
         if last_ai_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
-            # marking messages if they haven't introduced changes
-            if last_ai_message.content.startswith(WRONG_EXECUTION_WORD):
-                # last tool response message
-                state["messages"][-1].to_remove = True
-                print("check if to_remove flag saved: ", state["messages"][-1], state["messages"][-1].to_remove)
-            else:
-                state = self.exchange_file_contents(state)
-            print("to_removes: ", len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]))
-            # checking if we have at least 3 "to_remove" messages in state and then calling human
-            if len([msg for msg in state["messages"] if hasattr(msg, "to_remove")]) >= 3:
-                print("more than 3 repeats")
-                # remove all messages (with and without "to_remove") since first "to_remove" message
-                state["messages"] = state["messages"][:state["messages"].index([msg for msg in state["messages"] if hasattr(msg, "to_remove")][0])]
-                human_input = input("Please suggest AI how to introduce that change correctly:")
-                state.append(HumanMessage(content=human_input))
-
+            state = self.exchange_file_contents(state)
         return state
 
     def check_log(self, state):
@@ -155,12 +126,21 @@ class Executor():
     def after_agent_condition(self, state):
         last_message = state["messages"][-1]
 
-        if last_message.content == bad_json_format_msg:
+        # safety mechanism for looped wrong tool call
+        last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
+        print("last human messages", last_human_messages)
+        tool_not_executed_human_msgs = [m for m in last_human_messages if m.content.startswith(TOOL_NOT_EXECUTED_WORD)]
+        print("tool_not_executed_human_msgs", tool_not_executed_human_msgs)
+        if len(tool_not_executed_human_msgs) == 3:
+            print("Seems like AI been looped. Please suggest it how to introduce change correctly:")
+            return "human"
+
+        elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.tool_call["tool"] != "final_response":
-            return "tool"
-        else:
+        elif last_message.tool_call["tool"] == "final_response":
             return "check_log" if log_file_path else "human"
+        else:
+            return "tool"
 
     def after_check_log_condition(self, state):
         last_message = state["messages"][-1]
@@ -188,6 +168,15 @@ class Executor():
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
         self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":

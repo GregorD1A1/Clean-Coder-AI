@@ -2,7 +2,7 @@ import re
 import json
 import os
 import textwrap
-from tools.tools import see_file
+from tools.tools_coder_pipeline import see_file
 from dotenv import load_dotenv, find_dotenv
 import xml.etree.ElementTree as ET
 from termcolor import colored
@@ -46,6 +46,7 @@ def find_tool_json(response):
         except json.JSONDecodeError:
             return "Invalid json."
     elif len(matches) > 1:
+        print("Multiple jsons found.")
         return "Multiple jsons found."
     else:
         print("No json found in response.")
@@ -99,9 +100,14 @@ def read_project_description():
 
     return project_knowledge
 
+
 def get_project_tasks():
     tasks = todoist_api.get_tasks(project_id=PROJECT_ID)
     tasks_string = "\n".join(
-        f"id: {task.id}, name: {task.content}, description: {task.description}, order: {task.order}" for task in tasks
+        f"id: {task.id}, \nName: {task.content}, \nDescription: {task.description}, \nOrder: {task.order}\n\n" for task in tasks
     )
     return "Tasks in Todoist:\n" + tasks_string
+
+
+if __name__ == "__main__":
+    print(get_project_tasks())
