@@ -35,7 +35,7 @@ you found in internet, files dev need to use, technical details related to exist
 :param order: order of the task in project.
 """
     task = todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
-    return {"status": "Task added successfully", "task_id": task.id}
+    return "Task added successfully"
 
 
 @tool
@@ -54,7 +54,7 @@ def modify_task(task_id, new_task_name=None, new_task_description=None):
 
     todoist_api.update_task(task_id=task_id, **update_data)
 
-    return {"status": "Task modified successfully"}
+    return "Task modified successfully"
 
 
 @tool
@@ -76,7 +76,7 @@ def reorder_tasks(tasks):
         headers={"Authorization": f"Bearer {todoist_api_key}"},
         data={"commands": commands_json}
     )
-    return {"status": "Tasks reordered successfully", "response": response}
+    return "Tasks reordered successfully"
 
 
 @tool
@@ -86,10 +86,9 @@ tool_input:
 :param task_id: id of the task.
 """
     todoist_api.delete_task(task_id=task_id)
-    return {"status": "Task deleted successfully"}
+    return "Task deleted successfully"
 
 
-@tool
 def ask_programmer_to_execute_task(task_id):
     """Ask programmer to implement given task.
     tool_input:
@@ -102,19 +101,7 @@ def ask_programmer_to_execute_task(task_id):
     # Execute the main pipeline to implement the task
     run_clean_coder_pipeline(task_name_description)
 
-    # Mark task as done
-    todoist_api.close_task(task_id=task_id)
 
-    # ToDo: git upload
-
-    # Ask tester to check if changes have been implemented correctly
-    tester_query =  f"""Please check if the task has been implemented correctly.
-
-Task: {task_name_description}
-"""
-    tester_response = input(tester_query)
-
-    return f"Task execution completed. Tester response: {tester_response}"
 
 
 @tool
@@ -124,7 +111,33 @@ overlapping scope allowed. Tasks should be in execution order. First task in ord
 tool_input:
 {}
 """
-    return "Project planning finished"
+    human_comment = input(
+        "Project planning finished. Provide your proposition of changes in the project tasks or write 'ok' to continue...\n"
+    )
+    if human_comment != "ok":
+        return human_comment
+
+    # Get first task and it's name and description
+    task = todoist_api.get_tasks(project_id=PROJECT_ID)[0]
+    task_name_description = f"{task.content}\n{task.description}"
+
+    # Execute the main pipeline to implement the task
+    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
+    run_clean_coder_pipeline(task_name_description)
+
+    # Mark task as done
+    todoist_api.close_task(task_id=task.id)
+
+    # ToDo: git upload
+
+    # Ask tester to check if changes have been implemented correctly
+    tester_query = f"""Please check if the task has been implemented correctly.
+
+    Task: {task_name_description}
+    """
+    tester_response = input(tester_query)
+
+    return f"Task execution completed. Tester response: {tester_response}"
 
 
 if __name__ == "__main__":
@@ -138,4 +151,5 @@ if __name__ == "__main__":
         ]
     )"""
     from utilities.util_functions import get_project_tasks
-    #print(get_project_tasks())
+    print(get_project_tasks())
+    finish_project_planning.invoke({})

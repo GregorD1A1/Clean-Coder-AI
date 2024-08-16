@@ -12,7 +12,7 @@ from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
-                                                  no_json_msg)
+                                                  no_json_msg, ask_human)
 from langgraph.prebuilt import ToolNode
 
 
@@ -93,8 +93,6 @@ def after_agent_condition(state):
 
     if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
         return "agent"
-    elif last_message.tool_call["tool"] != "finish_project_planning":
-        return "human"
     else:
         return "tool"
 
