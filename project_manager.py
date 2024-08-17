@@ -10,6 +10,7 @@ from tools.tools_project_manager import add_task, modify_task, delete_task, fini
 from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
+from langchain_community.chat_models import ChatOllama
 from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg, ask_human)
@@ -34,6 +35,7 @@ rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
+#llm = ChatOllama(model="llama3.1:8b-instruct-fp16")
 
 
 class AgentState(TypedDict):

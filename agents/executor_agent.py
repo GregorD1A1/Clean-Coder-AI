@@ -10,7 +10,6 @@ from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_groq import ChatGroq
-from langchain_together import ChatTogether
 from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,

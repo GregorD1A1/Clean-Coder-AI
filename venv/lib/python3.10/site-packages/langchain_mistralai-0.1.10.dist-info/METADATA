@@ -1,0 +1,78 @@
+Metadata-Version: 2.1
+Name: langchain-mistralai
+Version: 0.1.10
+Summary: An integration package connecting Mistral and LangChain
+Home-page: https://github.com/langchain-ai/langchain
+License: MIT
+Requires-Python: >=3.8.1,<4.0
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Requires-Dist: httpx (>=0.25.2,<1)
+Requires-Dist: httpx-sse (>=0.3.1,<1)
+Requires-Dist: langchain-core (>=0.2.17,<0.3)
+Requires-Dist: tokenizers (>=0.15.1,<1)
+Project-URL: Repository, https://github.com/langchain-ai/langchain
+Project-URL: Source Code, https://github.com/langchain-ai/langchain/tree/master/libs/partners/mistralai
+Description-Content-Type: text/markdown
+
+# langchain-mistralai
+
+This package contains the LangChain integrations for [MistralAI](https://docs.mistral.ai) through their [mistralai](https://pypi.org/project/mistralai/) SDK.
+
+## Installation
+
+```bash
+pip install -U langchain-mistralai
+```
+
+## Chat Models
+
+This package contains the `ChatMistralAI` class, which is the recommended way to interface with MistralAI models.
+
+To use, install the requirements, and configure your environment.
+
+```bash
+export MISTRAL_API_KEY=your-api-key
+```
+
+Then initialize
+
+```python
+from langchain_core.messages import HumanMessage
+from langchain_mistralai.chat_models import ChatMistralAI
+
+chat = ChatMistralAI(model="mistral-small")
+messages = [HumanMessage(content="say a brief hello")]
+chat.invoke(messages)
+```
+
+`ChatMistralAI` also supports async and streaming functionality:
+
+```python
+# For async...
+await chat.ainvoke(messages)
+
+# For streaming...
+for chunk in chat.stream(messages):
+    print(chunk.content, end="", flush=True)
+```
+
+## Embeddings
+
+With `MistralAIEmbeddings`, you can directly use the default model 'mistral-embed', or set a different one if available.
+
+### Choose model
+
+`embedding.model = 'mistral-embed'`
+
+### Simple query
+
+`res_query = embedding.embed_query("The test information")`
+
+### Documents
+
+`res_document = embedding.embed_documents(["test1", "another test"])`

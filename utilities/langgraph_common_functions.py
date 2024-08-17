@@ -23,7 +23,6 @@ def call_model(state, llm, stop_sequence_to_add=None):
     # Add stop sequence if needed (sometimes needed for Claude)
     response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
     response.tool_call = find_tool_json(response.content)
-    print("Tool call: ", response.tool_call)
     print_wrapped(response.content)
     state["messages"].append(response)
 

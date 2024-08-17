@@ -1,0 +1,620 @@
+Metadata-Version: 2.1
+Name: replicate
+Version: 0.31.0
+Summary: Python client for Replicate
+Author: Replicate, Inc.
+License: 
+                                         Apache License
+                                   Version 2.0, January 2004
+                                http://www.apache.org/licenses/
+        
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+        
+           1. Definitions.
+        
+              "License" shall mean the terms and conditions for use, reproduction,
+              and distribution as defined by Sections 1 through 9 of this document.
+        
+              "Licensor" shall mean the copyright owner or entity authorized by
+              the copyright owner that is granting the License.
+        
+              "Legal Entity" shall mean the union of the acting entity and all
+              other entities that control, are controlled by, or are under common
+              control with that entity. For the purposes of this definition,
+              "control" means (i) the power, direct or indirect, to cause the
+              direction or management of such entity, whether by contract or
+              otherwise, or (ii) ownership of fifty percent (50%) or more of the
+              outstanding shares, or (iii) beneficial ownership of such entity.
+        
+              "You" (or "Your") shall mean an individual or Legal Entity
+              exercising permissions granted by this License.
+        
+              "Source" form shall mean the preferred form for making modifications,
+              including but not limited to software source code, documentation
+              source, and configuration files.
+        
+              "Object" form shall mean any form resulting from mechanical
+              transformation or translation of a Source form, including but
+              not limited to compiled object code, generated documentation,
+              and conversions to other media types.
+        
+              "Work" shall mean the work of authorship, whether in Source or
+              Object form, made available under the License, as indicated by a
+              copyright notice that is included in or attached to the work
+              (an example is provided in the Appendix below).
+        
+              "Derivative Works" shall mean any work, whether in Source or Object
+              form, that is based on (or derived from) the Work and for which the
+              editorial revisions, annotations, elaborations, or other modifications
+              represent, as a whole, an original work of authorship. For the purposes
+              of this License, Derivative Works shall not include works that remain
+              separable from, or merely link (or bind by name) to the interfaces of,
+              the Work and Derivative Works thereof.
+        
+              "Contribution" shall mean any work of authorship, including
+              the original version of the Work and any modifications or additions
+              to that Work or Derivative Works thereof, that is intentionally
+              submitted to Licensor for inclusion in the Work by the copyright owner
+              or by an individual or Legal Entity authorized to submit on behalf of
+              the copyright owner. For the purposes of this definition, "submitted"
+              means any form of electronic, verbal, or written communication sent
+              to the Licensor or its representatives, including but not limited to
+              communication on electronic mailing lists, source code control systems,
+              and issue tracking systems that are managed by, or on behalf of, the
+              Licensor for the purpose of discussing and improving the Work, but
+              excluding communication that is conspicuously marked or otherwise
+              designated in writing by the copyright owner as "Not a Contribution."
+        
+              "Contributor" shall mean Licensor and any individual or Legal Entity
+              on behalf of whom a Contribution has been received by Licensor and
+              subsequently incorporated within the Work.
+        
+           2. Grant of Copyright License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              copyright license to reproduce, prepare Derivative Works of,
+              publicly display, publicly perform, sublicense, and distribute the
+              Work and such Derivative Works in Source or Object form.
+        
+           3. Grant of Patent License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              (except as stated in this section) patent license to make, have made,
+              use, offer to sell, sell, import, and otherwise transfer the Work,
+              where such license applies only to those patent claims licensable
+              by such Contributor that are necessarily infringed by their
+              Contribution(s) alone or by combination of their Contribution(s)
+              with the Work to which such Contribution(s) was submitted. If You
+              institute patent litigation against any entity (including a
+              cross-claim or counterclaim in a lawsuit) alleging that the Work
+              or a Contribution incorporated within the Work constitutes direct
+              or contributory patent infringement, then any patent licenses
+              granted to You under this License for that Work shall terminate
+              as of the date such litigation is filed.
+        
+           4. Redistribution. You may reproduce and distribute copies of the
+              Work or Derivative Works thereof in any medium, with or without
+              modifications, and in Source or Object form, provided that You
+              meet the following conditions:
+        
+              (a) You must give any other recipients of the Work or
+                  Derivative Works a copy of this License; and
+        
+              (b) You must cause any modified files to carry prominent notices
+                  stating that You changed the files; and
+        
+              (c) You must retain, in the Source form of any Derivative Works
+                  that You distribute, all copyright, patent, trademark, and
+                  attribution notices from the Source form of the Work,
+                  excluding those notices that do not pertain to any part of
+                  the Derivative Works; and
+        
+              (d) If the Work includes a "NOTICE" text file as part of its
+                  distribution, then any Derivative Works that You distribute must
+                  include a readable copy of the attribution notices contained
+                  within such NOTICE file, excluding those notices that do not
+                  pertain to any part of the Derivative Works, in at least one
+                  of the following places: within a NOTICE text file distributed
+                  as part of the Derivative Works; within the Source form or
+                  documentation, if provided along with the Derivative Works; or,
+                  within a display generated by the Derivative Works, if and
+                  wherever such third-party notices normally appear. The contents
+                  of the NOTICE file are for informational purposes only and
+                  do not modify the License. You may add Your own attribution
+                  notices within Derivative Works that You distribute, alongside
+                  or as an addendum to the NOTICE text from the Work, provided
+                  that such additional attribution notices cannot be construed
+                  as modifying the License.
+        
+              You may add Your own copyright statement to Your modifications and
+              may provide additional or different license terms and conditions
+              for use, reproduction, or distribution of Your modifications, or
+              for any such Derivative Works as a whole, provided Your use,
+              reproduction, and distribution of the Work otherwise complies with
+              the conditions stated in this License.
+        
+           5. Submission of Contributions. Unless You explicitly state otherwise,
+              any Contribution intentionally submitted for inclusion in the Work
+              by You to the Licensor shall be under the terms and conditions of
+              this License, without any additional terms or conditions.
+              Notwithstanding the above, nothing herein shall supersede or modify
+              the terms of any separate license agreement you may have executed
+              with Licensor regarding such Contributions.
+        
+           6. Trademarks. This License does not grant permission to use the trade
+              names, trademarks, service marks, or product names of the Licensor,
+              except as required for reasonable and customary use in describing the
+              origin of the Work and reproducing the content of the NOTICE file.
+        
+           7. Disclaimer of Warranty. Unless required by applicable law or
+              agreed to in writing, Licensor provides the Work (and each
+              Contributor provides its Contributions) on an "AS IS" BASIS,
+              WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+              implied, including, without limitation, any warranties or conditions
+              of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+              PARTICULAR PURPOSE. You are solely responsible for determining the
+              appropriateness of using or redistributing the Work and assume any
+              risks associated with Your exercise of permissions under this License.
+        
+           8. Limitation of Liability. In no event and under no legal theory,
+              whether in tort (including negligence), contract, or otherwise,
+              unless required by applicable law (such as deliberate and grossly
+              negligent acts) or agreed to in writing, shall any Contributor be
+              liable to You for damages, including any direct, indirect, special,
+              incidental, or consequential damages of any character arising as a
+              result of this License or out of the use or inability to use the
+              Work (including but not limited to damages for loss of goodwill,
+              work stoppage, computer failure or malfunction, or any and all
+              other commercial damages or losses), even if such Contributor
+              has been advised of the possibility of such damages.
+        
+           9. Accepting Warranty or Additional Liability. While redistributing
+              the Work or Derivative Works thereof, You may choose to offer,
+              and charge a fee for, acceptance of support, warranty, indemnity,
+              or other liability obligations and/or rights consistent with this
+              License. However, in accepting such obligations, You may act only
+              on Your own behalf and on Your sole responsibility, not on behalf
+              of any other Contributor, and only if You agree to indemnify,
+              defend, and hold each Contributor harmless for any liability
+              incurred by, or claims asserted against, such Contributor by reason
+              of your accepting any such warranty or additional liability.
+        
+           END OF TERMS AND CONDITIONS
+        
+           APPENDIX: How to apply the Apache License to your work.
+        
+              To apply the Apache License to your work, attach the following
+              boilerplate notice, with the fields enclosed by brackets "[]"
+              replaced with your own identifying information. (Don't include
+              the brackets!)  The text should be enclosed in the appropriate
+              comment syntax for the file format. We also recommend that a
+              file or class name and description of purpose be included on the
+              same "printed page" as the copyright notice for easier
+              identification within third-party archives.
+        
+           Copyright 2022, Replicate, Inc.
+        
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+        
+               http://www.apache.org/licenses/LICENSE-2.0
+        
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+Project-URL: homepage, https://replicate.com
+Project-URL: repository, https://github.com/replicate/replicate-python
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: httpx <1,>=0.21.0
+Requires-Dist: packaging
+Requires-Dist: pydantic >1.10.7
+Requires-Dist: typing-extensions >=4.5.0
+
+# Replicate Python client
+
+This is a Python client for [Replicate](https://replicate.com). It lets you run models from your Python code or Jupyter notebook, and do various other things on Replicate.
+
+> **👋** Check out an interactive version of this tutorial on [Google Colab](https://colab.research.google.com/drive/1K91q4p-OhL96FHBAVLsv9FlwFdu6Pn3c).
+>
+> [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1K91q4p-OhL96FHBAVLsv9FlwFdu6Pn3c)
+
+## Requirements
+
+- Python 3.8+
+
+## Install
+
+```sh
+pip install replicate
+```
+
+## Authenticate
+
+Before running any Python scripts that use the API, you need to set your Replicate API token in your environment.
+
+Grab your token from [replicate.com/account](https://replicate.com/account) and set it as an environment variable:
+
+```
+export REPLICATE_API_TOKEN=<your token>
+```
+
+We recommend not adding the token directly to your source code, because you don't want to put your credentials in source control. If anyone used your API key, their usage would be charged to your account.
+
+## Run a model
+
+Create a new Python file and add the following code, 
+replacing the model identifier and input with your own:
+
+```python
+>>> import replicate
+>>> replicate.run(
+        "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+        input={"prompt": "a 19th century portrait of a wombat gentleman"}
+    )
+
+['https://replicate.com/api/models/stability-ai/stable-diffusion/files/50fcac81-865d-499e-81ac-49de0cb79264/out-0.png']
+```
+
+> [!TIP]
+> You can also use the Replicate client asynchronously by prepending `async_` to the method name. 
+> 
+> Here's an example of how to run several predictions concurrently and wait for them all to complete:
+>
+> ```python
+> import asyncio
+> import replicate
+> 
+> # https://replicate.com/stability-ai/sdxl
+> model_version = "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b"
+> prompts = [
+>     f"A chariot pulled by a team of {count} rainbow unicorns"
+>     for count in ["two", "four", "six", "eight"]
+> ]
+>
+> async with asyncio.TaskGroup() as tg:
+>     tasks = [
+>         tg.create_task(replicate.async_run(model_version, input={"prompt": prompt}))
+>         for prompt in prompts
+>     ]
+>
+> results = await asyncio.gather(*tasks)
+> print(results)
+> ```
+
+To run a model that takes a file input you can pass either
+a URL to a publicly accessible file on the Internet
+or a handle to a file on your local device.
+
+```python
+>>> output = replicate.run(
+        "andreasjansson/blip-2:f677695e5e89f8b236e52ecd1d3f01beb44c34606419bcc19345e046d8f786f9",
+        input={ "image": open("path/to/mystery.jpg") }
+    )
+
+"an astronaut riding a horse"
+```
+
+`replicate.run` raises `ModelError` if the prediction fails.
+You can access the exception's `prediction` property 
+to get more information about the failure.
+
+```python
+import replicate
+from replicate.exceptions import ModelError
+
+try:
+  output = replicate.run("stability-ai/stable-diffusion-3", { "prompt": "An astronaut riding a rainbow unicorn" })
+except ModelError as e
+  if "(some known issue)" in e.prediction.logs:
+    pass
+
+  print("Failed prediction: " + e.prediction.id)
+```
+
+
+## Run a model and stream its output
+
+Replicate’s API supports server-sent event streams (SSEs) for language models. 
+Use the `stream` method to consume tokens as they're produced by the model.
+
+```python
+import replicate
+
+for event in replicate.stream(
+    "meta/meta-llama-3-70b-instruct",
+    input={
+        "prompt": "Please write a haiku about llamas.",
+    },
+):
+    print(str(event), end="")
+```
+
+> [!TIP]
+> Some models, like [meta/meta-llama-3-70b-instruct](https://replicate.com/meta/meta-llama-3-70b-instruct), 
+> don't require a version string. 
+> You can always refer to the API documentation on the model page for specifics.
+
+You can also stream the output of a prediction you create.
+This is helpful when you want the ID of the prediction separate from its output.
+
+```python
+prediction = replicate.predictions.create(
+    model="meta/meta-llama-3-70b-instruct"
+    input={"prompt": "Please write a haiku about llamas."},
+    stream=True,
+)
+
+for event in prediction.stream():
+    print(str(event), end="")
+```
+
+For more information, see
+["Streaming output"](https://replicate.com/docs/streaming) in Replicate's docs.
+
+
+## Run a model in the background
+
+You can start a model and run it in the background:
+
+```python
+>>> model = replicate.models.get("kvfrans/clipdraw")
+>>> version = model.versions.get("5797a99edc939ea0e9242d5e8c9cb3bc7d125b1eac21bda852e5cb79ede2cd9b")
+>>> prediction = replicate.predictions.create(
+    version=version,
+    input={"prompt":"Watercolor painting of an underwater submarine"})
+
+>>> prediction
+Prediction(...)
+
+>>> prediction.status
+'starting'
+
+>>> dict(prediction)
+{"id": "...", "status": "starting", ...}
+
+>>> prediction.reload()
+>>> prediction.status
+'processing'
+
+>>> print(prediction.logs)
+iteration: 0, render:loss: -0.6171875
+iteration: 10, render:loss: -0.92236328125
+iteration: 20, render:loss: -1.197265625
+iteration: 30, render:loss: -1.3994140625
+
+>>> prediction.wait()
+
+>>> prediction.status
+'succeeded'
+
+>>> prediction.output
+'https://.../output.png'
+```
+
+## Run a model in the background and get a webhook
+
+You can run a model and get a webhook when it completes, instead of waiting for it to finish:
+
+```python
+model = replicate.models.get("ai-forever/kandinsky-2.2")
+version = model.versions.get("ea1addaab376f4dc227f5368bbd8eff901820fd1cc14ed8cad63b29249e9d463")
+prediction = replicate.predictions.create(
+    version=version,
+    input={"prompt":"Watercolor painting of an underwater submarine"},
+    webhook="https://example.com/your-webhook",
+    webhook_events_filter=["completed"]
+)
+```
+
+For details on receiving webhooks, see [replicate.com/docs/webhooks](https://replicate.com/docs/webhooks).
+
+## Compose models into a pipeline
+
+You can run a model and feed the output into another model:
+
+```python
+laionide = replicate.models.get("afiaka87/laionide-v4").versions.get("b21cbe271e65c1718f2999b038c18b45e21e4fba961181fbfae9342fc53b9e05")
+swinir = replicate.models.get("jingyunliang/swinir").versions.get("660d922d33153019e8c263a3bba265de882e7f4f70396546b6c9c8f9d47a021a")
+image = laionide.predict(prompt="avocado armchair")
+upscaled_image = swinir.predict(image=image)
+```
+
+## Get output from a running model
+
+Run a model and get its output while it's running:
+
+```python
+iterator = replicate.run(
+    "pixray/text2image:5c347a4bfa1d4523a58ae614c2194e15f2ae682b57e3797a5bb468920aa70ebf",
+    input={"prompts": "san francisco sunset"}
+)
+
+for image in iterator:
+    display(image)
+```
+
+## Cancel a prediction
+
+You can cancel a running prediction:
+
+```python
+>>> model = replicate.models.get("kvfrans/clipdraw")
+>>> version = model.versions.get("5797a99edc939ea0e9242d5e8c9cb3bc7d125b1eac21bda852e5cb79ede2cd9b")
+>>> prediction = replicate.predictions.create(
+        version=version,
+        input={"prompt":"Watercolor painting of an underwater submarine"}
+    )
+
+>>> prediction.status
+'starting'
+
+>>> prediction.cancel()
+
+>>> prediction.reload()
+>>> prediction.status
+'canceled'
+```
+
+## List predictions
+
+You can list all the predictions you've run:
+
+```python
+replicate.predictions.list()
+# [<Prediction: 8b0ba5ab4d85>, <Prediction: 494900564e8c>]
+```
+
+Lists of predictions are paginated. You can get the next page of predictions by passing the `next` property as an argument to the `list` method:
+
+```python
+page1 = replicate.predictions.list()
+
+if page1.next:
+    page2 = replicate.predictions.list(page1.next)
+```
+
+## Load output files
+
+Output files are returned as HTTPS URLs. You can load an output file as a buffer:
+
+```python
+import replicate
+from PIL import Image
+from urllib.request import urlretrieve
+
+out = replicate.run(
+    "stability-ai/stable-diffusion:27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
+    input={"prompt": "wavy colorful abstract patterns, oceans"}
+    )
+
+urlretrieve(out[0], "/tmp/out.png")
+background = Image.open("/tmp/out.png")
+```
+
+## List models
+
+You can list the models you've created:
+
+```python
+replicate.models.list()
+```
+
+Lists of models are paginated. You can get the next page of models by passing the `next` property as an argument to the `list` method, or you can use the `paginate` method to fetch pages automatically.
+
+```python
+# Automatic pagination using `replicate.paginate` (recommended)
+models = []
+for page in replicate.paginate(replicate.models.list):
+    models.extend(page.results)
+    if len(models) > 100:
+        break
+
+# Manual pagination using `next` cursors
+page = replicate.models.list()
+while page:
+    models.extend(page.results)
+    if len(models) > 100:
+          break
+    page = replicate.models.list(page.next) if page.next else None
+```
+
+You can also find collections of featured models on Replicate:
+
+```python
+>>> collections = [collection for page in replicate.paginate(replicate.collections.list) for collection in page]
+>>> collections[0].slug
+"vision-models"
+>>> collections[0].description
+"Multimodal large language models with vision capabilities like object detection and optical character recognition (OCR)"
+
+>>> replicate.collections.get("text-to-image").models
+[<Model: stability-ai/sdxl>, ...]
+```
+
+## Create a model
+
+You can create a model for a user or organization
+with a given name, visibility, and hardware SKU:
+
+```python
+import replicate
+
+model = replicate.models.create(
+    owner="your-username",
+    name="my-model",
+    visibility="public",
+    hardware="gpu-a40-large"
+)
+```
+
+Here's how to list of all the available hardware for running models on Replicate:
+
+```python
+>>> [hw.sku for hw in replicate.hardware.list()]
+['cpu', 'gpu-t4', 'gpu-a40-small', 'gpu-a40-large']
+```
+
+## Fine-tune a model
+
+Use the [training API](https://replicate.com/docs/fine-tuning) 
+to fine-tune models to make them better at a particular task. 
+To see what **language models** currently support fine-tuning, 
+check out Replicate's [collection of trainable language models](https://replicate.com/collections/trainable-language-models).
+
+If you're looking to fine-tune **image models**, 
+check out Replicate's [guide to fine-tuning image models](https://replicate.com/docs/guides/fine-tune-an-image-model).
+
+Here's how to fine-tune a model on Replicate:
+
+```python
+training = replicate.trainings.create(
+    model="stability-ai/sdxl",
+    version="39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+    input={
+      "input_images": "https://my-domain/training-images.zip",
+      "token_string": "TOK",
+      "caption_prefix": "a photo of TOK",
+      "max_train_steps": 1000,
+      "use_face_detection_instead": False
+    },
+    # You need to create a model on Replicate that will be the destination for the trained version.
+    destination="your-username/model-name"
+)
+```
+
+## Customize client behavior
+
+The `replicate` package exports a default shared client.
+This client is initialized with an API token
+set by the `REPLICATE_API_TOKEN` environment variable.
+
+You can create your own client instance to
+pass a different API token value,
+add custom headers to requests,
+or control the behavior of the underlying [HTTPX client](https://www.python-httpx.org/api/#client):
+
+```python
+import os
+from replicate.client import Client
+
+replicate = Client(
+  api_token=os.environ["SOME_OTHER_REPLICATE_API_TOKEN"]
+  headers={
+    "User-Agent": "my-app/1.0
+  }
+)
+```
+
+> [!WARNING]
+> Never hardcode authentication credentials like API tokens into your code.
+> Instead, pass them as environment variables when running your program.
+
+## Development
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)

@@ -1,0 +1,101 @@
+Metadata-Version: 2.1
+Name: cohere
+Version: 5.5.8
+Summary: 
+Requires-Python: >=3.8,<4.0
+Classifier: Intended Audience :: Developers
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: OS Independent
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Typing :: Typed
+Requires-Dist: boto3 (>=1.34.0,<2.0.0)
+Requires-Dist: fastavro (>=1.9.4,<2.0.0)
+Requires-Dist: httpx (>=0.21.2)
+Requires-Dist: httpx-sse (>=0.4.0,<0.5.0)
+Requires-Dist: parameterized (>=0.9.0,<0.10.0)
+Requires-Dist: pydantic (>=1.9.2)
+Requires-Dist: requests (>=2.0.0,<3.0.0)
+Requires-Dist: tokenizers (>=0.15,<1)
+Requires-Dist: types-requests (>=2.0.0,<3.0.0)
+Requires-Dist: typing_extensions (>=4.0.0)
+Description-Content-Type: text/markdown
+
+# Cohere Python SDK
+
+![](banner.png)
+
+[![version badge](https://img.shields.io/pypi/v/cohere)](https://pypi.org/project/cohere/)
+![license badge](https://img.shields.io/github/license/cohere-ai/cohere-python)
+[![fern shield](https://img.shields.io/badge/%F0%9F%8C%BF-SDK%20generated%20by%20Fern-brightgreen)](https://github.com/fern-api/fern)
+
+The Cohere Python SDK allows access to Cohere models across many different platforms: the cohere platform, AWS (Bedrock, Sagemaker), Azure, GCP and Oracle OCI. For a full list of support and snippets, please take a look at the [SDK support docs page](https://docs.cohere.com/docs/cohere-works-everywhere).
+
+## Documentation
+
+Cohere documentation and API reference is available [here](https://docs.cohere.com/).
+
+## Installation
+
+```
+pip install cohere
+```
+
+## Usage
+
+```Python
+import cohere
+
+co = cohere.Client(
+    api_key="YOUR_API_KEY",
+)
+
+chat = co.chat(
+    message="hello world!",
+    model="command"
+)
+
+print(chat)
+```
+
+> [!TIP]
+> You can set a system environment variable `CO_API_KEY` to avoid writing your api key within your code, e.g. add `export CO_API_KEY=theapikeyforyouraccount`
+> in your ~/.zshrc or ~/.bashrc, open a new terminal, then code calling `cohere.Client()` will read this key.
+
+
+## Streaming
+
+The SDK supports streaming endpoints. To take advantage of this feature for chat,
+use `chat_stream`.
+
+```Python
+import cohere
+
+co = cohere.Client(
+    api_key="YOUR_API_KEY",
+)
+
+stream = co.chat_stream(
+    message="Tell me a short story"
+)
+
+for event in stream:
+    if event.event_type == "text-generation":
+        print(event.text, end='')
+```
+
+## Contributing
+
+While we value open-source contributions to this SDK, the code is generated programmatically. Additions made directly would have to be moved over to our generation code, otherwise they would be overwritten upon the next generated release. Feel free to open a PR as a proof of concept, but know that we will not be able to merge it as-is. We suggest opening an issue first to discuss with us!
+
+On the other hand, contributions to the README are always very welcome!
+

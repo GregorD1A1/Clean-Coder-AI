@@ -191,7 +191,7 @@ def ask_human_tool(prompt):
     :param prompt: prompt to human.
     """
     try:
-        human_message = input(prompt)
+        human_message = input(prompt + "\n")
         return human_message
     except Exception as e:
         return f"{type(e).__name__}: {e}"
