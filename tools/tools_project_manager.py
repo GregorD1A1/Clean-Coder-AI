@@ -27,11 +27,11 @@ tool_input:
 :param task_name: name of the task. Good name is descriptive, starts with a verb and usually could be fitted in formula
 'To complete this task, I need to $TASK_NAME'.
 :param task_description: detailed description of what needs to be done in order to implement task.
-Good description include:
+Good description includes:
 - Definition of done (required) - section, describing what need to be done with acceptance criteria.
-- Story (optional) - explain here why do we want to implement this task.
 - Resources (optional) - Include here all information that will be helpful for developer to complete task. Example code
-you found in internet, files dev need to use, technical details related to existing code dev need to pay attention on.
+you found in internet, files dev need to use, technical details related to existing code programmer need to pay
+attention on.
 :param order: order of the task in project.
 """
     task = todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
@@ -41,11 +41,11 @@ you found in internet, files dev need to use, technical details related to exist
 @tool
 def modify_task(task_id, new_task_name=None, new_task_description=None):
     """Modify task in project management platform (Todoist).
-    tool_input:
-    :param task_id: id of the task.
-    :param new_task_name: new name of the task (optional).
-    :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
-    """
+tool_input:
+:param task_id: id of the task.
+:param new_task_name: new name of the task (optional).
+:param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
+"""
     update_data = {}
     if new_task_name:
         update_data['content'] = new_task_name
@@ -58,16 +58,16 @@ def modify_task(task_id, new_task_name=None, new_task_description=None):
 
 
 @tool
-def reorder_tasks(tasks):
+def reorder_tasks(task_items):
     """Reorder tasks in project management platform (Todoist).
     tool_input:
-    :param tasks: list of dictionaries with 'id' (str) and 'child_order' (int) keys.
+    :param task_items: list of dictionaries with 'id' (str) and 'child_order' (int) keys.
     """
     command = {
         "type": "item_reorder",
         "uuid": str(uuid.uuid4()),
         "args": {
-            "items": tasks
+            "items": task_items
         }
     }
     commands_json = json.dumps([command])
