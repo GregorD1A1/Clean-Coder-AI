@@ -62,6 +62,16 @@ def reorder_tasks(task_items):
     """Reorder tasks in project management platform (Todoist).
     tool_input:
     :param task_items: list of dictionaries with 'id' (str) and 'child_order' (int) keys.
+    Example:
+    {
+    "tool": "reorder_tasks",
+    "tool_input": {
+        task_items: [
+        {"id": "123", "child_order": 0},
+        {"id": "456", "child_order": 1},
+    ]
+
+}
     """
     command = {
         "type": "item_reorder",

@@ -49,18 +49,8 @@ stop_sequence = None
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 #llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
-#llm = ChatOllama(model="llama3.1")
+#llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
-#llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0.3).with_config({"run_name": "Researcher"})
-#llm = ChatNVIDIA(model="nvidia/llama3-chatqa-1.5-70b")
-#llama = LlamaAPI(os.getenv("LLAMA_API_KEY"))
-#llm = ChatLlamaAPI(client=llama)
-'''llm = ChatOpenAI(
-    model='deepseek-chat',
-    openai_api_key='',
-    openai_api_base='https://api.deepseek.com/v1',
-    temperature=0.2
-)'''
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 
 

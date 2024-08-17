@@ -35,7 +35,6 @@ rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
-#llm = ChatOllama(model="llama3.1:8b-instruct-fp16")
 
 
 class AgentState(TypedDict):
@@ -64,6 +63,8 @@ Here is description of the project you work on:
 
 You have access to following tools:
 {rendered_tools}\n
+Never imagine tools or tool parameters that not provided above!
+
 First, provide step by step reasoning about what do you need to find in order to accomplish the task. Ensure, you have
 long and thoughtful reasoning before every tool call. Remember, you are brain worker.
 Next, generate response using json template: Choose only one tool to use.
