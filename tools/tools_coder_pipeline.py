@@ -1,5 +1,6 @@
 from langchain.tools import tool
 import os
+from os.path import join
 import json
 import base64
 import playwright
@@ -39,7 +40,7 @@ def list_dir(directory):
     try:
         if file_folder_ignored(directory, forbidden_files_and_folders):
             return "You are not allowed to work with this directory."
-        files = os.listdir(work_dir + directory)
+        files = os.listdir(join(work_dir, directory))
         return files
     except Exception as e:
         return f"{type(e).__name__}: {e}"
@@ -54,7 +55,7 @@ def see_file(filename):
     try:
         if file_folder_ignored(filename, forbidden_files_and_folders):
             return "You are not allowed to work with this file."
-        with open(work_dir + filename, 'r', encoding='utf-8') as file:
+        with open(join(work_dir, filename), 'r', encoding='utf-8') as file:
             lines = file.readlines()
         formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
         file_content = "".join(formatted_lines)
@@ -87,7 +88,7 @@ def see_image(filename):
     :param filename: Name and path of image to check.
     """
     try:
-        with open(work_dir + filename, 'rb') as image_file:
+        with open(join(work_dir, filename), 'rb') as image_file:
             img_encoded = base64.b64encode(image_file.read()).decode("utf-8")
         return img_encoded
     except Exception as e:
@@ -104,7 +105,7 @@ def insert_code(filename, line_number, code):
     :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
     """
     try:
-        with open(work_dir + filename, 'r+', encoding='utf-8') as file:
+        with open(join(work_dir, filename), 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
             file_contents.insert(line_number, code + '\n')
             file_contents = "".join(file_contents)
@@ -134,7 +135,7 @@ def replace_code(filename, start_line,  code, end_line):
     :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
     """
     try:
-        with open(work_dir + filename, 'r+', encoding='utf-8') as file:
+        with open(join(work_dir, filename), 'r+', encoding='utf-8') as file:
             file_contents = file.readlines()
             file_contents[start_line - 1:end_line] = [code + '\n']
             file_contents = "".join(file_contents)
@@ -219,7 +220,7 @@ def make_screenshot(endpoint, login_needed, commands):
         elif action == 'hover':
             page.hover(selector)
 
-    page.screenshot(path=work_dir + 'screenshots/screenshot.png')
+    page.screenshot(path=join(work_dir, 'screenshots/screenshot.png'))
     browser.close()
 
 if __name__ == '__main__':
