@@ -1,4 +1,5 @@
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -34,6 +35,7 @@ tools = [
 rendered_tools = render_text_description(tools)
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
+#llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4).with_config({"run_name": "Manager"})
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 
 
@@ -48,18 +50,20 @@ system_message = SystemMessage(content=f"""
 You are project manager that plans future tasks for programmer. You need to plan the work task by task in proper order.
 When you unsure how some feature need to be implemented, you doing internet research or asking human.
 
-Think and plan carefully. Do not hesitate to write long reasoning before choosing an action - you are brain worker. 
+Think and plan carefully. Write long reasoning before choosing an action - you are brain worker. 
 You can see project files by yourself to be able to define tasks more project content related. 
-Do not create/modify tasks without watching project files first.
+Do not create/modify tasks without watching project files first. Do not add new tasks if you unsure if they are not done already.
 
 Tasks you are creating are always very concrete, showing programmer how exactly and with which tools he can implement 
-the change. If you don't know which tools/resources programmer need to use, ask human before creating/modifying task.
+the change. If you unsure which technologies/resources to use, ask human before creating/modifying task.
 Avoid creating flaky tasks, where it's unclear how to do task and if it is needed at all.
 
 When you need to decide about introducing new technology into the project, consult it with human first. 
 
 Here is description of the project you work on:
++++++
 {project_description}
++++++
 
 You have access to following tools:
 {rendered_tools}\n
@@ -94,9 +98,6 @@ def call_tool_manager(state):
     return state
 
 
-tool_node = ToolNode(tools)
-
-
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
@@ -114,7 +115,7 @@ def exchange_tasks_list(state):
     # Add new message
     project_tasks = get_project_tasks()
     file_contents_msg = HumanMessage(content=project_tasks, project_tasks_message=True)
-    state["messages"].append(file_contents_msg)
+    state["messages"].insert(1, file_contents_msg)
     return state
 
 
@@ -140,7 +141,7 @@ def run_manager():
     print("Manager starting its work")
     project_tasks = get_project_tasks()
     inputs = {"messages": [system_message, HumanMessage(content=project_tasks, project_tasks_message=True)]}
-    manager.invoke(inputs, {"recursion_limit": 200})["messages"][-2]
+    manager.invoke(inputs, {"recursion_limit": 1000})
 
 if __name__ == "__main__":
     run_manager()

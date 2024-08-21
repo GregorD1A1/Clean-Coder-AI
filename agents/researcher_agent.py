@@ -46,8 +46,8 @@ rendered_tools = render_text_description(tools)
 #stop_sequence = "\n```\n"
 stop_sequence = None
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-#llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
+#llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")

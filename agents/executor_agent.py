@@ -127,9 +127,7 @@ class Executor():
 
         # safety mechanism for looped wrong tool call
         last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
-        print("last human messages", last_human_messages)
         tool_not_executed_human_msgs = [m for m in last_human_messages if m.content.startswith(TOOL_NOT_EXECUTED_WORD)]
-        print("tool_not_executed_human_msgs", tool_not_executed_human_msgs)
         if len(tool_not_executed_human_msgs) == 3:
             print("Seems like AI been looped. Please suggest it how to introduce change correctly:")
             return "human"
@@ -163,10 +161,10 @@ class Executor():
         print("\n\n\nExecutor starting its work")
         inputs = {"messages": [
             system_message,
-            HumanMessage(content=f"Task: {task}\n\n###\n\nPlan: {plan}"),
+            HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
-        self.executor.invoke(inputs, {"recursion_limit": 150})["messages"][-1]
+        self.executor.invoke(inputs, {"recursion_limit": 150})
 
 
 

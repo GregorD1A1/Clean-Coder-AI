@@ -48,11 +48,14 @@ def call_tool(state, tool_executor):
         state["messages"].append(HumanMessage(content="No tool called"))
         return state
     tool_call = last_message.tool_call
+    response = tool_executor.invoke(ToolInvocation(**tool_call))
+    '''
     try:
         response = tool_executor.invoke(ToolInvocation(**tool_call))
     except Exception as e:
         print("Error in tool call formatting")
         response = "Some error in tool call format. Are you sure that you provided all needed tool parameters according tool schema?"
+    '''
     response_message = HumanMessage(content=str(response))
     state["messages"].append(response_message)
 

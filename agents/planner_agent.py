@@ -122,21 +122,14 @@ def call_planers(state):
     return state
 
 
-def call_model_corrector(state):
-    state, response = call_model(state, llm)
-    return state
-
-
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
 researcher_workflow.add_node("planers", call_planers)
-researcher_workflow.add_node("agent", call_model_corrector)
 researcher_workflow.add_node("human", ask_human)
 researcher_workflow.set_entry_point("planers")
 
 researcher_workflow.add_edge("planers", "human")
-researcher_workflow.add_edge("agent", "human")
 researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
 researcher = researcher_workflow.compile()

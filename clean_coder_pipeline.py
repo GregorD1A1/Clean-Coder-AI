@@ -5,7 +5,6 @@ from agents.executor_agent import Executor
 
 def run_clean_coder_pipeline(task, self_approve=False):
     files, file_contents, images = research_task(task)
-
     plan = planning(task, file_contents, images)
 
     executor = Executor(files)
@@ -13,7 +12,7 @@ def run_clean_coder_pipeline(task, self_approve=False):
 
 
 if __name__ == "__main__":
-    task = """integrate with LLM gpt-4o and langchain
+    task = """just do nothing. go home.
 """
 
     run_clean_coder_pipeline(task)
