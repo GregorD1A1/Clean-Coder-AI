@@ -34,7 +34,15 @@ def file_folder_ignored(path, ignore_patterns):
 
     return False
 
+def create_project_discription_file():
+    # Create project_description.txt file if it doesn't exist inside of .clean_coder folder
+    project_description_path = os.path.join(work_dir, '.clean_coder', 'project_description.txt')
+    if not os.path.exists(project_description_path):
+        with open(project_description_path, 'w', encoding='utf-8') as file:
+            file.write("# Describe your project detailly here: ")
+
 
 # Create .coderignore file with default values if it doesn't exist
 create_coderignore()
 forbidden_files_and_folders = read_coderignore()
+create_project_discription_file()
