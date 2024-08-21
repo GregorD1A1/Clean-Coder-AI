@@ -4,6 +4,7 @@ import os
 from utilities.util_functions import print_wrapped
 from dotenv import load_dotenv, find_dotenv
 from clean_coder_pipeline import run_clean_coder_pipeline
+import subprocess
 import uuid
 import requests
 import json
@@ -134,6 +135,7 @@ tool_input:
     # Execute the main pipeline to implement the task
     print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
     run_clean_coder_pipeline(task_name_description)
+    #subprocess.run(['python', 'clean_coder_pipeline.py'])
 
     # Mark task as done
     todoist_api.close_task(task_id=task.id)

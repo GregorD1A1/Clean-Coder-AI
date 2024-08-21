@@ -14,17 +14,12 @@ from langchain_groq import ChatGroq
 load_dotenv(find_dotenv())
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
-#llm = ChatOpenAI(model="gpt-4-vision-preview", temperature=0.3).with_config({"run_name": "Planer"})
-#llm_voter = ChatAnthropic(model='claude-3-opus-20240229')
-#llm = ChatOllama(model="mixtral") #, temperature=0)
 llm_voter = llm.with_config({"run_name": "Voter"})
-llm_secretary = llm
 
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
     voter_messages: Sequence[BaseMessage]
-    secretary_messages: Sequence[BaseMessage]
 
 
 system_message = SystemMessage(
@@ -78,27 +73,6 @@ voter_system_message = SystemMessage(
     """
 )
 
-secretary_system_message = SystemMessage(
-    content="""
-You are secretary of lead developer. You have provided plan proposed by lead developer. Analyze the plan and find if all 
-proposed changes are related to provided list of project files only, or lead dev need to check other files also.
-
-Return in:
-```xml
-<response>
-<reasoning>
-Think step by step if some additional files are needed for that plan or not.
-</reasoning>
-<message_to_file_researcher>
-Write 'No any additional files needed.' if all the proposed plan changes are in given files; write custom message with 
-request to check out files in filesystem if plan assumes changes in another files than provided or lead dev wants to 
-ensure about something in another files.
-</message_to_file_researcher>
-<response>
-```
-"""
-)
-
 
 # node functions
 def call_planers(state):
@@ -122,14 +96,26 @@ def call_planers(state):
     return state
 
 
+def call_model_corrector(state):
+    messages = state["messages"]
+    response = llm.invoke(messages)
+    print_wrapped(response.content)
+    state["messages"].append(response)
+
+    return state
+
+
 # workflow definition
 researcher_workflow = StateGraph(AgentState)
 
+
 researcher_workflow.add_node("planers", call_planers)
+researcher_workflow.add_node("agent", call_model_corrector)
 researcher_workflow.add_node("human", ask_human)
 researcher_workflow.set_entry_point("planers")
 
 researcher_workflow.add_edge("planers", "human")
+researcher_workflow.add_edge("agent", "human")
 researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
 researcher = researcher_workflow.compile()
@@ -144,7 +130,6 @@ def planning(task, file_contents, images):
     inputs = {
         "messages": [system_message, message_without_imgs, message_images],
         "voter_messages": [voter_system_message, message_without_imgs],
-        "secretary_messages": [secretary_system_message]
     }
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
 
