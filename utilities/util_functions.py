@@ -106,6 +106,8 @@ def get_project_tasks():
     tasks_string = "\n".join(
         f"id: {task.id}, \nName: {task.content}, \nDescription: {task.description}, \nOrder: {task.order}\n\n" for task in tasks
     )
+    if not tasks:
+        tasks_string = "<empty>"
     return "Tasks in Todoist:\n" + tasks_string
 
 
