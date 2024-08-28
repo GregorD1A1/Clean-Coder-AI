@@ -96,6 +96,8 @@ def call_model_manager(state):
 def call_tool_manager(state):
     state = call_tool(state, tool_executor)
     state = exchange_tasks_list(state)
+    if state["messages"][-2].tool_call["tool"] == "finish_project_planning":
+        actualize_progress_description(state)
     return state
 
 
@@ -107,13 +109,6 @@ def after_agent_condition(state):
         return "agent"
     else:
         return "tool"
-
-
-def after_tool_condition(state):
-    if state["messages"][-2].tool_call["tool"] == "finish_project_planning":
-        return "write_progress"
-    else:
-        return "agent"
 
 
 # just functions
@@ -133,7 +128,8 @@ def actualize_progress_description(state):
     progress_description = read_progress_description()
 
     actualize_description_message = f"""After task been executed, actualize description of project progress. 
-Write what have been done in the project so far in up to 7 sentences. Never imagine facts.
+Write what have been done in the project so far in up to 7 sentences. Never imagine facts. Do not write what need to be 
+done in future and do not write project description, if that not needed to describe progress.
 
 Previous progress description, before last task execution:
 {progress_description}
@@ -180,24 +176,11 @@ def read_progress_description():
 
 # workflow definition
 manager_workflow = StateGraph(AgentState)
-
 manager_workflow.add_node("agent", call_model_manager)
 manager_workflow.add_node("tool", call_tool_manager)
-manager_workflow.add_node("write_progress", actualize_progress_description)
-
 manager_workflow.set_entry_point("agent")
-
-manager_workflow.add_conditional_edges(
-    "agent",
-    after_agent_condition,
-)
-manager_workflow.add_conditional_edges(
-    "tool",
-    after_tool_condition,
-)
-manager_workflow.add_edge("write_progress", "agent")
-
-
+manager_workflow.add_conditional_edges("agent", after_agent_condition)
+manager_workflow.add_edge("tool", "agent")
 manager = manager_workflow.compile()
 
 
