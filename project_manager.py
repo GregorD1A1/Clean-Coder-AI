@@ -9,8 +9,6 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from tools.tools_project_manager import add_task, modify_task, delete_task, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
-from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
-from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from langchain_community.chat_models import ChatOllama
 from utilities.util_functions import (read_project_description, read_progress_description, get_project_tasks,
                                       find_tool_json)
@@ -21,8 +19,6 @@ import os
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
-tavily_api_wrapper = TavilySearchAPIWrapper()
-internet_research = TavilySearchResults(api_wrapper=tavily_api_wrapper)
 tools = [
     add_task,
     modify_task,
@@ -30,7 +26,6 @@ tools = [
     reorder_tasks,
     list_dir,
     see_file,
-    internet_research,
     ask_human_tool,
     finish_project_planning,
 ]
