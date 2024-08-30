@@ -113,20 +113,6 @@ tool_input:
     return "Task deleted successfully"
 
 
-def ask_programmer_to_execute_task(task_id):
-    """Ask programmer to implement given task.
-    tool_input:
-    :param task_id: id of the task.
-    """
-    task = todoist_api.get_task(task_id)
-    task_name_description = f"{task.content}\n{task.description}"
-    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
-
-    # Execute the main pipeline to implement the task
-    run_clean_coder_pipeline(task_name_description)
-
-
-
 @tool
 def finish_project_planning():
     """Call that tool when all task in Todoist correctly reflect work for nearest time. No extra tasks or tasks with
@@ -147,7 +133,6 @@ tool_input:
     # Execute the main pipeline to implement the task
     print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
     run_clean_coder_pipeline(task_name_description)
-    #subprocess.run(['python', 'clean_coder_pipeline.py'])
 
     # Mark task as done
     todoist_api.close_task(task_id=task.id)
