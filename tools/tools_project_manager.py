@@ -1,10 +1,9 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-from utilities.util_functions import print_wrapped
+from utilities.util_functions import print_wrapped, actualize_progress_description_file
 from dotenv import load_dotenv, find_dotenv
 from clean_coder_pipeline import run_clean_coder_pipeline
-import subprocess
 import uuid
 import requests
 import json
@@ -15,7 +14,7 @@ load_dotenv(find_dotenv())
 todoist_api_key = os.getenv('TODOIST_API_KEY')
 todoist_api = TodoistAPI(todoist_api_key)
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
-
+TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
 
 
 @tool
@@ -35,7 +34,11 @@ you found in internet, files dev need to use, technical details related to exist
 attention on.
 :param order: order of the task in project.
 """
-    task = todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
+    human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+    if human_message != 'ok':
+        return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+
+    todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
     return "Task added successfully"
 
 
@@ -47,6 +50,11 @@ tool_input:
 :param new_task_name: new name of the task (optional).
 :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
 """
+    task_name = todoist_api.get_task(task_id).content
+    human_message = input(f"I want to modify task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    if human_message != 'ok':
+        return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+
     update_data = {}
     if new_task_name:
         update_data['content'] = new_task_name
@@ -96,6 +104,11 @@ def delete_task(task_id):
 tool_input:
 :param task_id: id of the task.
 """
+    task_name = todoist_api.get_task(task_id).content
+    human_message = input(f"I want to delete task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    if human_message != 'ok':
+        return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+
     todoist_api.delete_task(task_id=task_id)
     return "Task deleted successfully"
 
@@ -111,7 +124,6 @@ def ask_programmer_to_execute_task(task_id):
 
     # Execute the main pipeline to implement the task
     run_clean_coder_pipeline(task_name_description)
-
 
 
 
@@ -148,6 +160,8 @@ tool_input:
     Task: {task_name_description}
     """
     tester_response = input(tester_query)
+
+    actualize_progress_description_file(task_name_description, tester_response)
 
     return f"Task execution completed. Tester response: {tester_response}"
 

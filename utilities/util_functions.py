@@ -7,6 +7,9 @@ from dotenv import load_dotenv, find_dotenv
 import xml.etree.ElementTree as ET
 from termcolor import colored
 from todoist_api_python.api import TodoistAPI
+from langchain_core.prompts import PromptTemplate
+from langchain_openai.chat_models import ChatOpenAI
+from langchain_core.output_parsers import StrOutputParser
 
 
 load_dotenv(find_dotenv())
@@ -15,6 +18,24 @@ log_file_path = os.getenv("LOG_FILE")
 todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
+
+actualize_description_prompt_template = """After task been executed, actualize description of project progress. 
+Write what have been done in the project so far in up to 7 sentences. Never imagine facts. Do not write what need to be 
+done in future and do not write project description, if that not needed to describe progress.
+
+Previous progress description, before last task execution:
+{progress_description}
+
+Last task been executed:
+{task_name_description}
+
+Tester response about task implementation:
+{tester_response}
+
+Return new progress description and nothing more.
+"""
+
+llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
 def print_wrapped(content, width=160, color=None):
@@ -109,6 +130,37 @@ def get_project_tasks():
     if not tasks:
         tasks_string = "<empty>"
     return "Tasks in Todoist:\n" + tasks_string
+
+
+def actualize_progress_description_file(task_name_description, tester_response):
+    progress_description = read_progress_description()
+    actualize_description_prompt = PromptTemplate.from_template(actualize_description_prompt_template)
+    chain = actualize_description_prompt | llm | StrOutputParser()
+    progress_description = chain.invoke(
+        {
+            "progress_description": progress_description,
+            "task_name_description": task_name_description,
+            "tester_response": tester_response
+        }
+    )
+    #print(response.content)
+    #response_json = find_tool_json(response.content)
+    #progress_description = response_json["tool_input"]["progress_description"]
+
+    with open(os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt"), "w") as f:
+        f.write(progress_description)
+    print("Writing description of progress done.")
+
+
+def read_progress_description():
+    file_path = os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt")
+    if not os.path.exists(file_path):
+        open(file_path, 'a').close()  # Creates file if it doesn't exist
+        progress_description = "<empty>"
+    else:
+        with open(file_path, "r") as f:
+            progress_description = f.read()
+    return progress_description
 
 
 if __name__ == "__main__":

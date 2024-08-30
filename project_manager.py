@@ -2,7 +2,7 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
@@ -12,13 +12,15 @@ from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from langchain_community.chat_models import ChatOllama
-from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks
+from utilities.util_functions import (read_project_description, read_progress_description, get_project_tasks,
+                                      find_tool_json)
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg, ask_human)
-from langgraph.prebuilt import ToolNode
+import os
 
 
 load_dotenv(find_dotenv())
+work_dir = os.getenv("WORK_DIR")
 tavily_api_wrapper = TavilySearchAPIWrapper()
 internet_research = TavilySearchResults(api_wrapper=tavily_api_wrapper)
 tools = [
@@ -95,6 +97,8 @@ def call_model_manager(state):
 def call_tool_manager(state):
     state = call_tool(state, tool_executor)
     state = exchange_tasks_list(state)
+    if state["messages"][-2].tool_call["tool"] == "finish_project_planning":
+        actualize_progress_description(state)
     return state
 
 
@@ -119,29 +123,43 @@ def exchange_tasks_list(state):
     return state
 
 
+def actualize_progress_description(state):
+    # Remove old one
+    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "progress_description_message")]
+    progress_description = read_progress_description()
+    with open(os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt"), "w") as f:
+        f.write(progress_description)
+    progress_msg = HumanMessage(content=
+                                f"Here is description what been done so far in the project:\n{progress_description}",
+                                progress_description_message=True
+    )
+    state["messages"].insert(2, progress_msg)
+
+
+
 # workflow definition
 manager_workflow = StateGraph(AgentState)
-
 manager_workflow.add_node("agent", call_model_manager)
 manager_workflow.add_node("tool", call_tool_manager)
-
 manager_workflow.set_entry_point("agent")
-
-manager_workflow.add_conditional_edges(
-    "agent",
-    after_agent_condition,
-)
+manager_workflow.add_conditional_edges("agent", after_agent_condition)
 manager_workflow.add_edge("tool", "agent")
-
-
 manager = manager_workflow.compile()
 
 
 def run_manager():
     print("Manager starting its work")
     project_tasks = get_project_tasks()
-    inputs = {"messages": [system_message, HumanMessage(content=project_tasks, project_tasks_message=True)]}
+    progress_description_message = HumanMessage(
+        content=f"Here is description what been done so far in the project:\n{read_progress_description()}",
+        progress_description_message=True
+    )
+    inputs = {"messages": [system_message, HumanMessage(content=project_tasks, project_tasks_message=True), progress_description_message]}
     manager.invoke(inputs, {"recursion_limit": 1000})
+
 
 if __name__ == "__main__":
     run_manager()
+
+    #state = AgentState(messages=[system_message, HumanMessage(content="Ok, start"), AIMessage(content="Task of creating profile name application been executed.")])
+    #actualize_progress_description(state)
