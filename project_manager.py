@@ -12,7 +12,8 @@ from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
 from langchain_community.utilities.tavily_search import TavilySearchAPIWrapper
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from langchain_community.chat_models import ChatOllama
-from utilities.util_functions import print_wrapped, read_project_description, get_project_tasks, find_tool_json
+from utilities.util_functions import (read_project_description, read_progress_description, get_project_tasks,
+                                      find_tool_json)
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg, ask_human)
 import os
@@ -126,52 +127,14 @@ def actualize_progress_description(state):
     # Remove old one
     state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "progress_description_message")]
     progress_description = read_progress_description()
-
-    actualize_description_message = f"""After task been executed, actualize description of project progress. 
-Write what have been done in the project so far in up to 7 sentences. Never imagine facts. Do not write what need to be 
-done in future and do not write project description, if that not needed to describe progress.
-
-Previous progress description, before last task execution:
-{progress_description}
-Return json according template:
-```json
-{{
-    "tool": "actualize_progress_description",
-    "tool_input": {{
-        "progress_description": "$PROGRESS_DESCRIPTION"
-}},",
-}}
-```
-"""
-    print("Writing description of progress done.")
-    messages = state["messages"]
-    messages.append(HumanMessage(content=actualize_description_message))
-    response = llm.invoke(messages)
-    print(response.content)
-    response_json = find_tool_json(response.content)
-    progress_description = response_json["tool_input"]["progress_description"]
-    print(progress_description)
-
     with open(os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt"), "w") as f:
         f.write(progress_description)
-
     progress_msg = HumanMessage(content=
                                 f"Here is description what been done so far in the project:\n{progress_description}",
                                 progress_description_message=True
     )
     state["messages"].insert(2, progress_msg)
 
-
-
-def read_progress_description():
-    file_path = os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt")
-    if not os.path.exists(file_path):
-        open(file_path, 'a').close()  # Creates file if it doesn't exist
-        progress_description = "<empty>"
-    else:
-        with open(file_path, "r") as f:
-            progress_description = f.read()
-    return progress_description
 
 
 # workflow definition
