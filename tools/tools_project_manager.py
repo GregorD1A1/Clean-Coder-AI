@@ -13,6 +13,7 @@ load_dotenv(find_dotenv())
 
 todoist_api_key = os.getenv('TODOIST_API_KEY')
 todoist_api = TodoistAPI(todoist_api_key)
+base_work_dir = os.getenv('WORK_DIR')
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
 
@@ -132,7 +133,7 @@ tool_input:
 
     # Execute the main pipeline to implement the task
     print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
-    run_clean_coder_pipeline(task_name_description)
+    run_clean_coder_pipeline(task_name_description, base_work_dir)
 
     # Mark task as done
     todoist_api.close_task(task_id=task.id)

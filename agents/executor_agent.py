@@ -1,5 +1,8 @@
 import os
-from tools.tools_coder_pipeline import see_file, replace_code, insert_code, create_file_with_code, ask_human_tool, TOOL_NOT_EXECUTED_WORD
+from tools.tools_coder_pipeline import (
+    ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_list_dir_tool, prepare_see_file_tool,
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
+)
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
@@ -8,13 +11,16 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
+from langchain_core.tools import Tool
+from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
+from langchain_community.agent_toolkits.clickup.toolkit import ClickupToolkit
 from langchain_groq import ChatGroq
 from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
-
+from copy import deepcopy
 
 
 load_dotenv(find_dotenv())
@@ -29,10 +35,6 @@ tool input:
 implemented changes work correctly."""
     print_wrapped(test_instruction, color="blue")
 
-
-tools = [see_file, insert_code, replace_code, create_file_with_code, ask_human_tool, final_response]
-rendered_tools = render_text_description(tools)
-
 stop_sequence = "\n```\n"
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
@@ -45,37 +47,20 @@ llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tok
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
-
-tool_executor = ToolExecutor(tools)
-system_message = SystemMessage(
-        content=f"""
-You are a senior programmer tasked with refining an existing codebase. Your goal is to incrementally 
-introduce improvements using a set of provided tools. Each change should be implemented step by step, 
-meaning you make one modification at a time. Focus on individual functions or lines of code 
-rather than rewriting entire files at once.
-
-Not overcomplicate the code. Do not introduce sophisticated improvements when code is already working. Avoid improving in endless.
-\n\n
-Tools to your disposal:\n
-{rendered_tools}
-\n\n
-First, write your thinking process. Think step by step about what do you need to do to accomplish the task.
-Do not implement features unrelated to provided task.
-Reasoning part of your response is very important, never miss it! Even if the next step seems to be obvious.
-Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
-rest will be possibility to do later.
-```json
-{{
-    "tool": "$TOOL_NAME",
-    "tool_input": "$TOOL_PARAMS",
-}}
-```
-"""
-    )
+current_dir = os.path.dirname(os.path.realpath(__file__))
+with open(f"{current_dir}/prompts/executor_system.prompt", "r") as f:
+    system_prompt_template = f.read()
 
 
 class Executor():
-    def __init__(self, files):
+    def __init__(self, files, work_dir):
+        self.work_dir = work_dir
+        tools = prepare_tools(work_dir)
+        rendered_tools = render_text_description(tools)
+        self.tool_executor = ToolExecutor(tools)
+        self.system_message = SystemMessage(
+            content=system_prompt_template.format(executor_tools=rendered_tools)
+        )
         self.files = files
 
         # workflow definition
@@ -100,13 +85,13 @@ class Executor():
     # node functions
     def call_model_executor(self, state):
         #stop_sequence = None
-        state, response = call_model(state, llm, stop_sequence_to_add=stop_sequence)
+        state = call_model(state, llm, stop_sequence_to_add=stop_sequence)
 
         return state
 
     def call_tool_executor(self, state):
         last_ai_message = state["messages"][-1]
-        state = call_tool(state, tool_executor)
+        state = call_tool(state, self.tool_executor)
         if last_ai_message.tool_call["tool"] == "create_file_with_code":
             self.files.add(last_ai_message.tool_call["tool_input"]["filename"])
         if last_ai_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
@@ -152,22 +137,30 @@ class Executor():
         # Remove old one
         state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
         # Add new file contents
-        file_contents = check_file_contents(self.files)
+        file_contents = check_file_contents(self.files, self.work_dir)
         file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
         state["messages"].append(file_contents_msg)
         return state
 
-    def do_task(self, task, plan, file_contents):
+    def do_task(self, task, plan, text_files):
         print("\n\n\nExecutor starting its work")
+        file_contents = check_file_contents(text_files, self.work_dir)
         inputs = {"messages": [
-            system_message,
+            self.system_message,
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
         self.executor.invoke(inputs, {"recursion_limit": 150})
 
 
-
+def prepare_tools(work_dir):
+    list_dir = prepare_list_dir_tool(work_dir)
+    see_file = prepare_see_file_tool(work_dir)
+    replace_code = prepare_replace_code_tool(work_dir)
+    insert_code = prepare_insert_code_tool(work_dir)
+    create_file = prepare_create_file_tool(work_dir)
+    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    return tools
 
 
 
@@ -571,5 +564,5 @@ src/views/MemorialProfile.vue:
 128|</style>
 """
     files = set(["src/views/MemorialProfile.vue", "src/assets/scss/MemorialProfile.scss", "src/views/MemorialProfilePages/EducationPage.vue"])
-    executor = Executor(files)
+    executor = Executor(files, work_dir="E:\Eksperiments\Hacker_news_scraper")
     executor.do_task(task, plan, file_contents)

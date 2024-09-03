@@ -39,7 +39,7 @@ def call_model(state, llm, stop_sequence_to_add=None):
         state["messages"].append(HumanMessage(content=bad_json_format_msg))
         print("\nBad json format provided, asked to provide again.")
 
-    return state, response
+    return state
 
 
 def call_tool(state, tool_executor):

@@ -6,7 +6,7 @@ from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.util_functions import print_wrapped
+from utilities.util_functions import print_wrapped, check_file_contents, convert_images
 from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
 from langchain_groq import ChatGroq
 
@@ -121,8 +121,10 @@ researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 researcher = researcher_workflow.compile()
 
 
-def planning(task, file_contents, images):
+def planning(task, text_files, image_paths, work_dir):
     print("\n\n\nPlanner starting its work")
+    file_contents = check_file_contents(text_files, work_dir)
+    images = convert_images(image_paths)
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"
     message_without_imgs = HumanMessage(content=message_content_without_imgs)
     message_images = HumanMessage(content=images)

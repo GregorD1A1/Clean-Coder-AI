@@ -8,17 +8,18 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from tools.tools_project_manager import add_task, modify_task, delete_task, finish_project_planning, reorder_tasks
-from tools.tools_coder_pipeline import list_dir, see_file, ask_human_tool
+from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
-from utilities.util_functions import (read_project_description, read_progress_description, get_project_tasks,
-                                      find_tool_json)
+from utilities.util_functions import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
-                                                  no_json_msg, ask_human)
+                                                  no_json_msg)
 import os
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+list_dir = prepare_list_dir_tool(work_dir)
+see_file = prepare_see_file_tool(work_dir)
 tools = [
     add_task,
     modify_task,
@@ -81,11 +82,7 @@ Next, generate response using json template: Choose only one tool to use.
 
 # node functions
 def call_model_manager(state):
-    state, response = call_model(state, llm)
-    # safety mechanism for a bad json
-    tool_call = response.tool_call
-    if tool_call is None or "tool" not in tool_call:
-        state["messages"].append(HumanMessage(content=bad_json_format_msg))
+    state = call_model(state, llm)
     return state
 
 
@@ -155,6 +152,3 @@ def run_manager():
 
 if __name__ == "__main__":
     run_manager()
-
-    #state = AgentState(messages=[system_message, HumanMessage(content="Ok, start"), AIMessage(content="Task of creating profile name application been executed.")])
-    #actualize_progress_description(state)

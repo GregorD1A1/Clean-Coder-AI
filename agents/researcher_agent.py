@@ -11,16 +11,20 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
-from tools.tools_coder_pipeline import list_dir, see_file, see_image, retrieve_files_by_semantic_query
+from tools.tools_coder_pipeline import (
+    prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
+)
 from rag.retrieval import vdb_availabe
-from utilities.util_functions import check_file_contents, find_tool_xml, find_tool_json, print_wrapped
-from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
-                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
+from utilities.util_functions import find_tool_json, print_wrapped
+from utilities.langgraph_common_functions import (
+    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+)
 import os
 
 
 load_dotenv(find_dotenv())
 mistral_api_key = os.getenv("MISTRAL_API_KEY")
+work_dir = os.getenv("WORK_DIR")
 
 
 @tool
@@ -37,12 +41,6 @@ def final_response(files_to_work_on, reference_files, template_images):
     """
     pass
 
-
-tools = [list_dir, see_file, final_response]
-if vdb_availabe:
-    tools.append(retrieve_files_by_semantic_query)
-rendered_tools = render_text_description(tools)
-
 #stop_sequence = "\n```\n"
 stop_sequence = None
 
@@ -58,45 +56,15 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
-tool_executor = ToolExecutor(tools)
-system_message_content = f"""As a curious filesystem researcher, examine files thoroughly, prioritizing comprehensive checks. 
-You checking a lot of different folders looking around for interesting files (hey, you are very curious!) before giving the final answer.
-The more folders/files you will check, the more they will pay you.
-When you discover significant dependencies from one file to another, ensure to inspect both. 
-Your final selection should include files needed to be modified or needed as reference for a programmer 
-(for example to see how code in similar file implemented). 
-Avoid recommending unseen or non-existent files in final response. Important: you are not allowed to modify any files!
-You need to point out all files programmer needed to see to execute the task and only that task. Task is:
-'''
-{{task}}
-'''
-
-You have access to following tools:
-{rendered_tools}
-
-First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
-Next, generate response using json template: Choose only one tool to use.
-```json
-{{{{
-    "tool": "$TOOL_NAME",
-    "tool_input": "$TOOL_PARAMS",
-}}}}
-```
-"""
-
+current_dir = os.path.dirname(os.path.realpath(__file__))
+with open(f"{current_dir}/prompts/researcher_system.prompt", "r") as f:
+    system_prompt_template = f.read()
 
 # node functions
 def call_model_researcher(state):
-    state, response = call_model(state, llm, stop_sequence_to_add=stop_sequence)
-    # safety mechanism for a bad json
-    tool_call = response.tool_call
-    if tool_call is None or "tool" not in tool_call:
-        state["messages"].append(HumanMessage(content=bad_json_format_msg))
+    state = call_model(state, llm, stop_sequence_to_add=stop_sequence)
+
     return state
-
-
-def call_tool_researcher(state):
-    return call_tool(state, tool_executor)
 
 
 # Logic for conditional edges
@@ -111,59 +79,50 @@ def after_agent_condition(state):
         return "tool"
 
 
-# workflow definition
-researcher_workflow = StateGraph(AgentState)
+class Researcher():
+    def __init__(self, work_dir):
+        list_dir = prepare_list_dir_tool(work_dir)
+        see_file = prepare_see_file_tool(work_dir)
+        tools = [list_dir, see_file, final_response]
+        if vdb_availabe:
+            tools.append(retrieve_files_by_semantic_query)
+        self.rendered_tools = render_text_description(tools)
+        self.tool_executor = ToolExecutor(tools)
 
-researcher_workflow.add_node("agent", call_model_researcher)
-researcher_workflow.add_node("tool", call_tool_researcher)
-researcher_workflow.add_node("human", ask_human)
+        # workflow definition
+        researcher_workflow = StateGraph(AgentState)
 
-researcher_workflow.set_entry_point("agent")
+        researcher_workflow.add_node("agent", call_model_researcher)
+        researcher_workflow.add_node("tool", self.call_tool_researcher)
+        researcher_workflow.add_node("human", ask_human)
 
-researcher_workflow.add_conditional_edges(
-    "agent",
-    after_agent_condition,
-)
-researcher_workflow.add_conditional_edges(
-    "human",
-    after_ask_human_condition,
-)
-researcher_workflow.add_edge("tool", "agent")
+        researcher_workflow.set_entry_point("agent")
 
-researcher = researcher_workflow.compile()
+        researcher_workflow.add_conditional_edges("agent", after_agent_condition)
+        researcher_workflow.add_conditional_edges("human", after_ask_human_condition )
+        researcher_workflow.add_edge("tool", "agent")
+
+        self.researcher = researcher_workflow.compile()
+
+    # node functions
+    def call_tool_researcher(self, state):
+        return call_tool(state, self.tool_executor)
+
+    # just functions
+    def research_task(self, task):
+        print("Researcher starting its work")
+        system_message = system_prompt_template.format(task=task, tools=self.rendered_tools)
+        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=f"Go")]}
+        researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
+
+        tool_json = find_tool_json(researcher_response.content)
+        text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
+        image_paths = tool_json["tool_input"]["template_images"]
+
+        return text_files, image_paths
 
 
-def research_task(task):
-    print("Researcher starting its work")
-    system_message = system_message_content.format(task=task)
-    inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=f"Go")]}
-    researcher_response = researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
-
-    #tool_json = find_tool_xml(researcher_response.content)
-    tool_json = find_tool_json(researcher_response.content)
-    text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
-    file_contents = check_file_contents(text_files)
-
-    image_paths = tool_json["tool_input"]["template_images"]
-    images = [
-                 {"type": "text", "text": image_path}
-                 for image_path in image_paths
-        ] + [
-        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{see_image(image_path)}"}}
-        for image_path in image_paths
-    ]
-    # images for claude
-    '''
-    images.append(
-        {
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/png",
-                "data": see_image(image_path),
-            },
-        }
-    )
-    '''
-
-    return text_files, file_contents, images
+if __name__ == "__main__":
+    task = """Check all system"""
+    researcher = Researcher(work_dir)
+    researcher.research_task(task)

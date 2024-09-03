@@ -2,7 +2,6 @@ import re
 import json
 import os
 import textwrap
-from tools.tools_coder_pipeline import see_file
 from dotenv import load_dotenv, find_dotenv
 import xml.etree.ElementTree as ET
 from termcolor import colored
@@ -10,6 +9,7 @@ from todoist_api_python.api import TodoistAPI
 from langchain_core.prompts import PromptTemplate
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
+import base64
 
 
 load_dotenv(find_dotenv())
@@ -47,13 +47,25 @@ def print_wrapped(content, width=160, color=None):
     print(wrapped_content)
 
 
-def check_file_contents(files):
+def check_file_contents(files, work_dir):
     file_contents = str()
     for file_name in files:
-        file_content = see_file(file_name)
+        file_content = watch_file(file_name, work_dir)
         file_contents += file_content + "\n\n###\n\n"
 
     return file_contents
+
+
+def watch_file(filename, work_dir):
+    #if file_folder_ignored(filename, forbidden_files_and_folders):
+    #    return "You are not allowed to work with this file."
+    with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
+    file_content = "".join(formatted_lines)
+    file_content = filename + ":\n\n" + file_content
+
+    return file_content
 
 
 def find_tool_json(response):
@@ -163,5 +175,43 @@ def read_progress_description():
     return progress_description
 
 
+def see_image(filename, work_dir):
+    try:
+        with open(join_paths(work_dir, filename), 'rb') as image_file:
+            img_encoded = base64.b64encode(image_file.read()).decode("utf-8")
+        return img_encoded
+    except Exception as e:
+        return f"{type(e).__name__}: {e}"
+
+
+def convert_images(image_paths):
+    images = [
+                 {"type": "text", "text": image_path}
+                 for image_path in image_paths
+             ] + [
+                 {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{see_image(image_path, work_dir)}"}}
+                 for image_path in image_paths
+             ]
+    # images for claude
+    '''
+    images.append(
+        {
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/png",
+                "data": see_image(image_path, work_dir),
+            },
+        }
+    )
+    '''
+    return images
+
+
+def join_paths(*args):
+    joined = '/'.join(p.strip('/') for p in args if p)
+    return os.path.normpath(joined)
+
+
 if __name__ == "__main__":
-    print(get_project_tasks())
+    print(join_paths("E://Eksperiments/Hacker_news_scraper/", "/dzik"))
