@@ -4,7 +4,7 @@ import playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
-from utilities.coderignore_functions import file_folder_ignored, forbidden_files_and_folders
+from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 from utilities.util_functions import join_paths
 from rag.retrieval import retrieve
 
