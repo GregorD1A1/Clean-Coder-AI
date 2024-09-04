@@ -4,11 +4,11 @@ from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain_community.chat_models import ChatOllama
-from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import print_wrapped, check_file_contents, convert_images
 from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
-from langchain_groq import ChatGroq
+import os
+from langchain_community.chat_models import ChatOllama
+from langchain_anthropic import ChatAnthropic
 
 
 load_dotenv(find_dotenv())
@@ -21,57 +21,14 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
     voter_messages: Sequence[BaseMessage]
 
+current_dir = os.path.dirname(os.path.realpath(__file__))
+with open(f"{current_dir}/prompts/planer_system.prompt", "r") as f:
+    planer_system_prompt_template = f.read()
+with open(f"{current_dir}/prompts/voter_system.prompt", "r") as f:
+    voter_system_prompt_template = f.read()
 
-system_message = SystemMessage(
-    content="""
-You are senior programmer. You guiding your code monkey friend about what changes need to be done in code in order 
-to execute given task. Think step by step and provide detailed plan about what code modifications needed to be done 
-to execute task. When possible, plan consistent code with other files. Your recommendations should include in details:
-- Details about functions modifications - provide only functions you want to replace, without rest of the file,
-- Details about movement lines and functionalities from file to file,
-- Details about new file creation,
-Plan should not include library installation or tests or anything else unrelated to code modifications.
-At every your message, you providing proposition of all changes, not just some. Never imagine files you have 
-not provided in context. Simplicity is a priority - write minimum needed amount of code.
-
-Do not rewrite full code, instead only write changes and point places where they need to be inserted. 
-Show with pluses (+) and minuses (-), where you want to add/remove code.
-Example:
-- self.id_number = str(ObjectId())
-+ self.user_id = str(ObjectId())
-+ self.email = email
-
-"""
-)
-
-
-voter_system_message = SystemMessage(
-    content="""
-    Several implementation plans for a task implementation have been proposed. Carefully analyze these plans and 
-    determine which one accomplishes the task most effectively.
-    Take in account the following criteria:
-    1. The primary criterion is the effectiveness of the plan in executing the task. It is most important.
-    2. A secondary criterion is simplicity. If two plans are equally good, chose one described more concise and required 
-    less modifications.
-    3. The third criterion is consistency with existing code in other files. Prefer plan with code more similar to existing codebase.
-    
-    Respond in xml:
-    ```xml
-    <response>
-        <evaluating>
-            Neatly summarize characteristics of plan propositions. Impartially evaluate pros and cons of every of them.
-        </evaluating>
-        <weighting>
-           Think step by step about why one proposition is better than another. Make final decision which of them is the
-           best according to provided criteria.
-        </weighting>
-        <choice>
-           Provide here nr of plan you chosen. Only the number and nothing more.
-        </choice>
-    </response>
-    ```
-    """
-)
+planer_system_message = SystemMessage(content=planer_system_prompt_template)
+voter_system_message = SystemMessage(content=voter_system_prompt_template)
 
 
 # node functions
@@ -130,7 +87,7 @@ def planning(task, text_files, image_paths, work_dir):
     message_images = HumanMessage(content=images)
 
     inputs = {
-        "messages": [system_message, message_without_imgs, message_images],
+        "messages": [planer_system_message, message_without_imgs, message_images],
         "voter_messages": [voter_system_message, message_without_imgs],
     }
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]

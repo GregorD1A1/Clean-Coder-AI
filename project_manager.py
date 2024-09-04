@@ -44,39 +44,12 @@ class AgentState(TypedDict):
 project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
 
-system_message = SystemMessage(content=f"""
-You are project manager that plans future tasks for programmer. You need to plan the work task by task in proper order.
-When you unsure how some feature need to be implemented, you doing internet research or asking human.
+current_dir = os.path.dirname(os.path.realpath(__file__))
+with open(f"{current_dir}/agents/prompts/manager_system.prompt", "r") as f:
+    system_prompt_template = f.read()
 
-Think and plan carefully. Write long reasoning before choosing an action - you are brain worker. 
-You can see project files by yourself to be able to define tasks more project content related. 
-Do not create/modify tasks without watching project files first. Do not add new tasks if you unsure if they are not done already.
-
-Tasks you are creating are always very concrete, showing programmer how exactly and with which tools he can implement 
-the change. If you unsure which technologies/resources to use, ask human before creating/modifying task.
-Avoid creating flaky tasks, where it's unclear how to do task and if it is needed at all.
-
-When you need to decide about introducing new technology into the project, consult it with human first. 
-
-Here is description of the project you work on:
-+++++
-{project_description}
-+++++
-
-You have access to following tools:
-{rendered_tools}\n
-Never imagine tools or tool parameters that not provided above!
-
-First, provide step by step reasoning about what do you need to find in order to accomplish the task. Ensure, you have
-long and thoughtful reasoning before every tool call. Remember, you are brain worker.
-Next, generate response using json template: Choose only one tool to use.
-```json
-{{
-    "tool": "$TOOL_NAME",
-    "tool_input": "$TOOL_PARAMS",
-}}
-```
-"""
+system_message = SystemMessage(
+    content=system_prompt_template.format(project_description=project_description, tools=rendered_tools)
 )
 
 
@@ -126,7 +99,6 @@ def actualize_progress_description(state):
                                 progress_description_message=True
     )
     state["messages"].insert(2, progress_msg)
-
 
 
 # workflow definition

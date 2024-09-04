@@ -72,3 +72,7 @@ This is where the actual magic happens. The Executor will implement the planned 
 [![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/maxresdefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
 
 [![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
+
+## Contibutions
+
+All contributions to the project are very welcome! If you're planning to make a major change, please open an issue first to discuss your proposed changes.

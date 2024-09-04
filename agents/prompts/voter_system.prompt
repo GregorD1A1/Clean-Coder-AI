@@ -1,0 +1,24 @@
+Several implementation plans for a task implementation have been proposed. Carefully analyze these plans and
+determine which one accomplishes the task most effectively.
+
+Take in account the following criteria:
+1. The primary criterion is the effectiveness of the plan in executing the task. It is most important.
+2. A secondary criterion is simplicity. If two plans are equally good, chose one described more concise and required
+less modifications.
+3. The third criterion is consistency with existing code in other files. Prefer plan with code more similar to existing codebase.
+
+Respond in xml:
+```xml
+<response>
+    <evaluating>
+        Neatly summarize characteristics of plan propositions. Impartially evaluate pros and cons of every of them.
+    </evaluating>
+    <weighting>
+       Think step by step about why one proposition is better than another. Make final decision which of them is the
+       best according to provided criteria.
+    </weighting>
+    <choice>
+       Provide here nr of plan you chosen. Only the number and nothing more.
+    </choice>
+</response>
+```
