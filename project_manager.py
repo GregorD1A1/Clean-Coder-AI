@@ -14,6 +14,7 @@ from utilities.util_functions import read_project_description, read_progress_des
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 import os
+import time
 
 
 load_dotenv(find_dotenv())
@@ -43,6 +44,11 @@ class AgentState(TypedDict):
 
 project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
+tasks_progress_template = """Current project tasks:
+{tasks}
+
+What have been done so far:
+{progress_description}"""
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 with open(f"{current_dir}/agents/prompts/manager_system.prompt", "r") as f:
@@ -56,14 +62,13 @@ system_message = SystemMessage(
 # node functions
 def call_model_manager(state):
     state = call_model(state, llm)
+    state = cut_off_context(state)
     return state
 
 
 def call_tool_manager(state):
     state = call_tool(state, tool_executor)
-    state = exchange_tasks_list(state)
-    if state["messages"][-2].tool_call["tool"] == "finish_project_planning":
-        actualize_progress_description(state)
+    state = actualize_tasks_list_and_progress_description(state)
     return state
 
 
@@ -78,28 +83,24 @@ def after_agent_condition(state):
 
 
 # just functions
-def exchange_tasks_list(state):
+def actualize_tasks_list_and_progress_description(state):
     # Remove old tasks message
-    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "project_tasks_message")]
+    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "tasks_and_progress_message")]
     # Add new message
     project_tasks = get_project_tasks()
-    file_contents_msg = HumanMessage(content=project_tasks, project_tasks_message=True)
-    state["messages"].insert(1, file_contents_msg)
+    progress_description = read_progress_description()
+    tasks_and_progress_msg = HumanMessage(
+        content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
+        tasks_and_progress_message=True
+    )
+    state["messages"].append(tasks_and_progress_msg)
     return state
 
-
-def actualize_progress_description(state):
-    # Remove old one
-    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "progress_description_message")]
-    progress_description = read_progress_description()
-    with open(os.path.join(work_dir, ".clean_coder", "manager_progress_description.txt"), "w") as f:
-        f.write(progress_description)
-    progress_msg = HumanMessage(content=
-                                f"Here is description what been done so far in the project:\n{progress_description}",
-                                progress_description_message=True
-    )
-    state["messages"].insert(2, progress_msg)
-
+def cut_off_context(state):
+    system_message = next((msg for msg in state["messages"] if msg.type == "system"), None)
+    last_messages_excluding_system = [msg for msg in state["messages"][-20:] if msg.type != "system"]
+    state["messages"] = [system_message] + last_messages_excluding_system
+    return state
 
 # workflow definition
 manager_workflow = StateGraph(AgentState)
@@ -114,11 +115,12 @@ manager = manager_workflow.compile()
 def run_manager():
     print("Manager starting its work")
     project_tasks = get_project_tasks()
-    progress_description_message = HumanMessage(
-        content=f"Here is description what been done so far in the project:\n{read_progress_description()}",
-        progress_description_message=True
+    progress_description = read_progress_description()
+    tasks_and_progress_msg = HumanMessage(
+        content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
+        tasks_and_progress_message=True
     )
-    inputs = {"messages": [system_message, HumanMessage(content=project_tasks, project_tasks_message=True), progress_description_message]}
+    inputs = {"messages": [system_message, tasks_and_progress_msg]}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
 
