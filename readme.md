@@ -75,4 +75,6 @@ This is where the actual magic happens. The Executor will implement the planned 
 
 ## Contibutions
 
-All contributions to the project are very welcome! If you're planning to make a major change, please open an issue first to discuss your proposed changes.
+All contributions to the project are very welcome!
+
+If you're planning to make a major change, please open an issue first to discuss your proposed changes.
