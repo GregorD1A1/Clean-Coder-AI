@@ -114,7 +114,6 @@ def check_bracket_balance(code):
 def parse_scss(scss_code):
     # removing import statements as they cousing error, because function has no access to filesystem
     scss_code = re.sub(r'@import\s+[\'"].*?[\'"];', '', scss_code)
-
     try:
         sass.compile(string=scss_code)
         return "Valid syntax"
@@ -141,9 +140,11 @@ def parse_vue_basic(content):
 
     style_match = re.search(r'<style[^>]*>(.*?)</style>', content, re.DOTALL)
     if style_match:
-        style_part_response = parse_scss(style_match.group(1))
-        if style_part_response != "Valid syntax":
-            return style_part_response
+        css = style_match.group(1)
+        if css:     # if for the case of empty css block
+            style_part_response = parse_scss(style_match.group(1))
+            if style_part_response != "Valid syntax":
+                return style_part_response
 
     return "Valid syntax"
 
@@ -170,209 +171,78 @@ def lint_vue_code(code_string):
 
 code = """
 <template>
-  <div class="dashboard content">
-    <div class="container">
-      <h1 class="dashboard-title">Panel użytkownika</h1>
-
-      <ul class="mem-profile-list">
-        <li v-for="mem_profile in mem_profiles" :key="mem_profile.slot_number" class="mem-profile-item">
-          <span class="mem-profile-name">
-            {{ mem_profile.firstName }} {{ mem_profile.secondName }} {{ mem_profile.lastName }}</span>
-          (Numer profilu: {{ mem_profile.slot_number }})
-          <div class="button-container">
-            <button class="edit-button" @click="editMemProfile(mem_profile.slot_number)">Edytuj</button>
-            <button class="share-button" @click="copyProfileLink(mem_profile.slot_number)">Udostępnij</button>
-            <span
-                v-show="showTooltip && tooltipSlotNumber === mem_profile.slot_number"
-                class="tooltip"
-            >Link skopiowany</span>
-            <button class="profile-button" @click="redirectToProfile(mem_profile.slot_number)">Zobacz profil</button>
-          </div>
-        </li>
-      </ul>
-
-      <button class="button create-button" @click="goToCreateMemProfile">Kup nowy profil</button>
-    </div>
+  <div class="register-form">
+    <h1>Register</h1>
+    <form @submit.prevent="handleSubmit">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" v-model="email" required />
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" v-model="password" required />
+      </div>
+      <div>
+        <label for="repeatPassword">Repeat Password:</label>
+        <input type="password" v-model="repeatPassword"required />
+      </div>
+      <div>
+        <label for="role">Register as:</label>
+        <select v-model="role" required>
+          <option value="intern">Intern</option>
+          <option value="campaign">Campaign Manager</option>
+        </select>
+      </div>
+      <button type="submit">Register</button>
+    </form>
   </div>
 </template>
 
 <script>
-import '@/assets/scss/common.scss';
-import axios from 'axios';
-
 export default {
-  name: 'DashboardPage',
   data() {
     return {
-      mem_profiles: [],
-      apiUrl: process.env.VUE_APP_API_URL, // Ensure this is set in your .env file
-      showTooltip: false,
-      tooltipSlotNumber: null,
+      email: '',
+      password: '',
+      role: 'intern',
+      apiUrl: import.meta.env.VITE_API_URL,
     };
   },
-  async created() {
-    await this.fetchMemProfiles();
-  },
   methods: {
-    async fetchMemProfiles() {
+    async handleSubmit() {
+      console.log(this.apiUrl);
+      const endpoint = this.role === 'intern' ? '/register/intern' : '/register/campaign';
+      const payload = {
+        email: this.email,
+        password: this.password,
+      };
       try {
-        const token = localStorage.getItem('userToken'); // Retrieve token from localStorage
-        const response = await axios.get(`${this.apiUrl}dashboard/`, {
+        const response = await fetch(this.apiUrl + endpoint, {
+          method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token}` // Use the token for authorization
-          }
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
         });
-        this.mem_profiles = response.data.mem_profiles;
-      } catch (error) {
-        console.error('Error fetching memorial profiles:', error);
+        if (!response.ok) {
+          throw new Error('Registration failed');
+        }
+        alert('Registration successful');
+      } 
+      catch (error) {
+        alert(error.message);
+      } 
+      finally {
+        this.email = '';
+        this.password = '';
+        this.role = 'intern';
       }
     },
-    editMemProfile(slotNumber) {
-      this.$router.push({name: 'memorial-profile-edit', params: {slotNumber: slotNumber}});
-    },
-    goToCreateMemProfile() {
-      this.$router.push({name: 'create-mem-profile'});
-    },
-    copyProfileLink(slotNumber) {
-      const link = `https://takzyli.pl/memorial_profile/${slotNumber}`;
-      navigator.clipboard.writeText(link).then(() => {
-        this.showTooltip = true;
-        this.tooltipSlotNumber = slotNumber;
-        setTimeout(() => {
-          this.showTooltip = false;
-          this.tooltipSlotNumber = null;
-        }, 2000);
-      }, (err) => {
-        console.error('Could not copy text: ', err);
-      });
-    },
-    redirectToProfile(slotNumber) {
-      this.$router.push({path: `/memorial_profile/${slotNumber}`});
-    },
-  }
+  },
 };
 </script>
 
-<style lang="scss" scoped>
-.dashboard {
-  padding: 20px;
-  background-color: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-.dashboard-title {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.mem-profile-list {
-  list-style-type: none;
-  padding: 0;
-}
-
-.mem-profile-item {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 10px;
-}
-
-.mem-profile-name {
-  font-weight: bold;
-}
-
-.edit-button, .create-button {
-  width: 100%;
-  background-color: black;
-  color: white;
-  border: none;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 5px; /* Rounded edges */
-  font-weight: 600;
-  transition: background-color 0.3s ease;
-  align-self: center;
-
-  @media (min-width: 768px) {
-    width: fit-content;
-  }
-}
-
-.edit-button {
-  margin: 0 5px 5px;
-}
-
-.edit-button:hover, .create-button:hover {
-  background-color: #333;
-}
-
-.share-button {
-  color: DeepSkyBlue;
-  border: 1px solid DeepSkyBlue;
-  background-color: transparent;
-  padding: 8px 16px;
-  border-radius: 5px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin: 0 5px 5px;
-}
-
-.share-button:hover {
-  background-color: DeepSkyBlue;
-  color: white;
-}
-
-.profile-button {
-  background-color: #808080; // Gray color
-  color: white;
-  border: none;
-  cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 5px;
-  font-weight: 600;
-  transition: background-color 0.3s ease;
-  margin: 0 5px 5px;
-}
-
-@media (max-width: 768px) {
-  .mem-profile-item {
-    flex-direction: column;
-    align-items: center;
-  }
-  .edit-button, .share-button, .profile-button {
-    width: calc(100% - 20px); /* Adjust width to allow for margin */
-  }
-}
-
-
-.profile-button:hover {
-  background-color: #696969; // Slightly darker shade on hover
-}
-
-.tooltip {
-  position: absolute;
-  top: -30px;
-  right: 50%;
-  transform: translateX(100%);
-  background-color: gray;
-  color: white;
-  padding: 5px;
-  border-radius: 5px;
-  white-space: nowrap;
-  font-size: 0.7em;
-}
-
-.button-container {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 5px;
-}
-</style>
+<style scoped src="@/assets/styles/forms.css"></style>
 
 """
 
