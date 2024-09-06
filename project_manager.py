@@ -94,7 +94,10 @@ def actualize_tasks_list_and_progress_description(state):
         tasks_and_progress_message=True
     )
     state["messages"].append(tasks_and_progress_msg)
+    for msg in state["messages"]:
+        print(msg)
     return state
+
 
 def cut_off_context(state):
     system_message = next((msg for msg in state["messages"] if msg.type == "system"), None)
