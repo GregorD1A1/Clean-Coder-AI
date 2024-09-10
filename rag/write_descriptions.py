@@ -15,7 +15,7 @@ def is_code_file(file_path):
     # List of common code file extensions
     code_extensions = {
         '.js', '.jsx', '.ts', '.tsx', '.vue', '.py', '.rb', '.php', '.java', '.c', '.cpp', '.cs', '.go', '.swift',
-        '.kt', '.rs', '.htm','.html', '.css', '.scss', '.sass', '.less'
+        '.kt', '.rs', '.htm','.html', '.css', '.scss', '.sass', '.less', '.prompt',
     }
     return file_path.suffix.lower() in code_extensions
 

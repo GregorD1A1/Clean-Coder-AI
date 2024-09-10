@@ -21,3 +21,6 @@ todoist-api-python==2.1.5
 replicate==0.31.0
 termcolor==2.4.0
 lxml==5.3.0
+sounddevice==0.5.0
+soundfile==0.12.1
+keyboard==0.13.5

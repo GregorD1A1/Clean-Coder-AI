@@ -94,8 +94,6 @@ def actualize_tasks_list_and_progress_description(state):
         tasks_and_progress_message=True
     )
     state["messages"].append(tasks_and_progress_msg)
-    for msg in state["messages"]:
-        print(msg)
     return state
 
 
@@ -123,7 +121,8 @@ def run_manager():
         content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
         tasks_and_progress_message=True
     )
-    inputs = {"messages": [system_message, tasks_and_progress_msg]}
+    start_human_message = HumanMessage(content="Go")    # Claude needs to have human message always as first
+    inputs = {"messages": [system_message, tasks_and_progress_msg, start_human_message]}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
 

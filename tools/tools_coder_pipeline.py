@@ -7,6 +7,8 @@ from utilities.syntax_checker_functions import check_syntax
 from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 from utilities.util_functions import join_paths
 from rag.retrieval import retrieve
+from utilities.voice_utils import start_recording, stop_recording, transcribe_audio
+import keyboard
 
 
 load_dotenv(find_dotenv())
@@ -192,12 +194,25 @@ tool input:
 @tool
 def ask_human_tool(prompt):
     """
-Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
-tool input:
-:param prompt: prompt to human.
-"""
+    Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
+    tool input:
+    :param prompt: prompt to human.
+    """
     try:
-        human_message = input(prompt + "\n")
+        print(prompt + "\nPress 'Ctrl+R' to start recording, 'Ctrl+S' to stop recording, and 'Ctrl+C' to cancel recording.")
+        
+        recording = False
+        human_message = None
+
+        
+
+        # Wait for user input or voice recording
+        while human_message is None:
+            human_message = input(prompt + "\n")
+        
+        # Stop listening for keyboard events after input is received
+        keyboard.unhook_all()
+        
         return human_message
     except Exception as e:
         return f"{type(e).__name__}: {e}"
@@ -230,4 +245,12 @@ def make_screenshot(self, endpoint, login_needed, commands):
 
 
 if __name__ == '__main__':
-    pass
+    print("Testing ask_human_tool with voice support:")
+    print("1. You can type your response normally.")
+    print("2. Press 'Ctrl+R' to start voice recording.")
+    print("3. Press 'Ctrl+S' to stop recording and see the transcription.")
+    print("4. Press 'Ctrl+C' to cancel recording.")
+    print("5. After recording, you can edit the transcription or provide a new response.")
+    print("\nTesting ask_human_tool now:")
+    response = ask_human_tool("Please provide a test response (you can type or use voice recording):")
+    print(f"\nReceived response: {response}")

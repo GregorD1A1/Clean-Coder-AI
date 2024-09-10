@@ -131,7 +131,7 @@ def parse_vue_basic(content):
         return template_part_response
 
     try:
-        script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
+        script = re.search(r'<script[^>]*>(.*?)</script>', content, re.DOTALL).group(1)
     except AttributeError:
         return "Script part has no valid open/closing tags."
     script_part_response = check_bracket_balance(script)
@@ -170,79 +170,72 @@ def lint_vue_code(code_string):
 
 
 code = """
-<template>
-  <div class="register-form">
-    <h1>Register</h1>
-    <form @submit.prevent="handleSubmit">
-      <div>
-        <label for="email">Email:</label>
-        <input type="email" v-model="email" required />
-      </div>
-      <div>
-        <label for="password">Password:</label>
-        <input type="password" v-model="password" required />
-      </div>
-      <div>
-        <label for="repeatPassword">Repeat Password:</label>
-        <input type="password" v-model="repeatPassword"required />
-      </div>
-      <div>
-        <label for="role">Register as:</label>
-        <select v-model="role" required>
-          <option value="intern">Intern</option>
-          <option value="campaign">Campaign Manager</option>
-        </select>
-      </div>
-      <button type="submit">Register</button>
-    </form>
-  </div>
-</template>
-
-<script>
-export default {
-  data() {
-    return {
-      email: '',
-      password: '',
-      role: 'intern',
-      apiUrl: import.meta.env.VITE_API_URL,
-    };
-  },
-  methods: {
-    async handleSubmit() {
-      console.log(this.apiUrl);
-      const endpoint = this.role === 'intern' ? '/register/intern' : '/register/campaign';
-      const payload = {
-        email: this.email,
-        password: this.password,
-      };
-      try {
-        const response = await fetch(this.apiUrl + endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) {
-          throw new Error('Registration failed');
-        }
-        alert('Registration successful');
-      } 
-      catch (error) {
-        alert(error.message);
-      } 
-      finally {
-        this.email = '';
-        this.password = '';
-        this.role = 'intern';
-      }
-    },
-  },
-};
+<script setup>
+import { RouterLink, RouterView } from 'vue-router'
 </script>
 
-<style scoped src="@/assets/styles/forms.css"></style>
+<template>
+  <RouterView />
+</template>
+
+<style scoped>
+header {
+  line-height: 1.5;
+  max-height: 100vh;
+}
+
+nav {
+  width: 100%;
+  font-size: 12px;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+nav a.router-link-exact-active {
+  color: var(--color-text);
+}
+
+nav a.router-link-exact-active:hover {
+  background-color: transparent;
+}
+
+nav a {
+  display: inline-block;
+  padding: 0 1rem;
+  border-left: 1px solid var(--color-border);
+}
+
+nav a:first-of-type {
+  border: 0;
+}
+
+@media (min-width: 1024px) {
+  header {
+    display: flex;
+    place-items: center;
+    padding-right: calc(var(--section-gap) / 2);
+  }
+
+  .logo {
+    margin: 0 2rem 0 0;
+  }
+
+  header .wrapper {
+    display: flex;
+    place-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  nav {
+    text-align: left;
+    margin-left: -1rem;
+    font-size: 1rem;
+
+    padding: 1rem 0;
+    margin-top: 1rem;
+  }
+}
+</style>
 
 """
 
