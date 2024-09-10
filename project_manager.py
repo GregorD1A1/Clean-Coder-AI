@@ -44,8 +44,11 @@ class AgentState(TypedDict):
 
 project_description = read_project_description()
 tool_executor = ToolExecutor(tools)
-tasks_progress_template = """Current project tasks:
+tasks_progress_template = """Actual list of tasks you planned in Todoist:
+
 {tasks}
+
+###
 
 What have been done so far:
 {progress_description}"""

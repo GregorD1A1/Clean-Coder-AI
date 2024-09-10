@@ -141,7 +141,7 @@ def get_project_tasks():
     )
     if not tasks:
         tasks_string = "<empty>"
-    return "Tasks in Todoist:\n" + tasks_string
+    return tasks_string
 
 
 def actualize_progress_description_file(task_name_description, tester_response):
