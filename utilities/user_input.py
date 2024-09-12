@@ -9,7 +9,7 @@ recorder = VoiceRecorder()
 
 
 def user_input(prompt=""):
-    print_wrapped(prompt + " You can record voice by pressing Ctrl.", color="yellow", bold=True)
+    print_wrapped(prompt + "You can record voice by pressing Tab:", color="yellow", bold=True)
     global output_string
     output_string = ""
 
@@ -28,7 +28,7 @@ def user_input(prompt=""):
         elif key == Key.space:
             output_string += " "
 
-        elif key == Key.ctrl_l or key == Key.ctrl_r:
+        elif key == Key.tab:
             recorder.start_recording()
 
         elif key == Key.backspace:
