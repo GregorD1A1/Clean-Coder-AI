@@ -1,5 +1,6 @@
 from langchain_core.messages import HumanMessage
-from utilities.util_functions import find_tool_json, find_tool_xml, print_wrapped
+from utilities.util_functions import find_tool_json, print_wrapped
+from utilities.user_input import user_input
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
 from langchain_core.messages.ai import AIMessage
@@ -63,7 +64,7 @@ def call_tool(state, tool_executor):
 
 
 def ask_human(state):
-    human_response = input("Write 'ok' if you agree with the agent or provide commentary. ")
+    human_response = user_input("Write 'ok' if you agree with the agent or provide commentary. ")
     if human_response == "ok":
         state["messages"].append(HumanMessage(content="Approved by human"))
     else:

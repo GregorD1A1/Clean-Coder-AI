@@ -45,7 +45,7 @@ def final_response(files_to_work_on, reference_files, template_images):
 stop_sequence = None
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2).with_config({"run_name": "Researcher"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")

@@ -35,18 +35,20 @@ def user_input(prompt=""):
             if output_string:
                 output_string = output_string[:-1]
                 # needed to remove letter from screen
-                sys.stdout.write('\r' + output_string + ' ')
+                #sys.stdout.write('\r' + output_string + ' ')
 
         elif key == Key.enter:
+            # go to newline when enter clicked
+            #sys.stdout.write("")
             if recorder.is_recording:
                 recorder.stop_recording()
                 print("Recording finished")
                 output_string = recorder.transcribe_audio()
             return False  # Stop listener
 
-        # print(f'\r{output_string}', end='', flush=True)
-        sys.stdout.write('\r' + output_string)
-        sys.stdout.flush()
+        print(f'\r{output_string}', end='', flush=True)
+        #sys.stdout.write('\r' + output_string)
+        #sys.stdout.flush()
 
 
     # Collect all event until released
@@ -75,5 +77,5 @@ def user_input_simple(prompt=""):
 
 if __name__ == "__main__":
     user_input("Provide your feedback.")
-    os.remove(recorder.soundfile_path)
+    #os.remove(recorder.soundfile_path)
     user_input("Provide your feedback.")
