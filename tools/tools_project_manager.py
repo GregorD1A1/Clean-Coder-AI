@@ -2,6 +2,7 @@ from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
 from utilities.util_functions import print_wrapped, actualize_progress_description_file
+from utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv
 from clean_coder_pipeline import run_clean_coder_pipeline
 import uuid
@@ -35,7 +36,7 @@ you found in internet, files dev need to use, technical details related to exist
 attention on.
 :param order: order of the task in project.
 """
-    human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+    human_message = user_input("Write 'ok' if you agree with agent or provide commentary: ")
     if human_message != 'ok':
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -52,7 +53,7 @@ tool_input:
 :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
 """
     task_name = todoist_api.get_task(task_id).content
-    human_message = input(f"I want to modify task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    human_message = user_input(f"I want to modify task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
     if human_message != 'ok':
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -106,7 +107,7 @@ tool_input:
 :param task_id: id of the task.
 """
     task_name = todoist_api.get_task(task_id).content
-    human_message = input(f"I want to delete task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    human_message = user_input(f"I want to delete task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
     if human_message != 'ok':
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -121,7 +122,7 @@ overlapping scope allowed. Tasks should be in execution order. First task in ord
 tool_input:
 {}
 """
-    human_comment = input(
+    human_comment = user_input(
         "Project planning finished. Provide your proposition of changes in the project tasks or write 'ok' to continue...\n"
     )
     if human_comment != "ok":

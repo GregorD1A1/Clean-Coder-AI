@@ -6,8 +6,8 @@ from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
 from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 from utilities.util_functions import join_paths
+from utilities.user_input import user_input
 from rag.retrieval import retrieve
-from utilities.voice_utils import start_recording, stop_recording, transcribe_audio
 import keyboard
 
 
@@ -110,7 +110,7 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+                human_message = user_input("Write 'ok' if you agree with agent or provide commentary.")
                 if human_message != 'ok':
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -144,7 +144,7 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+                human_message = user_input("Write 'ok' if you agree with agent or provide commentary.")
                 if human_message != 'ok':
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -171,7 +171,7 @@ tool input:
 :param code: Code to write in the file.
 """
         try:
-            human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
+            human_message = user_input("Write 'ok' if you agree with agent or provide commentary: ")
             if human_message != 'ok':
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -199,19 +199,7 @@ def ask_human_tool(prompt):
     :param prompt: prompt to human.
     """
     try:
-        print(prompt + "\nPress 'Ctrl+R' to start recording, 'Ctrl+S' to stop recording, and 'Ctrl+C' to cancel recording.")
-        
-        recording = False
-        human_message = None
-
-        
-
-        # Wait for user input or voice recording
-        while human_message is None:
-            human_message = input(prompt + "\n")
-        
-        # Stop listening for keyboard events after input is received
-        keyboard.unhook_all()
+        human_message = user_input(prompt)
         
         return human_message
     except Exception as e:

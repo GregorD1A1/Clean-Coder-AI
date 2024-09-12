@@ -38,10 +38,12 @@ Return new progress description and nothing more.
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
-def print_wrapped(content, width=160, color=None):
+def print_wrapped(content, width=160, color=None, bold=False):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
+    if bold:
+        wrapped_content = f"\033[1m{wrapped_content}\033[0m"
     if color:
         wrapped_content = colored(wrapped_content, color, force_color='True')
     print(wrapped_content)
