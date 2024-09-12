@@ -61,8 +61,11 @@ def check_file_contents(files, work_dir):
 def watch_file(filename, work_dir):
     #if file_folder_ignored(filename, forbidden_files_and_folders):
     #    return "You are not allowed to work with this file."
-    with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
-        lines = file.readlines()
+    try:
+        with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
+            lines = file.readlines()
+    except FileNotFoundError:
+        return "File not exists."
     formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
     file_content = "".join(formatted_lines)
     file_content = filename + ":\n\n" + file_content

@@ -35,11 +35,11 @@ def user_input(prompt=""):
             if output_string:
                 output_string = output_string[:-1]
                 # needed to remove letter from screen
-                #sys.stdout.write('\r' + output_string + ' ')
+                sys.stdout.write('\r' + output_string + ' ')
 
         elif key == Key.enter:
             # go to newline when enter clicked
-            #sys.stdout.write("")
+            sys.stdout.write("")
             if recorder.is_recording:
                 recorder.stop_recording()
                 print("Recording finished")

@@ -146,7 +146,7 @@ tool_input:
 
     Task: {task_name_description}
     """
-    tester_response = input(tester_query)
+    tester_response = user_input(tester_query)
 
     actualize_progress_description_file(task_name_description, tester_response)
 
