@@ -8,7 +8,6 @@ from utilities.start_project_functions import file_folder_ignored, forbidden_fil
 from utilities.util_functions import join_paths
 from utilities.user_input import user_input
 from rag.retrieval import retrieve
-import keyboard
 
 
 load_dotenv(find_dotenv())
