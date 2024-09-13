@@ -1,11 +1,12 @@
 from pynput.keyboard import Key, Listener
-from voice_utils import VoiceRecorder
-from util_functions import print_wrapped
+from utilities.voice_utils import VoiceRecorder
+from utilities.util_functions import print_wrapped
 import sys
 from threading import Thread
 import time
 
 output_string = ""
+been_recorded = False
 recorder = VoiceRecorder()
 
 
@@ -73,10 +74,12 @@ def user_input_simple(prompt=""):
 
     return user_response
 
-def user_input(self, prompt=""):
+def user_input(prompt=""):
+
     print_wrapped("Just start writing or record voice message by pressing Tab:", color="yellow", bold=True)
 
     def press_interrupt(key):
+        global been_recorded
         if hasattr(key, 'char'):
             if not recorder.is_recording:
                 return False
@@ -88,6 +91,7 @@ def user_input(self, prompt=""):
 
         elif key == Key.tab:
             recorder.start_recording()
+            been_recorded = True
 
         elif key == Key.enter:
             if recorder.is_recording:
@@ -100,7 +104,9 @@ def user_input(self, prompt=""):
     with Listener(on_press=press_interrupt) as listener:
         listener.join()
 
-    output_string = input()
+    if not been_recorded:
+        output_string = input()
+    been_recorded = False
 
     return output_string
 
