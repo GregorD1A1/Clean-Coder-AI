@@ -1,17 +1,16 @@
 from pynput.keyboard import Key, Listener
-from utilities.voice_utils import VoiceRecorder
-from utilities.util_functions import print_wrapped
-import os, sys
-
+from voice_utils import VoiceRecorder
+from util_functions import print_wrapped
+import sys
+from threading import Thread
+import time
 
 output_string = ""
 recorder = VoiceRecorder()
 
 
-def user_input(prompt=""):
+def user_inputv1(prompt=""):
     print_wrapped(prompt + "You can record voice by pressing Tab:", color="yellow", bold=True)
-    global output_string
-    output_string = ""
 
     def press_interrupt(key):
         global output_string
@@ -74,8 +73,36 @@ def user_input_simple(prompt=""):
 
     return user_response
 
+def user_input(self, prompt=""):
+    print_wrapped("Just start writing or record voice message by pressing Tab:", color="yellow", bold=True)
+
+    def press_interrupt(key):
+        if hasattr(key, 'char'):
+            if not recorder.is_recording:
+                return False
+            else:
+                # cancel recording
+                if key.char == 'c':
+                    recorder.stop_recording()
+                    print("Recording canceled")
+
+        elif key == Key.tab:
+            recorder.start_recording()
+
+        elif key == Key.enter:
+            if recorder.is_recording:
+                recorder.stop_recording()
+                print("Recording finished")
+                output_string = recorder.transcribe_audio()
+            return False  # Stop listener
+
+    # Collect all event until released
+    with Listener(on_press=press_interrupt) as listener:
+        listener.join()
+
+    output_string = input()
+
+    return output_string
 
 if __name__ == "__main__":
-    user_input("Provide your feedback.")
-    #os.remove(recorder.soundfile_path)
-    user_input("Provide your feedback.")
+    print(user_input("Provide your feedback."))

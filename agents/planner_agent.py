@@ -4,7 +4,7 @@ from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
-from utilities.util_functions import print_wrapped, check_file_contents, convert_images
+from utilities.util_functions import print_wrapped, check_file_contents, convert_images, get_joke
 from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
 import os
 from langchain_community.chat_models import ChatOllama
@@ -35,7 +35,8 @@ voter_system_message = SystemMessage(content=voter_system_prompt_template)
 def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
-    print(f"\nGenerating plan propositions...")
+    print(f"\nGenerating plan propositions. While I'm thinking...\n")
+    print_wrapped(get_joke(), color="red")
     plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
         state["voter_messages"].append(AIMessage(content="_"))

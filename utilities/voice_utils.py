@@ -7,7 +7,7 @@ import queue
 import sys
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
-
+import time
 
 load_dotenv(find_dotenv())
 openai_client = OpenAI()
@@ -15,6 +15,7 @@ openai_client = OpenAI()
 
 class VoiceRecorder:
     def __init__(self):
+
         self.recording_queue = queue.Queue()
         self.sample_rate = 44100
         self.soundfile_path = tempfile.mktemp(suffix=".wav")

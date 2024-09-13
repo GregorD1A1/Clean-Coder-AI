@@ -10,6 +10,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 import base64
+import requests
 
 
 load_dotenv(find_dotenv())
@@ -218,5 +219,16 @@ def join_paths(*args):
     return os.path.normpath(joined)
 
 
+def get_joke():
+    try:
+        response = requests.get("https://v2.jokeapi.dev/joke/Programming?type=single")
+        # response = requests.get("https://uselessfacts.jsph.pl//api/v2/facts/random")
+        print(response.json())
+        joke = response.json()["joke"] + "\n\n"
+    except Exception as e:
+        joke = f"Failed to receive joke :/"
+    return joke
+
+
 if __name__ == "__main__":
-    print(join_paths("E://Eksperiments/Hacker_news_scraper/", "/dzik"))
+    print(get_joke())
