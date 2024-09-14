@@ -25,7 +25,7 @@ class VoiceRecorder:
     def record(self):
         with soundfile.SoundFile(self.soundfile_path, mode='x', samplerate=self.sample_rate, channels=1) as file:
             with sounddevice.InputStream(samplerate=self.sample_rate, channels=1, callback=self.save_sound_callback):
-                print('\nEnter - save recording, C - cancel')
+                print('Press Enter to finish recording')
                 while self.is_recording:
                     file.write(self.recording_queue.get())
 

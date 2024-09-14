@@ -16,6 +16,6 @@ def run_clean_coder_pipeline(task, work_dir):
 
 
 if __name__ == "__main__":
-    task = user_input("Provide task to be executed: ")
+    task = user_input("Provide task to be executed. ")
     work_dir = os.getenv("WORK_DIR")
     run_clean_coder_pipeline(task, work_dir)

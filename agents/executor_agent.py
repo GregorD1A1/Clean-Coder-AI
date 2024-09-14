@@ -69,7 +69,7 @@ class Executor():
         executor_workflow.add_node("agent", self.call_model_executor)
         executor_workflow.add_node("tool", self.call_tool_executor)
         executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human_help", user_input)
+        executor_workflow.add_node("human_help", self.agent_looped_human_help)
         executor_workflow.add_node("human_end_process_confirmation", ask_human)
 
         executor_workflow.set_entry_point("agent")
@@ -105,6 +105,13 @@ class Executor():
         log_message = HumanMessage(content="Logs:\n" + logs)
 
         state["messages"].append(log_message)
+        return state
+
+    def agent_looped_human_help(self, state):
+        human_message = user_input(
+            "It seems the agent repeatedly tries to introduce wrong changes. Help him to find his mistakes."
+        )
+        state["messages"].append(HumanMessage(content=human_message))
         return state
 
     # Conditional edge functions

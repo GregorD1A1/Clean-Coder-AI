@@ -64,11 +64,11 @@ def call_tool(state, tool_executor):
 
 
 def ask_human(state):
-    human_response = user_input("Write 'ok' if you agree with the agent or provide commentary. ")
-    if human_response == "ok":
+    human_message = user_input("Type (o)k if you accept or provide commentary.")
+    if human_message not in ['o', 'ok']:
         state["messages"].append(HumanMessage(content="Approved by human"))
     else:
-        state["messages"].append(HumanMessage(content=human_response))
+        state["messages"].append(HumanMessage(content=human_message))
     return state
 
 

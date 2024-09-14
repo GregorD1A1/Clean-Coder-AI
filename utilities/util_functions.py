@@ -39,14 +39,14 @@ Return new progress description and nothing more.
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
-def print_wrapped(content, width=160, color=None, bold=False):
+def print_wrapped(content, width=160, color=None, on_color=None, bold=False):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
     if bold:
         wrapped_content = f"\033[1m{wrapped_content}\033[0m"
     if color:
-        wrapped_content = colored(wrapped_content, color, force_color='True')
+        wrapped_content = colored(wrapped_content, color, on_color=on_color, force_color='True')
     print(wrapped_content)
 
 
@@ -223,7 +223,6 @@ def get_joke():
     try:
         response = requests.get("https://v2.jokeapi.dev/joke/Programming?type=single")
         # response = requests.get("https://uselessfacts.jsph.pl//api/v2/facts/random")
-        print(response.json())
         joke = response.json()["joke"] + "\n\n"
     except Exception as e:
         joke = f"Failed to receive joke :/"

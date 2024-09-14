@@ -109,8 +109,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = user_input("Write 'ok' if you agree with agent or provide commentary.")
-                if human_message != 'ok':
+                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
                 file.truncate()
@@ -143,8 +143,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = user_input("Write 'ok' if you agree with agent or provide commentary.")
-                if human_message != 'ok':
+                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
                 file.truncate()
@@ -170,8 +170,8 @@ tool input:
 :param code: Code to write in the file.
 """
         try:
-            human_message = user_input("Write 'ok' if you agree with agent or provide commentary: ")
-            if human_message != 'ok':
+            human_message = user_input("Type (o)k if you accept or provide commentary.")
+            if human_message not in ['o', 'ok']:
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
             full_path = join_paths(work_dir, filename)
@@ -232,12 +232,4 @@ def make_screenshot(self, endpoint, login_needed, commands):
 
 
 if __name__ == '__main__':
-    print("Testing ask_human_tool with voice support:")
-    print("1. You can type your response normally.")
-    print("2. Press 'Ctrl+R' to start voice recording.")
-    print("3. Press 'Ctrl+S' to stop recording and see the transcription.")
-    print("4. Press 'Ctrl+C' to cancel recording.")
-    print("5. After recording, you can edit the transcription or provide a new response.")
-    print("\nTesting ask_human_tool now:")
-    response = ask_human_tool("Please provide a test response (you can type or use voice recording):")
-    print(f"\nReceived response: {response}")
+    pass

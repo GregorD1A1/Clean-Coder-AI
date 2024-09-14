@@ -94,3 +94,9 @@ def planning(task, text_files, image_paths, work_dir):
     planner_response = researcher.invoke(inputs, {"recursion_limit": 50})["messages"][-2]
 
     return planner_response.content
+
+
+if __name__ == "__main__":
+    task = "Test task"
+    work_dir = os.getenv("WORK_DIR")
+    planning(task, work_dir=work_dir)
