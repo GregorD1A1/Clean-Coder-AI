@@ -37,7 +37,7 @@ attention on.
 :param order: order of the task in project.
 """
     human_message = user_input("Write 'ok' if you agree with agent or provide commentary: ")
-    if human_message != 'ok':
+    if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
     todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
@@ -54,7 +54,7 @@ tool_input:
 """
     task_name = todoist_api.get_task(task_id).content
     human_message = user_input(f"I want to modify task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
-    if human_message != 'ok':
+    if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
     update_data = {}
@@ -108,7 +108,7 @@ tool_input:
 """
     task_name = todoist_api.get_task(task_id).content
     human_message = user_input(f"I want to delete task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
-    if human_message != 'ok':
+    if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
     todoist_api.delete_task(task_id=task_id)
@@ -122,11 +122,11 @@ overlapping scope allowed. Tasks should be in execution order. First task in ord
 tool_input:
 {}
 """
-    human_comment = user_input(
+    human_message = user_input(
         "Project planning finished. Provide your proposition of changes in the project tasks or write 'ok' to continue...\n"
     )
-    if human_comment != "ok":
-        return human_comment
+    if human_message not in ['o', 'ok']:
+        return human_message
 
     # Get first task and it's name and description
     task = todoist_api.get_tasks(project_id=PROJECT_ID)[0]

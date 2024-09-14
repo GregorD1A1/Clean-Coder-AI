@@ -1,6 +1,7 @@
 import ast
 from bs4 import BeautifulSoup
 import esprima
+import pyjsparser
 import sass
 from lxml import etree
 import re
@@ -170,74 +171,109 @@ def lint_vue_code(code_string):
 
 
 code = """
-<script setup>
-import { RouterLink, RouterView } from 'vue-router'
-</script>
+// /utils/logger.js
+const axios = require('axios');
+axios.defaults.baseURL = process.env.VUE_APP_DEV_SERVER_API_URL;
 
-<template>
-  <RouterView />
-</template>
+const endpointName = '/logs/frontend-errors';
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
+const formatErrorMessage = (error, type = 'error') => {
+    const baseMessage = error && error.message
+      ? JSON.stringify(error.message.replace(/\n/g, ''))
+        .replace(/\\u00[\da-zA-Z]{2}\[\d+m/g, '')
+        .replace(/\s{2,}/g, ' ')
+      : 'No messages found';
+    return type === 'warning' ? `Warning: ${baseMessage}` : baseMessage;
 }
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
+const sendLogErrorRequest = (message) => {
+    axios.post(endpointName, { message })
+        .then(() => {
+            console.log(`Successful logged to file`);
+        })
+        .catch(error => {
+            console.error('Log to file failed: ', error);
+        });
 }
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
+const getFormattedErrorMessages = (error, message) => {
+    // eslint-disable-next-line no-control-regex
+    const cleanOutput = message.replace(/\u001b\[[0-9;]*m/g, '');
+    // Split by a pattern that matches the common part of the file paths
+    const errorsByFile = cleanOutput.split(/(?=Takzyli-frontend\/src\/)/);
+    // Filter out empty strings and the initial part if it doesn't contain file errors
+    const filteredErrors = errorsByFile.filter(e => e && !e.startsWith('[eslint]'));
+    // Combine errors for each file
+    const formattedErrors = filteredErrors.map(fileErrors => {
+        return fileErrors.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    });
+    const errorMessages = formattedErrors.filter(message => message.includes('error'));
+    const cleanedMessages = [...errorMessages]
+        .map(errorMessage => errorMessage
+            .replace(/ error /g,' ')
+            .replace(/✖ .*/g, '')
+        );
+
+    const transformedErrors = cleanedMessages.flatMap((item) => {
+        // Remove any trailing path segment that appears at the end of an item
+        const cleanedItem = item.replace(/\/[A-Za-z/_-]+\/$/, '');
+        // Extract the file path and errors from each cleaned item
+        const [filePath, ...errors] = cleanedItem.split(/ (?=\d+:\d+)/);
+        // Prepend the file path to each error and return the new array of errors
+        return errors.map(error => `${filePath} ${error}`);
+    })
+
+    return transformedErrors.sort((a, b) => {
+        // Extract file paths from the error strings
+        const filePathA = a.split(' ')[0];
+        const filePathB = b.split(' ')[0];
+
+        // Compare file paths to sort
+        return filePathA.localeCompare(filePathB);
+    });
 }
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
+const logErrorToServer = (error, type = 'error') => {
+    const errorMessage = formatErrorMessage(error, type);
+    const errorName = error ? error.name : null;
+
+    if (error) {
+        const errorMessagesSortedByPath = getFormattedErrorMessages(error, errorMessage);
+
+        errorMessagesSortedByPath.forEach((message) => {
+            const errorMessage = `
+                ${new Date().toISOString() + ' | '}
+                ${errorName ? errorName + ' | ' : ''}
+                ${message || 'No errors found'}
+           `.trim();
+
+            const formattedMessage = errorMessage.split('\n').map(item => item.trim()).join(' ');
+
+            sendLogErrorRequest(formattedMessage);
+        });
+    } else {
+        const formattedMessage = `
+            ${new Date().toISOString() + ' | '}
+            ${errorMessage}
+       `.replace(/\s{2,}/g, ' ').trim();
+
+        sendLogErrorRequest(formattedMessage);
+    }
 }
 
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
+const clearFrontendLogs = () => {
+    axios.delete(endpointName)
+        .then(() => {
+            console.log('Frontend logs cleared successfully');
+        })
+        .catch(error => {
+            console.error('Frontend logs clearing failed:', error);
+        });
 }
 
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
-  }
-
-  .logo {
-    margin: 0 2rem 0 0;
-  }
-
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
-
-    padding: 1rem 0;
-    margin-top: 1rem;
-  }
-}
-</style>
+module.exports = { logErrorToServer, clearFrontendLogs };
 
 """
 
 if __name__ == "__main__":
-    print(parse_vue_basic(code))
+    pyjsparser.parse(code)
