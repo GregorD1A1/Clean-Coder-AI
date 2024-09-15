@@ -1,4 +1,4 @@
-![Logo](https://www.flickr.com/photos/201506986@N08/53996797674/in/dateposted-public/)
+![Logo](https://i.imgur.com/yGvdAgq.png)
 # Clean Coder framework
 ### Your AI junior programmer
 
