@@ -7,9 +7,6 @@ langchain_anthropic==0.1.20
 langchain-openai==0.1.17
 langchain_mistralai==0.1.10
 playwright==1.43.0
-xmltodict==0.13.0
-beautifulsoup4==4.12.3
-esprima==4.0.1
 cssutils==2.11.0
 libsass==0.23.0
 openai==1.35.7
