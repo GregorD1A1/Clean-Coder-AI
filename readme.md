@@ -1,6 +1,27 @@
 # Clean Coder framework
 ### Your AI junior programmer
 
+```
+# clone repo
+git clone https://github.com/GregorD1A1/Clean-Coder-AI
+
+# go to directory
+cd Clean-Coder-AI
+
+# install dependencies
+pip install -r requirements.txt
+
+# provide path to the project directory you'll work on
+export WORK_DIR=/path/to/your/project/dir
+
+# provide api keys
+export OPENAI_API_KEY=your_api_key_here
+export ANTHROPIC_PROJECT_ID=your_api_key_here
+
+# run Clean Coder
+python clean_coder_pipeline.py
+```
+
 Clean Coder is an AI code writer developed with special attention to providing a clean context to Large Language Models (LLMs). This enhances the quality of LLM responses and reduces costs.
 
 Work of a programmer is often about making minor improvements to existing applications and expanding their capabilities, rather than building a whole new app from scratch. Unlike other AI coding frameworks, Clean Coder specializes in implementing changes within existing application.

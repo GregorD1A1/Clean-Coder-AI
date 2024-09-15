@@ -2,6 +2,7 @@ from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
 from agents.executor_agent import Executor
 import os
+from utilities.user_input import user_input
 
 
 def run_clean_coder_pipeline(task, work_dir):
@@ -15,7 +16,6 @@ def run_clean_coder_pipeline(task, work_dir):
 
 
 if __name__ == "__main__":
-    task = """Check all system
-"""
+    task = user_input("Provide task to be executed. ")
     work_dir = os.getenv("WORK_DIR")
     run_clean_coder_pipeline(task, work_dir)

@@ -6,6 +6,7 @@ from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
 from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 from utilities.util_functions import join_paths
+from utilities.user_input import user_input
 from rag.retrieval import retrieve
 
 
@@ -108,8 +109,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
-                if human_message != 'ok':
+                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
                 file.truncate()
@@ -142,8 +143,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
-                if human_message != 'ok':
+                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
                 file.truncate()
@@ -169,8 +170,8 @@ tool input:
 :param code: Code to write in the file.
 """
         try:
-            human_message = input("Write 'ok' if you agree with agent or provide commentary: ")
-            if human_message != 'ok':
+            human_message = user_input("Type (o)k if you accept or provide commentary.")
+            if human_message not in ['o', 'ok']:
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
             full_path = join_paths(work_dir, filename)
@@ -192,12 +193,13 @@ tool input:
 @tool
 def ask_human_tool(prompt):
     """
-Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
-tool input:
-:param prompt: prompt to human.
-"""
+    Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
+    tool input:
+    :param prompt: prompt to human.
+    """
     try:
-        human_message = input(prompt + "\n")
+        human_message = user_input(prompt)
+        
         return human_message
     except Exception as e:
         return f"{type(e).__name__}: {e}"

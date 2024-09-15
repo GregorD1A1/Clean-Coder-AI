@@ -1,6 +1,7 @@
 import ast
 from bs4 import BeautifulSoup
 import esprima
+import pyjsparser
 import sass
 from lxml import etree
 import re
@@ -131,7 +132,7 @@ def parse_vue_basic(content):
         return template_part_response
 
     try:
-        script = re.search(r'<script>(.*?)</script>', content, re.DOTALL).group(1)
+        script = re.search(r'<script[^>]*>(.*?)</script>', content, re.DOTALL).group(1)
     except AttributeError:
         return "Script part has no valid open/closing tags."
     script_part_response = check_bracket_balance(script)
@@ -170,81 +171,109 @@ def lint_vue_code(code_string):
 
 
 code = """
-<template>
-  <div class="register-form">
-    <h1>Register</h1>
-    <form @submit.prevent="handleSubmit">
-      <div>
-        <label for="email">Email:</label>
-        <input type="email" v-model="email" required />
-      </div>
-      <div>
-        <label for="password">Password:</label>
-        <input type="password" v-model="password" required />
-      </div>
-      <div>
-        <label for="repeatPassword">Repeat Password:</label>
-        <input type="password" v-model="repeatPassword"required />
-      </div>
-      <div>
-        <label for="role">Register as:</label>
-        <select v-model="role" required>
-          <option value="intern">Intern</option>
-          <option value="campaign">Campaign Manager</option>
-        </select>
-      </div>
-      <button type="submit">Register</button>
-    </form>
-  </div>
-</template>
+// /utils/logger.js
+const axios = require('axios');
+axios.defaults.baseURL = process.env.VUE_APP_DEV_SERVER_API_URL;
 
-<script>
-export default {
-  data() {
-    return {
-      email: '',
-      password: '',
-      role: 'intern',
-      apiUrl: import.meta.env.VITE_API_URL,
-    };
-  },
-  methods: {
-    async handleSubmit() {
-      console.log(this.apiUrl);
-      const endpoint = this.role === 'intern' ? '/register/intern' : '/register/campaign';
-      const payload = {
-        email: this.email,
-        password: this.password,
-      };
-      try {
-        const response = await fetch(this.apiUrl + endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
+const endpointName = '/logs/frontend-errors';
+
+const formatErrorMessage = (error, type = 'error') => {
+    const baseMessage = error && error.message
+      ? JSON.stringify(error.message.replace(/\n/g, ''))
+        .replace(/\\u00[\da-zA-Z]{2}\[\d+m/g, '')
+        .replace(/\s{2,}/g, ' ')
+      : 'No messages found';
+    return type === 'warning' ? `Warning: ${baseMessage}` : baseMessage;
+}
+
+const sendLogErrorRequest = (message) => {
+    axios.post(endpointName, { message })
+        .then(() => {
+            console.log(`Successful logged to file`);
+        })
+        .catch(error => {
+            console.error('Log to file failed: ', error);
         });
-        if (!response.ok) {
-          throw new Error('Registration failed');
-        }
-        alert('Registration successful');
-      } 
-      catch (error) {
-        alert(error.message);
-      } 
-      finally {
-        this.email = '';
-        this.password = '';
-        this.role = 'intern';
-      }
-    },
-  },
-};
-</script>
+}
 
-<style scoped src="@/assets/styles/forms.css"></style>
+const getFormattedErrorMessages = (error, message) => {
+    // eslint-disable-next-line no-control-regex
+    const cleanOutput = message.replace(/\u001b\[[0-9;]*m/g, '');
+    // Split by a pattern that matches the common part of the file paths
+    const errorsByFile = cleanOutput.split(/(?=Takzyli-frontend\/src\/)/);
+    // Filter out empty strings and the initial part if it doesn't contain file errors
+    const filteredErrors = errorsByFile.filter(e => e && !e.startsWith('[eslint]'));
+    // Combine errors for each file
+    const formattedErrors = filteredErrors.map(fileErrors => {
+        return fileErrors.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
+    });
+    const errorMessages = formattedErrors.filter(message => message.includes('error'));
+    const cleanedMessages = [...errorMessages]
+        .map(errorMessage => errorMessage
+            .replace(/ error /g,' ')
+            .replace(/✖ .*/g, '')
+        );
+
+    const transformedErrors = cleanedMessages.flatMap((item) => {
+        // Remove any trailing path segment that appears at the end of an item
+        const cleanedItem = item.replace(/\/[A-Za-z/_-]+\/$/, '');
+        // Extract the file path and errors from each cleaned item
+        const [filePath, ...errors] = cleanedItem.split(/ (?=\d+:\d+)/);
+        // Prepend the file path to each error and return the new array of errors
+        return errors.map(error => `${filePath} ${error}`);
+    })
+
+    return transformedErrors.sort((a, b) => {
+        // Extract file paths from the error strings
+        const filePathA = a.split(' ')[0];
+        const filePathB = b.split(' ')[0];
+
+        // Compare file paths to sort
+        return filePathA.localeCompare(filePathB);
+    });
+}
+
+const logErrorToServer = (error, type = 'error') => {
+    const errorMessage = formatErrorMessage(error, type);
+    const errorName = error ? error.name : null;
+
+    if (error) {
+        const errorMessagesSortedByPath = getFormattedErrorMessages(error, errorMessage);
+
+        errorMessagesSortedByPath.forEach((message) => {
+            const errorMessage = `
+                ${new Date().toISOString() + ' | '}
+                ${errorName ? errorName + ' | ' : ''}
+                ${message || 'No errors found'}
+           `.trim();
+
+            const formattedMessage = errorMessage.split('\n').map(item => item.trim()).join(' ');
+
+            sendLogErrorRequest(formattedMessage);
+        });
+    } else {
+        const formattedMessage = `
+            ${new Date().toISOString() + ' | '}
+            ${errorMessage}
+       `.replace(/\s{2,}/g, ' ').trim();
+
+        sendLogErrorRequest(formattedMessage);
+    }
+}
+
+const clearFrontendLogs = () => {
+    axios.delete(endpointName)
+        .then(() => {
+            console.log('Frontend logs cleared successfully');
+        })
+        .catch(error => {
+            console.error('Frontend logs clearing failed:', error);
+        });
+}
+
+module.exports = { logErrorToServer, clearFrontendLogs };
 
 """
 
 if __name__ == "__main__":
-    print(parse_vue_basic(code))
+    pyjsparser.parse(code)

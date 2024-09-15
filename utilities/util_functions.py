@@ -10,6 +10,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 import base64
+import requests
 
 
 load_dotenv(find_dotenv())
@@ -38,12 +39,14 @@ Return new progress description and nothing more.
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
-def print_wrapped(content, width=160, color=None):
+def print_wrapped(content, width=160, color=None, on_color=None, bold=False):
     lines = content.split('\n')
     wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
     wrapped_content = '\n'.join(wrapped_lines)
+    if bold:
+        wrapped_content = f"\033[1m{wrapped_content}\033[0m"
     if color:
-        wrapped_content = colored(wrapped_content, color, force_color='True')
+        wrapped_content = colored(wrapped_content, color, on_color=on_color, force_color='True')
     print(wrapped_content)
 
 
@@ -62,7 +65,7 @@ def watch_file(filename, work_dir):
     try:
         with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
             lines = file.readlines()
-    except:
+    except FileNotFoundError:
         return "File not exists."
     formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]
     file_content = "".join(formatted_lines)
@@ -140,11 +143,11 @@ def read_project_description():
 def get_project_tasks():
     tasks = todoist_api.get_tasks(project_id=PROJECT_ID)
     tasks_string = "\n".join(
-        f"id: {task.id}, \nName: {task.content}, \nDescription: {task.description}, \nOrder: {task.order}\n\n" for task in tasks
+        f"Task:\nid: {task.id}, \nName: {task.content}, \nDescription: {task.description}, \nOrder: {task.order}\n\n###\n" for task in tasks
     )
     if not tasks:
         tasks_string = "<empty>"
-    return "Tasks in Todoist:\n" + tasks_string
+    return tasks_string
 
 
 def actualize_progress_description_file(task_name_description, tester_response):
@@ -216,5 +219,15 @@ def join_paths(*args):
     return os.path.normpath(joined)
 
 
+def get_joke():
+    try:
+        response = requests.get("https://v2.jokeapi.dev/joke/Programming?type=single")
+        # response = requests.get("https://uselessfacts.jsph.pl//api/v2/facts/random")
+        joke = response.json()["joke"] + "\n\n"
+    except Exception as e:
+        joke = f"Failed to receive joke :/"
+    return joke
+
+
 if __name__ == "__main__":
-    print(join_paths("E://Eksperiments/Hacker_news_scraper/", "/dzik"))
+    print(get_joke())

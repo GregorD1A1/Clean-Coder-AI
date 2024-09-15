@@ -20,7 +20,7 @@ from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import check_file_contents, print_wrapped, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
-from copy import deepcopy
+from utilities.user_input import user_input
 
 
 load_dotenv(find_dotenv())
@@ -67,18 +67,19 @@ class Executor():
         executor_workflow = StateGraph(AgentState)
 
         executor_workflow.add_node("agent", self.call_model_executor)
-        #executor_workflow.add_node("checker", self.call_model_checker)
         executor_workflow.add_node("tool", self.call_tool_executor)
         executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human", ask_human)
+        executor_workflow.add_node("human_help", self.agent_looped_human_help)
+        executor_workflow.add_node("human_end_process_confirmation", ask_human)
 
         executor_workflow.set_entry_point("agent")
 
         #executor_workflow.add_edge("agent", "checker")
         executor_workflow.add_edge("tool", "agent")
+        executor_workflow.add_edge("human_help", "agent")
         executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
         executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
-        executor_workflow.add_conditional_edges("human", after_ask_human_condition)
+        executor_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
 
         self.executor = executor_workflow.compile()
 
@@ -106,21 +107,28 @@ class Executor():
         state["messages"].append(log_message)
         return state
 
+    def agent_looped_human_help(self, state):
+        human_message = user_input(
+            "It seems the agent repeatedly tries to introduce wrong changes. Help him to find his mistakes."
+        )
+        state["messages"].append(HumanMessage(content=human_message))
+        return state
+
     # Conditional edge functions
     def after_agent_condition(self, state):
         last_message = state["messages"][-1]
 
         # safety mechanism for looped wrong tool call
-        last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
+        last_human_messages = [m for m in state["messages"] if m.type == "human"][-5:]
         tool_not_executed_human_msgs = [m for m in last_human_messages if m.content.startswith(TOOL_NOT_EXECUTED_WORD)]
-        if len(tool_not_executed_human_msgs) == 3:
+        if len(tool_not_executed_human_msgs) == 4:
             print("Seems like AI been looped. Please suggest it how to introduce change correctly:")
-            return "human"
+            return "human_help"
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
         elif last_message.tool_call["tool"] == "final_response":
-            return "check_log" if log_file_path else "human"
+            return "check_log" if log_file_path else "human_end_process_confirmation"
         else:
             return "tool"
 
@@ -128,7 +136,7 @@ class Executor():
         last_message = state["messages"][-1]
 
         if last_message.content.endswith("Logs are correct"):
-            return "human"
+            return "human_end_process_confirmation"
         else:
             return "agent"
 

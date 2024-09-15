@@ -32,7 +32,7 @@ def final_response(files_to_work_on, reference_files, template_images):
     """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files Executor will need to modify.
     If not, do additional research. Include only the files you convinced will be useful.
-    Provide only existing files.
+    Provide only existing files, do not provide that you'll be implementing.
 
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
@@ -45,7 +45,7 @@ def final_response(files_to_work_on, reference_files, template_images):
 stop_sequence = None
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2)
+llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2).with_config({"run_name": "Researcher"})
 #llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
