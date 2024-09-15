@@ -1,8 +1,13 @@
+if __name__ == "__main__":
+    from utilities.graphics import print_ascii_logo
+    print_ascii_logo()
+
 from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
 from agents.executor_agent import Executor
 import os
 from utilities.user_input import user_input
+
 
 
 def run_clean_coder_pipeline(task, work_dir):

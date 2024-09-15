@@ -26,7 +26,7 @@ export ANTHROPIC_PROJECT_ID=your_api_key_here
 # run Clean Coder
 python clean_coder_pipeline.py
 ```
-or check detailed [instructions how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
+or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
 
 
 ## Key advantages:
