@@ -136,9 +136,6 @@ tool_input:
     print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
     run_clean_coder_pipeline(task_name_description, base_work_dir)
 
-    # Mark task as done
-    todoist_api.close_task(task_id=task.id)
-
     # ToDo: git upload
 
     # Ask tester to check if changes have been implemented correctly
@@ -149,6 +146,9 @@ tool_input:
     tester_response = user_input(tester_query)
 
     actualize_progress_description_file(task_name_description, tester_response)
+
+    # Mark task as done
+    todoist_api.close_task(task_id=task.id)
 
     return f"Task execution completed. Tester response: {tester_response}"
 
