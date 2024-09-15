@@ -1,6 +1,6 @@
 ![Logo](./assets/logo_wide.png)
-# Clean Coder framework
-### Your AI junior programmer
+<h1>Clean Coder<h1>
+<h2>Your AI junior developer<h2>
 
 ```
 # clone repo
