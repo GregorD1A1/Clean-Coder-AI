@@ -1,6 +1,9 @@
 ![Logo](./assets/logo_wide.png)
+<div align="center">
 <h1>Clean Coder<h1>
 <h2>Your AI junior developer<h2>
+</div>
+
 
 ```
 # clone repo
