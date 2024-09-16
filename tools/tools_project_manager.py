@@ -36,7 +36,7 @@ you found in internet, files dev need to use, technical details related to exist
 attention on.
 :param order: order of the task in project.
 """
-    human_message = user_input("Write 'ok' if you agree with agent or provide commentary: ")
+    human_message = user_input("Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -53,7 +53,7 @@ tool_input:
 :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
 """
     task_name = todoist_api.get_task(task_id).content
-    human_message = user_input(f"I want to modify task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    human_message = user_input(f"I want to modify task '{task_name}'. Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -107,7 +107,7 @@ tool_input:
 :param task_id: id of the task.
 """
     task_name = todoist_api.get_task(task_id).content
-    human_message = user_input(f"I want to delete task '{task_name}'. Write 'ok' if you agree or provide commentary: ")
+    human_message = user_input(f"I want to delete task '{task_name}'. Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -123,7 +123,7 @@ tool_input:
 {}
 """
     human_message = user_input(
-        "Project planning finished. Provide your proposition of changes in the project tasks or write 'ok' to continue...\n"
+        "Project planning finished. Provide your proposition of changes in task list or type (o)k to continue...\n"
     )
     if human_message not in ['o', 'ok']:
         return human_message
@@ -133,7 +133,7 @@ tool_input:
     task_name_description = f"{task.content}\n{task.description}"
 
     # Execute the main pipeline to implement the task
-    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="blue")
+    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="light_blue")
     run_clean_coder_pipeline(task_name_description, base_work_dir)
 
     # ToDo: git upload

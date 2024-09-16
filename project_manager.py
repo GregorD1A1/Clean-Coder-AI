@@ -1,7 +1,7 @@
 if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
-    
+
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_community.llms import Replicate

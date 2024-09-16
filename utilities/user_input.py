@@ -52,7 +52,7 @@ def user_input_old(prompt=""):
 
 
 def user_input(prompt=""):
-    print_wrapped(prompt + " You can use (m)icrophone to record it:", color="yellow", bold=True)
+    print_wrapped(prompt + " Or use (m)icrophone to record it:", color="yellow", bold=True)
     user_sentence = input()
     if user_sentence == 'm':
         recorder.start_recording()
