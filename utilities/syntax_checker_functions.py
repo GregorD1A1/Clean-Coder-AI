@@ -1,5 +1,4 @@
 import ast
-from bs4 import BeautifulSoup
 import sass
 from lxml import etree
 import re
