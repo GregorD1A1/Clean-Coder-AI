@@ -1,9 +1,9 @@
 ![Logo](./assets/logo_wide.png)
 <div align="center">
-<h2>Your AI junior developer</h2>
+<h2>Your 2-in-1 AI Scrum Master and Developer</h2>
 </div>
 
-Clean Coder is an AI code writer developed with special attention to providing a clean context to Large Language Models (LLMs). This enhances the quality of LLM responses and reduces costs.
+Clean Coder: Your AI-powered software project assistant. Plan, manage, and code your projects step-by-step. From task breakdown to implementation, Clean Coder streamlines your development process for efficient, organized results.
 
 ## Try it right away:
 ```
