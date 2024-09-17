@@ -1,11 +1,9 @@
 ![Logo](./assets/logo_wide_2.png)
 <div align="center">
 <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
-
-
+<br>
 Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
-
-
+<br>
 <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
 </div>
 
