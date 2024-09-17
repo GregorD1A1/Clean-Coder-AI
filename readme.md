@@ -44,10 +44,13 @@ or check detailed instructions [how to start in documentation](https://clean-cod
 
 ## 📺 Demo videos
 
-<a href="https://youtu.be/LLiABw4gY_w" title="Demo video">
+<a href="https://youtu.be/LLiABw4gY_w" title="Greg's Tech video">
   <img src="https://img.youtube.com/vi/LLiABw4gY_w/maxresdefault.jpg" width="300" alt="Demo video">
 </a>
-[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
+
+<a href="https://youtu.be/d5qbX-v4qwM" title="Planes video">
+  <img src="https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg" width="300" alt="Demo video">
+</a>
 
 ## 🌱 Contibutions
 
