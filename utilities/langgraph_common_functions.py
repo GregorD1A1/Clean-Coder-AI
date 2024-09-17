@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from utilities.util_functions import find_tool_json, print_wrapped
+from utilities.util_functions import find_tool_json, print_formatted
 from utilities.user_input import user_input
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
@@ -24,7 +24,7 @@ def call_model(state, llm, stop_sequence_to_add=None):
     # Add stop sequence if needed (sometimes needed for Claude)
     response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
     response.tool_call = find_tool_json(response.content)
-    print_wrapped(response.content)
+    print_formatted(response.content)
     state["messages"].append(response)
 
     # safety mechanism for a bad json

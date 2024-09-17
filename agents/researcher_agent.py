@@ -15,7 +15,7 @@ from tools.tools_coder_pipeline import (
     prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
 )
 from rag.retrieval import vdb_availabe
-from utilities.util_functions import find_tool_json, print_wrapped
+from utilities.util_functions import find_tool_json, print_formatted
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )

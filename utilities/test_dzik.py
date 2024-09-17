@@ -1,7 +1,7 @@
 import keyboard
 from pynput.keyboard import Key, Listener
 from voice_utils import VoiceRecorder
-from util_functions import print_wrapped
+from util_functions import print_formatted
 import time
 
 recorder = VoiceRecorder()
@@ -12,7 +12,7 @@ class InputHandler():
         self.been_recorded = False
 
     def user_input(self, prompt=""):
-        print_wrapped("Just start writing or record voice message by pressing Tab:", color="yellow", bold=True)
+        print_formatted("Just start writing or record voice message by pressing Tab:", color="yellow", bold=True)
 
         while True:
             if keyboard.is_pressed('ctrl'):

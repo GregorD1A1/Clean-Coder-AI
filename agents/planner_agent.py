@@ -4,7 +4,7 @@ from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
-from utilities.util_functions import print_wrapped, check_file_contents, convert_images, get_joke
+from utilities.util_functions import print_formatted, check_file_contents, convert_images, get_joke
 from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
 import os
 from langchain_community.chat_models import ChatOllama
@@ -36,7 +36,7 @@ def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
     print(f"\nGenerating plan propositions. While I'm thinking...\n")
-    print_wrapped(get_joke(), color="red")
+    print_formatted(get_joke(), color="red")
     plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
         state["voter_messages"].append(AIMessage(content="_"))
@@ -49,7 +49,7 @@ def call_planers(state):
     choice = int(response["response"][2]["choice"])
     plan = plan_propositions_messages[choice - 1]
     state["messages"].append(plan)
-    print_wrapped(f"Chosen plan:\n\n{plan.content}")
+    print_formatted(f"Chosen plan:\n\n{plan.content}")
 
     return state
 
@@ -57,7 +57,7 @@ def call_planers(state):
 def call_model_corrector(state):
     messages = state["messages"]
     response = llm.invoke(messages)
-    print_wrapped(response.content)
+    print_formatted(response.content)
     state["messages"].append(response)
 
     return state

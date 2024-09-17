@@ -12,9 +12,9 @@ Tools to your disposal:
 First, write your thinking process. Think step by step about what do you need to do to accomplish the task.
 Do not implement features unrelated to provided task.
 Reasoning part of your response is very important, never miss it! Even if the next step seems to be obvious.
-Next, call tool using template. Use only one json at once! If you want to introduce few changes, just choose one of them; 
+Next, call tool using template. Use only one tool call at once! If you want to introduce few changes, just choose one of them; 
 rest will be possibility to do later.
-```json
+```json5
 {{
     "tool": "$TOOL_NAME",
     "tool_input": "$TOOL_PARAMS",

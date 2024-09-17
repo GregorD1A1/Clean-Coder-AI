@@ -21,3 +21,4 @@ lxml==5.3.0
 sounddevice==0.5.0
 soundfile==0.12.1
 pynput==1.7.7
+json5==0.9.25
