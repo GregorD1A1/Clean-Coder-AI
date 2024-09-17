@@ -141,7 +141,7 @@ tool_input:
     # Ask tester to check if changes have been implemented correctly
     tester_query = f"""Please check if the task has been implemented correctly.
 
-    Task: {task_name_description}
+    Task: {task.content}
     """
     tester_response = user_input(tester_query)
 

@@ -1,11 +1,15 @@
 ![Logo](./assets/logo_wide.png)
 <div align="center">
-<h2>Your 2-in-1 AI Scrum Master and Developer</h2>
+<h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
+
+
+
+Clean Coder is Your AI-powered software project assistant. Deligate planing, managing, and coding to AI. Agents break down tasks on Todoist, write code, and test themselves, helping you create great projects with minimal effort and stress!
+
+<h3>⭐️ Your Star Motivates me to Introduce New Cool Features! ⭐️</h3>  
 </div>
 
-Clean Coder: Your AI-powered software project assistant. Deligate planing, managing, and coding to AI. Agents break down tasks on Todoist, write code, and test themselves, helping you create great projects with minimal effort and stress!
-
-### Relax and watch it code
+## Relax and watch it code
 
 ```
 # clone repo
@@ -30,7 +34,7 @@ python clean_coder_pipeline.py
 or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
 
 
-## Key advantages:
+## ✨ Key advantages:
 
 - [Manager agent](https://clean-coder.dev/quick_start/manager/) that plans thoroughly-descripted tasks using Todoist and supervises whole project, same as human scrum master.
 - [Programmer agents](https://clean-coder.dev/quick_start/programmer_pipeline/) that effectively executes manager planned tasks. They has well-designed context pipeline with only clean input context in it and with advanced techniques to make it more intelligent.
@@ -39,14 +43,12 @@ or check detailed instructions [how to start in documentation](https://clean-cod
 - Automatic file linting preventing agent to introduce wrong change and [log check for self-debug](https://clean-coder.dev/advanced_features_installation/logs_check/).
 - File Researcher agent with (but not only) [RAG tool](https://clean-coder.dev/advanced_features_installation/similarity_search_for_researcher/) for effective searching code files.
 
-## Demo videos
+## 🎬 Demo videos
 
 [![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/maxresdefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
 
 [![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/maxresdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
 
-## Contibutions
+## 🌱 Contibutions
 
-All contributions to the project are very welcome!
-
-If you're planning to make a major change, please open an issue first to discuss your proposed changes.
+All contributions to the project are very welcome! Please check the [contributions guide](https://clean-coder.dev/community/contributions_guide/).
