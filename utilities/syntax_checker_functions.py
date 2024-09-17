@@ -1,7 +1,4 @@
 import ast
-from bs4 import BeautifulSoup
-import esprima
-import pyjsparser
 import sass
 from lxml import etree
 import re
@@ -62,12 +59,10 @@ def parse_vue_template_part(code):
 
 
 def parse_javascript(js_content):
-    try:
-        esprima.parseModule(js_content)
-        return "Valid syntax"
-    except esprima.Error as e:
-        print(f"Esprima syntax error: {e}")
-        return f"JavaScript syntax error: {e}"
+    script_part_response = check_bracket_balance(js_content)
+    if script_part_response != "Valid syntax":
+        return script_part_response
+    return "Valid syntax"
 
 
 def check_template_tag_balance(code, open_tag, close_tag):
@@ -119,7 +114,7 @@ def parse_scss(scss_code):
         sass.compile(string=scss_code)
         return "Valid syntax"
     except sass.CompileError as e:
-       return f"CSS/SCSS syntax error: {e}"
+        return f"CSS/SCSS syntax error: {e}"
 
 
 # That function does not guarantee finding all the syntax errors in template and script part; but mostly works
@@ -149,6 +144,17 @@ def parse_vue_basic(content):
 
     return "Valid syntax"
 
+# function works, but not used by default as there could be problems with esprima installation
+def parse_javascript_esprima(js_content):
+    import esprima
+    try:
+        esprima.parseModule(js_content)
+        return "Valid syntax"
+    except esprima.Error as e:
+        print(f"Esprima syntax error: {e}")
+        return f"JavaScript syntax error: {e}"
+
+
 # Function under development
 def lint_vue_code(code_string):
     import subprocess
@@ -170,110 +176,6 @@ def lint_vue_code(code_string):
 
 
 
-code = """
-// /utils/logger.js
-const axios = require('axios');
-axios.defaults.baseURL = process.env.VUE_APP_DEV_SERVER_API_URL;
-
-const endpointName = '/logs/frontend-errors';
-
-const formatErrorMessage = (error, type = 'error') => {
-    const baseMessage = error && error.message
-      ? JSON.stringify(error.message.replace(/\n/g, ''))
-        .replace(/\\u00[\da-zA-Z]{2}\[\d+m/g, '')
-        .replace(/\s{2,}/g, ' ')
-      : 'No messages found';
-    return type === 'warning' ? `Warning: ${baseMessage}` : baseMessage;
-}
-
-const sendLogErrorRequest = (message) => {
-    axios.post(endpointName, { message })
-        .then(() => {
-            console.log(`Successful logged to file`);
-        })
-        .catch(error => {
-            console.error('Log to file failed: ', error);
-        });
-}
-
-const getFormattedErrorMessages = (error, message) => {
-    // eslint-disable-next-line no-control-regex
-    const cleanOutput = message.replace(/\u001b\[[0-9;]*m/g, '');
-    // Split by a pattern that matches the common part of the file paths
-    const errorsByFile = cleanOutput.split(/(?=Takzyli-frontend\/src\/)/);
-    // Filter out empty strings and the initial part if it doesn't contain file errors
-    const filteredErrors = errorsByFile.filter(e => e && !e.startsWith('[eslint]'));
-    // Combine errors for each file
-    const formattedErrors = filteredErrors.map(fileErrors => {
-        return fileErrors.trim().replace(/\n+/g, ' ').replace(/\s+/g, ' ');
-    });
-    const errorMessages = formattedErrors.filter(message => message.includes('error'));
-    const cleanedMessages = [...errorMessages]
-        .map(errorMessage => errorMessage
-            .replace(/ error /g,' ')
-            .replace(/✖ .*/g, '')
-        );
-
-    const transformedErrors = cleanedMessages.flatMap((item) => {
-        // Remove any trailing path segment that appears at the end of an item
-        const cleanedItem = item.replace(/\/[A-Za-z/_-]+\/$/, '');
-        // Extract the file path and errors from each cleaned item
-        const [filePath, ...errors] = cleanedItem.split(/ (?=\d+:\d+)/);
-        // Prepend the file path to each error and return the new array of errors
-        return errors.map(error => `${filePath} ${error}`);
-    })
-
-    return transformedErrors.sort((a, b) => {
-        // Extract file paths from the error strings
-        const filePathA = a.split(' ')[0];
-        const filePathB = b.split(' ')[0];
-
-        // Compare file paths to sort
-        return filePathA.localeCompare(filePathB);
-    });
-}
-
-const logErrorToServer = (error, type = 'error') => {
-    const errorMessage = formatErrorMessage(error, type);
-    const errorName = error ? error.name : null;
-
-    if (error) {
-        const errorMessagesSortedByPath = getFormattedErrorMessages(error, errorMessage);
-
-        errorMessagesSortedByPath.forEach((message) => {
-            const errorMessage = `
-                ${new Date().toISOString() + ' | '}
-                ${errorName ? errorName + ' | ' : ''}
-                ${message || 'No errors found'}
-           `.trim();
-
-            const formattedMessage = errorMessage.split('\n').map(item => item.trim()).join(' ');
-
-            sendLogErrorRequest(formattedMessage);
-        });
-    } else {
-        const formattedMessage = `
-            ${new Date().toISOString() + ' | '}
-            ${errorMessage}
-       `.replace(/\s{2,}/g, ' ').trim();
-
-        sendLogErrorRequest(formattedMessage);
-    }
-}
-
-const clearFrontendLogs = () => {
-    axios.delete(endpointName)
-        .then(() => {
-            console.log('Frontend logs cleared successfully');
-        })
-        .catch(error => {
-            console.error('Frontend logs clearing failed:', error);
-        });
-}
-
-module.exports = { logErrorToServer, clearFrontendLogs };
-
-"""
-
 if __name__ == "__main__":
-    pyjsparser.parse(code)
+    code = """
+"""

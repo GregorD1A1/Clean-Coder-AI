@@ -1,6 +1,11 @@
-# Clean Coder framework
-### Your AI junior programmer
+![Logo](./assets/logo_wide.png)
+<div align="center">
+<h2>Your 2-in-1 AI Scrum Master and Developer</h2>
+</div>
 
+Clean Coder: Your AI-powered software project assistant. Plan, manage, and code your projects step-by-step. From task breakdown to implementation, Clean Coder streamlines your development process for efficient, organized results.
+
+## Try it right away:
 ```
 # clone repo
 git clone https://github.com/GregorD1A1/Clean-Coder-AI
@@ -21,10 +26,8 @@ export ANTHROPIC_PROJECT_ID=your_api_key_here
 # run Clean Coder
 python clean_coder_pipeline.py
 ```
+or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
 
-Clean Coder is an AI code writer developed with special attention to providing a clean context to Large Language Models (LLMs). This enhances the quality of LLM responses and reduces costs.
-
-Work of a programmer is often about making minor improvements to existing applications and expanding their capabilities, rather than building a whole new app from scratch. Unlike other AI coding frameworks, Clean Coder specializes in implementing changes within existing application.
 
 ## Key advantages:
 
