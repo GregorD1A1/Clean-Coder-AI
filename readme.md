@@ -44,9 +44,9 @@ or check detailed instructions [how to start in documentation](https://clean-cod
 
 ## 📺 Demo videos
 
-[![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/mqdefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
+[![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/sddefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
 
-[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/mqdefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
+[![Demo video](https://img.youtube.com/vi/d5qbX-v4qwM/sddefault.jpg)](https://youtu.be/d5qbX-v4qwM "Demo video")
 
 ## 🌱 Contibutions
 
