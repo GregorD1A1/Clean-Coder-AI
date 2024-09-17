@@ -1,15 +1,13 @@
-![Logo](./assets/logo_wide.png)
+![Logo](./assets/logo_wide_2.png)
 <div align="center">
 <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
 
+Clean Coder is Your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
 
-
-Clean Coder is Your AI-powered software project assistant. Deligate planing, managing, and coding to AI. Agents break down tasks on Todoist, write code, and test themselves, helping you create great projects with minimal effort and stress!
-
-<h3>⭐️ Your Star Motivates me to Introduce New Cool Features! ⭐️</h3>  
+<h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
 </div>
 
-## Relax and watch it code
+## 🏖️ Relax and watch it code
 
 ```
 # clone repo
@@ -36,14 +34,14 @@ or check detailed instructions [how to start in documentation](https://clean-cod
 
 ## ✨ Key advantages:
 
-- [Manager agent](https://clean-coder.dev/quick_start/manager/) that plans thoroughly-descripted tasks using Todoist and supervises whole project, same as human scrum master.
-- [Programmer agents](https://clean-coder.dev/quick_start/programmer_pipeline/) that effectively executes manager planned tasks. They has well-designed context pipeline with only clean input context in it and with advanced techniques to make it more intelligent.
-- Ability to create a [frontend based on images](https://clean-coder.dev/features/working_with_images/) with designs.
-- You can [speak to Clean Coder](https://clean-coder.dev/features/talk_to_cc/) instead of writing to provide your feedback or assign task.
-- Automatic file linting preventing agent to introduce wrong change and [log check for self-debug](https://clean-coder.dev/advanced_features_installation/logs_check/).
-- File Researcher agent with (but not only) [RAG tool](https://clean-coder.dev/advanced_features_installation/similarity_search_for_researcher/) for effective searching code files.
+- Get project supervised by [Manager agent](https://clean-coder.dev/quick_start/manager/) with thoroughly-described tasks organized in Todoist, just like with a human scrum master.
+- Watch tasks executed one by one by [Programming agents](https://clean-coder.dev/quick_start/programmer_pipeline/), with a well-designed context pipeline and advanced techniques for enhanced intelligence.
+- Create a [frontend based on images](https://clean-coder.dev/features/working_with_images/) with designs.
+- [Speak to Clean Coder](https://clean-coder.dev/features/talk_to_cc/) instead of writing.
+- Automatic file linting prevents from introducing incorrect changes and [log check for self-debug](https://clean-coder.dev/advanced_features_installation/logs_check/).
+- File Researcher agent with (but not only) [RAG tool](https://clean-coder.dev/advanced_features_installation/similarity_search_for_researcher/) for effective searching of project files.
 
-## 🎬 Demo videos
+## 📺 Demo videos
 
 [![Demo video](https://img.youtube.com/vi/LLiABw4gY_w/maxresdefault.jpg)](https://youtu.be/LLiABw4gY_w "Demo video")
 
