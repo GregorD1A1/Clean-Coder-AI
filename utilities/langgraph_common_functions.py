@@ -1,15 +1,15 @@
 from langchain_core.messages import HumanMessage
-from utilities.util_functions import find_tool_json, print_wrapped
+from utilities.util_functions import find_tool_json, print_formatted
 from utilities.user_input import user_input
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
 from langchain_core.messages.ai import AIMessage
 from tools.tools_coder_pipeline import TOOL_NOT_EXECUTED_WORD
 
-bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json', '```' tags.
+bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json5', '```' tags.
 Code inside of json should be provided in the way that not makes json invalid.
 No '```' tags should be inside of json."""
-multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You have written multiple jsons at once. If you want to execute 
+multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
 multiple actions, choose only one for now; rest you can execute later."""
 no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to execute an action."""
 
@@ -24,7 +24,7 @@ def call_model(state, llm, stop_sequence_to_add=None):
     # Add stop sequence if needed (sometimes needed for Claude)
     response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
     response.tool_call = find_tool_json(response.content)
-    print_wrapped(response.content)
+    print_formatted(response.content)
     state["messages"].append(response)
 
     # safety mechanism for a bad json

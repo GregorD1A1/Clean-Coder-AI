@@ -26,8 +26,8 @@ Never imagine tools or tool parameters that not provided above!
 
 First, provide step by step reasoning about what do you need to find in order to accomplish the task. Ensure, you have
 long and thoughtful reasoning before every tool call. Remember, you are brain worker.
-Next, generate response using json template: Choose only one tool to use.
-```json
+Next, generate response using next template: Choose only one tool to use.
+```json5
 {{
     "tool": "$TOOL_NAME",
     "tool_input": "$TOOL_PARAMS",

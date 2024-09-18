@@ -3,7 +3,6 @@ from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_community.llms import Replicate
-from langchain_groq import ChatGroq
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -14,8 +13,8 @@ from langchain.tools import tool
 from tools.tools_coder_pipeline import (
     prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
 )
-from rag.retrieval import vdb_availabe
-from utilities.util_functions import find_tool_json, print_wrapped
+from rag.retrieval import vdb_available
+from utilities.util_functions import find_tool_json, print_formatted
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )
@@ -46,7 +45,6 @@ stop_sequence = None
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2).with_config({"run_name": "Researcher"})
-#llm = ChatGroq(model="llama3-70b-8192", temperature=0.3).with_config({"run_name": "Researcher"})
 #llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
@@ -60,10 +58,10 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 with open(f"{current_dir}/prompts/researcher_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
+
 # node functions
 def call_model_researcher(state):
     state = call_model(state, llm, stop_sequence_to_add=stop_sequence)
-
     return state
 
 
@@ -84,7 +82,7 @@ class Researcher():
         list_dir = prepare_list_dir_tool(work_dir)
         see_file = prepare_see_file_tool(work_dir)
         tools = [list_dir, see_file, final_response]
-        if vdb_availabe:
+        if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
         self.rendered_tools = render_text_description(tools)
         self.tool_executor = ToolExecutor(tools)

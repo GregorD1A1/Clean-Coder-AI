@@ -1,5 +1,5 @@
 import re
-import json
+import json5
 import os
 import textwrap
 from dotenv import load_dotenv, find_dotenv
@@ -39,15 +39,16 @@ Return new progress description and nothing more.
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 
 
-def print_wrapped(content, width=160, color=None, on_color=None, bold=False):
-    lines = content.split('\n')
-    wrapped_lines = [textwrap.fill(line, width=width) for line in lines]
-    wrapped_content = '\n'.join(wrapped_lines)
+def print_formatted(content, width=None, color=None, on_color=None, bold=False):
+    if width:
+        lines = content.split('\n')
+        lines = [textwrap.fill(line, width=width) for line in lines]
+        content = '\n'.join(lines)
     if bold:
-        wrapped_content = f"\033[1m{wrapped_content}\033[0m"
+        content = f"\033[1m{content}\033[0m"
     if color:
-        wrapped_content = colored(wrapped_content, color, on_color=on_color, force_color='True')
-    print(wrapped_content)
+        content = colored(content, color, on_color=on_color, force_color='True')
+    print(content)
 
 
 def check_file_contents(files, work_dir):
@@ -75,14 +76,14 @@ def watch_file(filename, work_dir):
 
 
 def find_tool_json(response):
-    matches = re.findall(r'```json(.*?)```', response, re.DOTALL)
+    matches = re.findall(r'```(?:json|json5)\s*\n(.*?)\n\s*```', response, re.DOTALL)
 
     if len(matches) == 1:
         json_str = matches[0].strip()
         try:
-            json_obj = json.loads(json_str)
-            return json_obj
-        except json.JSONDecodeError:
+            json5_obj = json5.loads(json_str)
+            return json5_obj
+        except:
             return "Invalid json."
     elif len(matches) > 1:
         print("Multiple jsons found.")
@@ -227,7 +228,3 @@ def get_joke():
     except Exception as e:
         joke = f"Failed to receive joke :/"
     return joke
-
-
-if __name__ == "__main__":
-    print(get_joke())

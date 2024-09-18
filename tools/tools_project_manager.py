@@ -1,7 +1,7 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-from utilities.util_functions import print_wrapped, actualize_progress_description_file
+from utilities.util_functions import print_formatted, actualize_progress_description_file
 from utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv
 from clean_coder_pipeline import run_clean_coder_pipeline
@@ -133,7 +133,7 @@ tool_input:
     task_name_description = f"{task.content}\n{task.description}"
 
     # Execute the main pipeline to implement the task
-    print_wrapped(f"\nAsked programmer to execute task: {task_name_description}\n", color="light_blue")
+    print_formatted(f"\nAsked programmer to execute task: {task_name_description}\n", color="light_blue")
     run_clean_coder_pipeline(task_name_description, base_work_dir)
 
     # ToDo: git upload
@@ -141,7 +141,7 @@ tool_input:
     # Ask tester to check if changes have been implemented correctly
     tester_query = f"""Please check if the task has been implemented correctly.
 
-    Task: {task_name_description}
+    Task: {task.content}
     """
     tester_response = user_input(tester_query)
 
