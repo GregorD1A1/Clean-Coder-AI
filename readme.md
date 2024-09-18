@@ -12,10 +12,7 @@ Clean Coder is your AI-powered software project assistant. Delegate planning, ma
 ## 🏖️ Relax and watch it code
 
 ```
-# clone repo
 git clone https://github.com/GregorD1A1/Clean-Coder-AI
-
-# go to directory
 cd Clean-Coder-AI
 
 # install dependencies

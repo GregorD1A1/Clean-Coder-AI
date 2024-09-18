@@ -14,8 +14,6 @@ from langchain.tools import tool
 from langchain_core.tools import Tool
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
-from langchain_community.agent_toolkits.clickup.toolkit import ClickupToolkit
-from langchain_groq import ChatGroq
 from langchain_anthropic import ChatAnthropic
 from utilities.util_functions import check_file_contents, print_formatted, check_application_logs, find_tool_json
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
@@ -39,7 +37,6 @@ stop_sequence = "\n```\n"
 
 #llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
 llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, stop=[stop_sequence]).with_config({"run_name": "Executor"})
-#llm = ChatGroq(model="llama3-70b-8192", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 
