@@ -6,10 +6,10 @@ from langgraph.graph import END
 from langchain_core.messages.ai import AIMessage
 from tools.tools_coder_pipeline import TOOL_NOT_EXECUTED_WORD
 
-bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json', '```' tags.
+bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json5', '```' tags.
 Code inside of json should be provided in the way that not makes json invalid.
 No '```' tags should be inside of json."""
-multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You have written multiple jsons at once. If you want to execute 
+multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
 multiple actions, choose only one for now; rest you can execute later."""
 no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to execute an action."""
 

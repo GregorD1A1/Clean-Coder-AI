@@ -76,7 +76,7 @@ def watch_file(filename, work_dir):
 
 
 def find_tool_json(response):
-    matches = re.findall(r'```json5(.*?)```', response, re.DOTALL)
+    matches = re.findall(r'```(?:json|json5)(.*?)```', response, re.DOTALL)
 
     if len(matches) == 1:
         json_str = matches[0].strip()
