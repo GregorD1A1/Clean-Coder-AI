@@ -61,7 +61,7 @@ def user_input(prompt=""):
             print_formatted(
                 "Install 'sudo apt-get install libportaudio2' (Linux) or 'brew install portaudio' (Mac) to use microphone feature.", color="light_red"
             )
-            user_sentence = user_input()
+            user_sentence = input()
 
     return user_sentence
 
