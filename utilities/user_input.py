@@ -1,12 +1,10 @@
-import sys
-
 from pynput.keyboard import Key, Listener
 from utilities.voice_utils import VoiceRecorder
 from utilities.util_functions import print_formatted
-import time
 
 recorder = VoiceRecorder()
 
+# Old try, to remove
 class InputHandler():
     def __init__(self):
         self.output_string = ""
@@ -44,11 +42,6 @@ class InputHandler():
 
         return self.output_string
 
-
-
-def user_input_old(prompt=""):
-    input_class = InputHandler()
-    return input_class.user_input(prompt)
 
 
 def user_input(prompt=""):

@@ -216,7 +216,8 @@ def convert_images(image_paths):
 
 
 def join_paths(*args):
-    joined = '/'.join(p.strip('/') for p in args if p)
+    leading_slash = '/' if args[0].startswith('/') else ''
+    joined = leading_slash + '/'.join(p.strip('/') for p in args)
     return os.path.normpath(joined)
 
 
@@ -228,3 +229,7 @@ def get_joke():
     except Exception as e:
         joke = f"Failed to receive joke :/"
     return joke
+
+
+if __name__ == "__main__":
+    print(join_paths("/home/pi/", "/dzikie_psy"))
