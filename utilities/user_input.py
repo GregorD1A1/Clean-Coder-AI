@@ -1,12 +1,10 @@
-import sys
-
 from pynput.keyboard import Key, Listener
 from utilities.voice_utils import VoiceRecorder
 from utilities.util_functions import print_formatted
-import time
 
 recorder = VoiceRecorder()
 
+# Old try, to remove
 class InputHandler():
     def __init__(self):
         self.output_string = ""
@@ -46,27 +44,34 @@ class InputHandler():
 
 
 
-def user_input_old(prompt=""):
-    input_class = InputHandler()
-    return input_class.user_input(prompt)
-
-
 def user_input(prompt=""):
     print_formatted(prompt + " Or use (m)icrophone to record it:", color="yellow", bold=True)
     user_sentence = input()
     if user_sentence == 'm':
-        recorder.start_recording()
-        def press_interrupt(key):
-            if key == Key.enter:
-                recorder.stop_recording()
-                print("Recording finished.\n")
-                return False  # Stop listener
-        with Listener(on_press=press_interrupt, suppress=True) as listener:
-            listener.join()
-
-        user_sentence = recorder.transcribe_audio()
+        if recorder.microphone_available:
+            user_sentence = record_voice_message()
+        else:
+            print_formatted(
+                "Install 'sudo apt-get install libportaudio2' (Linux) or 'brew install portaudio' (Mac) to use microphone feature.", color="light_red"
+            )
+            user_sentence = input()
 
     return user_sentence
+
+
+def record_voice_message():
+    recorder.start_recording()
+
+    def press_interrupt(key):
+        if key == Key.enter:
+            recorder.stop_recording()
+            print("Recording finished.\n")
+            return False  # Stop listener
+
+    with Listener(on_press=press_interrupt, suppress=True) as listener:
+        listener.join()
+
+    return recorder.transcribe_audio()
 
 if __name__ == "__main__":
     print(user_input("Provide your feedback."))

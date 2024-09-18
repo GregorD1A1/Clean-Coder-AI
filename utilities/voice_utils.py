@@ -1,13 +1,11 @@
 import os
 from threading import Thread
-import sounddevice
-import soundfile
 import tempfile
 import queue
 import sys
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
-import time
+from utilities.util_functions import print_formatted
 
 load_dotenv(find_dotenv())
 openai_client = OpenAI()
@@ -15,7 +13,14 @@ openai_client = OpenAI()
 
 class VoiceRecorder:
     def __init__(self):
-
+        self.microphone_available = True
+        try:
+            import sounddevice
+            import soundfile
+            self.sounddevice = sounddevice
+            self.soundfile = soundfile
+        except OSError:
+            self.microphone_available = False
         self.recording_queue = queue.Queue()
         self.sample_rate = 44100
         self.soundfile_path = tempfile.mktemp(suffix=".wav")
@@ -23,8 +28,8 @@ class VoiceRecorder:
         self.recording_thread = None
 
     def record(self):
-        with soundfile.SoundFile(self.soundfile_path, mode='x', samplerate=self.sample_rate, channels=1) as file:
-            with sounddevice.InputStream(samplerate=self.sample_rate, channels=1, callback=self.save_sound_callback):
+        with self.soundfile.SoundFile(self.soundfile_path, mode='x', samplerate=self.sample_rate, channels=1) as file:
+            with self.sounddevice.InputStream(samplerate=self.sample_rate, channels=1, callback=self.save_sound_callback):
                 print('Press Enter to finish recording')
                 while self.is_recording:
                     file.write(self.recording_queue.get())
