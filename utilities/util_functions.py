@@ -229,7 +229,3 @@ def get_joke():
     except Exception as e:
         joke = f"Failed to receive joke :/"
     return joke
-
-
-if __name__ == "__main__":
-    print(join_paths("/home/pi/", "/dzikie_psy"))
