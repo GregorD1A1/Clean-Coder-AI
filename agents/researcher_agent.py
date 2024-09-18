@@ -14,7 +14,7 @@ from langchain.tools import tool
 from tools.tools_coder_pipeline import (
     prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
 )
-from rag.retrieval import vdb_availabe
+from rag.retrieval import vdb_available
 from utilities.util_functions import find_tool_json, print_formatted
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
@@ -60,10 +60,10 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 with open(f"{current_dir}/prompts/researcher_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
+
 # node functions
 def call_model_researcher(state):
     state = call_model(state, llm, stop_sequence_to_add=stop_sequence)
-
     return state
 
 
@@ -84,7 +84,7 @@ class Researcher():
         list_dir = prepare_list_dir_tool(work_dir)
         see_file = prepare_see_file_tool(work_dir)
         tools = [list_dir, see_file, final_response]
-        if vdb_availabe:
+        if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
         self.rendered_tools = render_text_description(tools)
         self.tool_executor = ToolExecutor(tools)

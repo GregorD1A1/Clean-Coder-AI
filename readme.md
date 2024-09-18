@@ -6,6 +6,7 @@ Clean Coder is your AI-powered software project assistant. Delegate planning, ma
 <br>
 <br>
 <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
+<br>
 </div>
 
 ## 🏖️ Relax and watch it code
@@ -25,7 +26,7 @@ export WORK_DIR=/path/to/your/project/dir
 
 # provide api keys
 export OPENAI_API_KEY=your_api_key_here
-export ANTHROPIC_PROJECT_ID=your_api_key_here
+export ANTHROPIC_API_KEY=your_api_key_here
 
 # run Clean Coder
 python clean_coder_pipeline.py

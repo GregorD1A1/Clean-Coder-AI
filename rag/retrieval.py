@@ -8,18 +8,27 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
 cohere_key = os.getenv("COHERE_API_KEY")
-
 if cohere_key:
-    chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '/.clean_coder/chroma_base')
-    collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
-    try:
-        collection = chroma_client.get_collection(name=collection_name)
-        vdb_availabe = True
-    except ValueError:
-        print("Vector database does not exist. Please create it by running rag/write_descriptions.py")
-        vdb_availabe = False
-
     cohere_client = cohere.Client(cohere_key)
+collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
+
+
+def get_collection():
+    if cohere_key:
+        chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '/.clean_coder/chroma_base')
+        try:
+            return chroma_client.get_collection(name=collection_name)
+        except ValueError:
+            print("Vector database does not exist. Please create it by running rag/write_descriptions.py")
+            return False
+    return False
+
+
+collection = get_collection()
+
+
+def vdb_available():
+    return True if get_collection() else False
 
 
 def retrieve(question):
