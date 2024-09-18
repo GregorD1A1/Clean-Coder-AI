@@ -76,7 +76,7 @@ def watch_file(filename, work_dir):
 
 
 def find_tool_json(response):
-    matches = re.findall(r'```(?:json|json5)(.*?)```', response, re.DOTALL)
+    matches = re.findall(r'```(?:json|json5)\s*\n(.*?)\n\s*```', response, re.DOTALL)
 
     if len(matches) == 1:
         json_str = matches[0].strip()
@@ -228,7 +228,3 @@ def get_joke():
     except Exception as e:
         joke = f"Failed to receive joke :/"
     return joke
-
-
-if __name__ == "__main__":
-    print(get_joke())
