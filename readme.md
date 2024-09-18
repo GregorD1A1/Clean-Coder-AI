@@ -15,7 +15,6 @@ Clean Coder is your AI-powered software project assistant. Delegate planning, ma
 git clone https://github.com/GregorD1A1/Clean-Coder-AI
 cd Clean-Coder-AI
 
-# install dependencies
 pip install -r requirements.txt
 
 # provide path to the project directory you'll work on
@@ -25,7 +24,6 @@ export WORK_DIR=/path/to/your/project/dir
 export OPENAI_API_KEY=your_api_key_here
 export ANTHROPIC_API_KEY=your_api_key_here
 
-# run Clean Coder
 python clean_coder_pipeline.py
 ```
 or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
