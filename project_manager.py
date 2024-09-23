@@ -11,14 +11,13 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from tools.tools_project_manager import add_task, modify_task, delete_task, finish_project_planning, reorder_tasks
+from tools.tools_project_manager import add_task, modify_task, create_epic, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
-from utilities.util_functions import read_project_description, read_progress_description, get_project_tasks
+from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 import os
-import time
 
 
 load_dotenv(find_dotenv())
@@ -28,8 +27,8 @@ see_file = prepare_see_file_tool(work_dir)
 tools = [
     add_task,
     modify_task,
-    delete_task,
     reorder_tasks,
+    create_epic,
     list_dir,
     see_file,
     ask_human_tool,
@@ -109,6 +108,7 @@ def cut_off_context(state):
     last_messages_excluding_system = [msg for msg in state["messages"][-20:] if msg.type != "system"]
     state["messages"] = [system_message] + last_messages_excluding_system
     return state
+
 
 # workflow definition
 manager_workflow = StateGraph(AgentState)

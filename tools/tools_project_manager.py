@@ -1,7 +1,8 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-from utilities.util_functions import print_formatted, actualize_progress_description_file
+from utilities.util_functions import print_formatted
+from utilities.manager_utils import actualize_progress_description_file
 from utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv
 from clean_coder_pipeline import run_clean_coder_pipeline
@@ -20,7 +21,7 @@ TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
 
 
 @tool
-def add_task(task_name, task_description, order):
+def add_task(task_name, task_description, order, epic_id):
     """Add new task to project management platform (Todoist).
 Think very carefully before adding a new task to know what do you want exactly. Explain in detail what needs to be
 done in order to execute task.
@@ -35,25 +36,34 @@ Good description includes:
 you found in internet, files dev need to use, technical details related to existing code programmer need to pay
 attention on.
 :param order: order of the task in project.
+:param epic_id: id of the epic task belongs to.
 """
     human_message = user_input("Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
-    todoist_api.add_task(project_id=PROJECT_ID, content=task_name, description=task_description, order=order)
+    todoist_api.add_task(
+        project_id=PROJECT_ID,
+        content=task_name,
+        description=task_description,
+        order=order,
+        section_id=epic_id
+    )
     return "Task added successfully"
 
 
 @tool
-def modify_task(task_id, new_task_name=None, new_task_description=None):
+def modify_task(task_id, new_task_name=None, new_task_description=None, epic_id=None, delete=False):
     """Modify task in project management platform (Todoist).
 tool_input:
 :param task_id: id of the task.
 :param new_task_name: new name of the task (optional).
 :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
+:param epic_id: id of the epic to move task to.
+:param delete: if True, task will be deleted.
 """
     task_name = todoist_api.get_task(task_id).content
-    human_message = user_input(f"I want to modify task '{task_name}'. Type (o)k to agree or provide commentary.")
+    human_message = user_input(f"I want to {'delete' if delete else 'modify'} task '{task_name}'. Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -62,9 +72,14 @@ tool_input:
         update_data['content'] = new_task_name
     if new_task_description:
         update_data['description'] = new_task_description
+    if epic_id:
+        update_data['section_id'] = epic_id
+
+    if delete:
+        todoist_api.delete_task(task_id=task_id)
+        return "Task deleted successfully"
 
     todoist_api.update_task(task_id=task_id, **update_data)
-
     return "Task modified successfully"
 
 
@@ -101,18 +116,15 @@ def reorder_tasks(task_items):
 
 
 @tool
-def delete_task(task_id):
-    """Delete task from project management platform (Todoist) when it's not needed.
+def create_epic(name):
+    """
+Create an epic to group tasks with similar scope.
 tool_input:
-:param task_id: id of the task.
+:param name: short description of functionality epic is about.
 """
-    task_name = todoist_api.get_task(task_id).content
-    human_message = user_input(f"I want to delete task '{task_name}'. Type (o)k to agree or provide commentary.")
-    if human_message not in ['o', 'ok']:
-        return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
+    section = todoist_api.add_section(name=name, project_id=PROJECT_ID)
+    return f"Epic {section} created successfully"
 
-    todoist_api.delete_task(task_id=task_id)
-    return "Task deleted successfully"
 
 
 @tool
