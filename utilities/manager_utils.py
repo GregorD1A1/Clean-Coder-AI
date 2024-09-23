@@ -65,7 +65,7 @@ def get_project_tasks():
         tasks = future_tasks.result()
 
     for epic in epics:
-        output_string += f"## Epic: {epic.name}\n\n"
+        output_string += f"## Epic: {epic.name} (id: {epic.id})\n\n"
         tasks_in_epic = [task for task in tasks if task.section_id == epic.id]
         if tasks_in_epic:
             output_string += "\n".join(

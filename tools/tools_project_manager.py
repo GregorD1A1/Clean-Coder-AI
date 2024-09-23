@@ -72,14 +72,16 @@ tool_input:
         update_data['content'] = new_task_name
     if new_task_description:
         update_data['description'] = new_task_description
+    if update_data:
+        todoist_api.update_task(task_id=task_id, **update_data)
     if epic_id:
-        update_data['section_id'] = epic_id
+        move_task(task_id, epic_id)
 
     if delete:
         todoist_api.delete_task(task_id=task_id)
         return "Task deleted successfully"
 
-    todoist_api.update_task(task_id=task_id, **update_data)
+
     return "Task modified successfully"
 
 
@@ -113,6 +115,22 @@ def reorder_tasks(task_items):
         data={"commands": commands_json}
     )
     return "Tasks reordered successfully"
+
+def move_task(task_id, epic_id):
+    command = {
+        "type": "item_move",
+        "uuid": str(uuid.uuid4()),
+        "args": {
+            "id": task_id,
+            "section_id": epic_id
+        }
+    }
+    commands_json = json.dumps([command])
+    response = requests.post(
+        "https://api.todoist.com/sync/v9/sync",
+        headers={"Authorization": f"Bearer {todoist_api_key}"},
+        data={"commands": commands_json}
+    )
 
 
 @tool
@@ -166,15 +184,5 @@ tool_input:
 
 
 if __name__ == "__main__":
-    #print(add_task.invoke({"task_name": "dzik.py", "task_description": "pies", "order": 7}))
-    """reorder_tasks.invoke([
-            {"id": "8285014506", "child_order": 0},
-            {"id": "8277686998", "child_order": 1},
-            {"id": "8284954420", "child_order": 2},
-            {"id": "8277603650", "child_order": 3},
-            {"id": "8277604071", "child_order": 4}
-        ]
-    )"""
-    from utilities.util_functions import get_project_tasks
-    print(get_project_tasks())
-    finish_project_planning.invoke({})
+    modify_task.invoke({"task_id": "8364298166", "epic_id":"168081954"})
+    #move_task(task_id=8364298166, epic_id=168081954)
