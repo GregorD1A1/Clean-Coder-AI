@@ -11,7 +11,7 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from tools.tools_project_manager import add_task, modify_task, create_epic, finish_project_planning, reorder_tasks
+from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
 from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
@@ -29,6 +29,7 @@ tools = [
     modify_task,
     reorder_tasks,
     create_epic,
+    modify_epic,
     list_dir,
     see_file,
     ask_human_tool,

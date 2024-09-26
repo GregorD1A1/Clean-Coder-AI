@@ -5,10 +5,14 @@ from todoist_api_python.api import TodoistAPI
 import concurrent.futures
 from dotenv import load_dotenv, find_dotenv
 import os
+import uuid
+import requests
+import json
 
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
+todoist_api_key = os.getenv('TODOIST_API_KEY')
 todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
@@ -112,3 +116,20 @@ def read_progress_description():
         with open(file_path, "r") as f:
             progress_description = f.read()
     return progress_description
+
+
+def move_task(task_id, epic_id):
+    command = {
+        "type": "item_move",
+        "uuid": str(uuid.uuid4()),
+        "args": {
+            "id": task_id,
+            "section_id": epic_id
+        }
+    }
+    commands_json = json.dumps([command])
+    response = requests.post(
+        "https://api.todoist.com/sync/v9/sync",
+        headers={"Authorization": f"Bearer {todoist_api_key}"},
+        data={"commands": commands_json}
+    )

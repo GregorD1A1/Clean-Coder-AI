@@ -9,6 +9,7 @@ from clean_coder_pipeline import run_clean_coder_pipeline
 import uuid
 import requests
 import json
+from utilities.manager_utils import move_task
 
 
 load_dotenv(find_dotenv())
@@ -116,22 +117,6 @@ def reorder_tasks(task_items):
     )
     return "Tasks reordered successfully"
 
-def move_task(task_id, epic_id):
-    command = {
-        "type": "item_move",
-        "uuid": str(uuid.uuid4()),
-        "args": {
-            "id": task_id,
-            "section_id": epic_id
-        }
-    }
-    commands_json = json.dumps([command])
-    response = requests.post(
-        "https://api.todoist.com/sync/v9/sync",
-        headers={"Authorization": f"Bearer {todoist_api_key}"},
-        data={"commands": commands_json}
-    )
-
 
 @tool
 def create_epic(name):
@@ -144,6 +129,20 @@ tool_input:
     return f"Epic {section} created successfully"
 
 
+@tool
+def modify_epic(epic_id, new_epic_name=None, delete=False):
+    """Modify an epic in project management platform (Todoist).
+tool_input:
+:param epic_id: id of the epic.
+:param new_epic_name: new name of the epic (optional).
+:param delete: if True, epic will be deleted with all tasks inside.
+"""
+    if delete:
+        todoist_api.delete_section(section_id=epic_id)
+        return "Epic deleted successfully"
+
+    todoist_api.update_section(section_id=epic_id, name=new_epic_name)
+    return "Epic modified successfully"
 
 @tool
 def finish_project_planning():
@@ -158,8 +157,9 @@ tool_input:
     if human_message not in ['o', 'ok']:
         return human_message
 
+    first_epic_id = todoist_api.get_sections(project_id=PROJECT_ID)[0].id
     # Get first task and it's name and description
-    task = todoist_api.get_tasks(project_id=PROJECT_ID)[0]
+    task = todoist_api.get_tasks(project_id=PROJECT_ID, section_id=first_epic_id)[0]
     task_name_description = f"{task.content}\n{task.description}"
 
     # Execute the main pipeline to implement the task
@@ -184,5 +184,4 @@ tool_input:
 
 
 if __name__ == "__main__":
-    modify_task.invoke({"task_id": "8364298166", "epic_id":"168081954"})
-    #move_task(task_id=8364298166, epic_id=168081954)
+    print(finish_project_planning.invoke({}))
