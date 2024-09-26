@@ -100,7 +100,7 @@ def actualize_tasks_list_and_progress_description(state):
         content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
         tasks_and_progress_message=True
     )
-    state["messages"].append(tasks_and_progress_msg)
+    state["messages"].insert(-2, tasks_and_progress_msg)
     return state
 
 
