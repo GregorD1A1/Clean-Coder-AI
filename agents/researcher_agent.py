@@ -58,8 +58,8 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/prompts/researcher_system.prompt", "r") as f:
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 

@@ -61,7 +61,7 @@ What have been done so far:
 {progress_description}"""
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/agents/prompts/manager_system.prompt", "r") as f:
+with open(f"{current_dir}/prompts/manager_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 system_message = SystemMessage(

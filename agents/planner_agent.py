@@ -27,10 +27,10 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
     voter_messages: Sequence[BaseMessage]
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/prompts/planer_system.prompt", "r") as f:
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+with open(f"{parent_dir}/prompts/planer_system.prompt", "r") as f:
     planer_system_prompt_template = f.read()
-with open(f"{current_dir}/prompts/voter_system.prompt", "r") as f:
+with open(f"{parent_dir}/prompts/voter_system.prompt", "r") as f:
     voter_system_prompt_template = f.read()
 
 planer_system_message = SystemMessage(content=planer_system_prompt_template)
