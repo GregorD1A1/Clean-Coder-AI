@@ -13,8 +13,6 @@ from langchain_anthropic import ChatAnthropic
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
-llm_voter = llm.with_config({"run_name": "Voter"})
 llms_planners = []
 if os.getenv("OPENAI_API_KEY"):
     llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
@@ -45,7 +43,7 @@ def call_planers(state):
     nr_plans = 3
     print(f"\nGenerating plan propositions. While I'm thinking...\n")
     print_formatted(get_joke(), color="red")
-    plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
+    plan_propositions_messages = llm_planner.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
         state["voter_messages"].append(AIMessage(content="_"))
         state["voter_messages"].append(HumanMessage(content=f"Proposition nr {i+1}:\n\n" + proposition.content))

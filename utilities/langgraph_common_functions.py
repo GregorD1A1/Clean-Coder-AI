@@ -22,7 +22,7 @@ def call_model(state, llms, stop_sequence_to_add=None):
             response = llm.invoke(messages)
             break
         except Exception as e:
-            print_formatted(f"Exception happened: {e} with llm: {llm}. Switching to next LLM if available...")
+            print_formatted(f"Exception happened: { type(e).__name__} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
     else:
         raise Exception("Can not receive response from any llm")
 
