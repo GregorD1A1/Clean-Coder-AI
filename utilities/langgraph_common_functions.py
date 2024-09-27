@@ -15,9 +15,17 @@ no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to exe
 
 
 # nodes
-def call_model(state, llm, stop_sequence_to_add=None):
+def call_model(state, llms, stop_sequence_to_add=None):
     messages = state["messages"]
-    response = llm.invoke(messages)
+    for llm in llms:
+        try:
+            response = llm.invoke(messages)
+            break
+        except Exception as e:
+            print_formatted(f"Exception happened: {e} with llm: {llm}. Switching to next LLM if available...")
+    else:
+        raise Exception("Can not receive response from any llm")
+
     # Replicate returns string instead of AI Message, we need to handle it
     if 'Replicate' in str(llm):
         response = AIMessage(content=str(response))

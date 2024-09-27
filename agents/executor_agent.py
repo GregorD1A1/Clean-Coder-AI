@@ -35,10 +35,13 @@ implemented changes work correctly."""
 
 stop_sequence = "\n```\n"
 
-#llm = ChatOpenAI(model="gpt-4o", temperature=0).with_config({"run_name": "Executor"})
-llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, stop=[stop_sequence]).with_config({"run_name": "Executor"})
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
+llms = []
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, timeout=120, stop=[stop_sequence]).with_config({"run_name": "Executor"}))
+if os.getenv("OPENAI_API_KEY"):
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Executor"}))
 
 
 class AgentState(TypedDict):
@@ -83,7 +86,7 @@ class Executor():
     # node functions
     def call_model_executor(self, state):
         #stop_sequence = None
-        state = call_model(state, llm, stop_sequence_to_add=stop_sequence)
+        state = call_model(state, llms, stop_sequence_to_add=stop_sequence)
 
         return state
 

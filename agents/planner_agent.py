@@ -5,7 +5,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from utilities.util_functions import print_formatted, check_file_contents, convert_images, get_joke
-from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
+from utilities.langgraph_common_functions import ask_human, after_ask_human_condition
 import os
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
@@ -15,7 +15,15 @@ load_dotenv(find_dotenv())
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
 llm_voter = llm.with_config({"run_name": "Voter"})
+llms_planners = []
+if os.getenv("OPENAI_API_KEY"):
+    llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
 
+llm_planner = llms_planners[0].with_fallbacks(llms_planners[1:])
+# copy planers, but exchange config name
+llm_voter = llm_planner.with_config({"run_name": "Voter"})
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -56,7 +64,7 @@ def call_planers(state):
 
 def call_model_corrector(state):
     messages = state["messages"]
-    response = llm.invoke(messages)
+    response = llm_planner.invoke(messages)
     print_formatted(response.content)
     state["messages"].append(response)
 

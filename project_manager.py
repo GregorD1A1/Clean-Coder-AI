@@ -37,9 +37,12 @@ tools = [
 ]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
-#llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4).with_config({"run_name": "Manager"})
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
+llms = []
+if os.getenv("OPENAI_API_KEY"):
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 
 
 class AgentState(TypedDict):
@@ -68,7 +71,7 @@ system_message = SystemMessage(
 
 # node functions
 def call_model_manager(state):
-    state = call_model(state, llm)
+    state = call_model(state, llms)
     state = cut_off_context(state)
     return state
 
