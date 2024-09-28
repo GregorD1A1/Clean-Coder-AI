@@ -15,7 +15,7 @@ You have access to following tools:
 {tools}
 
 First, provide step by step reasoning about results of your previous action. Think what do you need to find now in order to accomplish the task.
-Next, generate response using next template: Choose only one tool to use.
+Next, call tool(s). You can use up to 3 tool cals simultaniousely to speed up research. Generate tool call using next template:
 ```json5
 {{
     "tool": "$TOOL_NAME",

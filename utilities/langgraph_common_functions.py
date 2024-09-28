@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from utilities.util_functions import find_tool_json, print_formatted
+from utilities.util_functions import find_tools_json, print_formatted
 from utilities.user_input import user_input
 from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
@@ -15,7 +15,7 @@ no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to exe
 
 
 # nodes
-def call_model(state, llms, stop_sequence_to_add=None):
+def call_model(state, llms):
     messages = state["messages"]
     for llm in llms:
         try:
@@ -29,35 +29,31 @@ def call_model(state, llms, stop_sequence_to_add=None):
     # Replicate returns string instead of AI Message, we need to handle it
     if 'Replicate' in str(llm):
         response = AIMessage(content=str(response))
-    # Add stop sequence if needed (sometimes needed for Claude)
-    response.content = response.content + stop_sequence_to_add if stop_sequence_to_add else response.content
-    response.tool_call = find_tool_json(response.content)
-    print_formatted(response.content)
+    response.json5_tool_calls = find_tools_json(response.content)
+    print_formatted(response.content, on_color="on_blue")
     state["messages"].append(response)
 
-    # safety mechanism for a bad json
-    tool_call = response.tool_call
-    if tool_call == "Multiple jsons found.":
-        state["messages"].append(
-            HumanMessage(content=multiple_jsons_msg))
-        print("\nToo many jsons provided, asked to provide one.")
-    elif tool_call == "No json found in response.":
+    if response.json5_tool_calls == "No json found in response.":
         state["messages"].append(HumanMessage(content=no_json_msg))
         print("\nNo json provided, asked to provide one.")
-    if tool_call is None or "tool" not in tool_call:
-        state["messages"].append(HumanMessage(content=bad_json_format_msg))
-        print("\nBad json format provided, asked to provide again.")
-
+        return state
+    for tool_call in response.json5_tool_calls:
+        if tool_call is None or "tool" not in tool_call:
+            state["messages"].append(HumanMessage(content=bad_json_format_msg))
+            print("\nBad json format provided, asked to provide again.")
+            return state
     return state
 
 
 def call_tool(state, tool_executor):
     last_message = state["messages"][-1]
-    if not hasattr(last_message, "tool_call"):
+    if not hasattr(last_message, "json5_tool_calls"):
         state["messages"].append(HumanMessage(content="No tool called"))
         return state
-    tool_call = last_message.tool_call
-    response = tool_executor.invoke(ToolInvocation(**tool_call))
+    json5_tool_calls = last_message.json5_tool_calls
+    tool_response = ""
+    for tool_call in json5_tool_calls:
+        tool_response += str(tool_executor.invoke(ToolInvocation(**tool_call))) + "\n\n###\n\n"
     '''
     try:
         response = tool_executor.invoke(ToolInvocation(**tool_call))
@@ -65,9 +61,8 @@ def call_tool(state, tool_executor):
         print("Error in tool call formatting")
         response = "Some error in tool call format. Are you sure that you provided all needed tool parameters according tool schema?"
     '''
-    response_message = HumanMessage(content=str(response))
+    response_message = HumanMessage(content=tool_response)
     state["messages"].append(response_message)
-
     return state
 
 

@@ -54,22 +54,22 @@ def watch_file(filename, work_dir):
     return file_content
 
 
-def find_tool_json(response):
+def find_tools_json(response):
     matches = re.findall(r'```(?:json|json5)\s*\n(.*?)\n\s*```', response, re.DOTALL)
 
-    if len(matches) == 1:
-        json_str = matches[0].strip()
+    if not matches:
+        return "No json found in response."
+
+    results = []
+    for match in matches:
+        json_str = match.strip()
         try:
             json5_obj = json5.loads(json_str)
-            return json5_obj
+            results.append(json5_obj)
         except:
-            return "Invalid json."
-    elif len(matches) > 1:
-        print("Multiple jsons found.")
-        return "Multiple jsons found."
-    else:
-        print("No json found in response.")
-        return None
+            results.append("Invalid json.")
+
+    return results
 
 
 def find_tool_xml(input_str):

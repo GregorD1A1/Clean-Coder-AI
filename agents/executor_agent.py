@@ -15,7 +15,7 @@ from langchain_core.tools import Tool
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.util_functions import check_file_contents, print_formatted, check_application_logs, find_tool_json
+from utilities.util_functions import check_file_contents, print_formatted, check_application_logs
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 from utilities.user_input import user_input
@@ -33,13 +33,11 @@ tool input:
 implemented changes work correctly."""
     print_formatted(test_instruction, color="blue")
 
-stop_sequence = "\n```\n"
-
 #llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 #llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, timeout=120, stop=[stop_sequence]).with_config({"run_name": "Executor"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Executor"}))
 
@@ -85,18 +83,21 @@ class Executor():
 
     # node functions
     def call_model_executor(self, state):
-        #stop_sequence = None
-        state = call_model(state, llms, stop_sequence_to_add=stop_sequence)
-
+        state = call_model(state, llms)
+        last_message = state["messages"][-1]
+        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
+            state["messages"].append(
+                HumanMessage(content=multiple_jsons_msg))
+            print("\nToo many jsons provided, asked to provide one.")
         return state
 
     def call_tool_executor(self, state):
         last_ai_message = state["messages"][-1]
         state = call_tool(state, self.tool_executor)
-        if last_ai_message.tool_call["tool"] == "create_file_with_code":
-            self.files.add(last_ai_message.tool_call["tool_input"]["filename"])
-        if last_ai_message.tool_call["tool"] in ["insert_code", "replace_code", "create_file_with_code"]:
-            state = self.exchange_file_contents(state)
+        for tool_call in last_ai_message.json5_tool_calls:
+            if tool_call["tool"] == "create_file_with_code":
+                self.files.add(tool_call["tool_input"]["filename"])
+        self.exchange_file_contents(state)
         return state
 
     def check_log(self, state):
@@ -127,7 +128,7 @@ class Executor():
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.tool_call["tool"] == "final_response":
+        elif last_message.json5_tool_calls[0]["tool"] == "final_response":
             return "check_log" if log_file_path else "human_end_process_confirmation"
         else:
             return "tool"

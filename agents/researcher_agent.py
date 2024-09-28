@@ -14,7 +14,7 @@ from tools.tools_coder_pipeline import (
     prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
 )
 from rag.retrieval import vdb_available
-from utilities.util_functions import find_tool_json, print_formatted
+from utilities.util_functions import find_tools_json, print_formatted
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )
@@ -30,10 +30,10 @@ work_dir = os.getenv("WORK_DIR")
 
 @tool
 def final_response(files_to_work_on, reference_files, template_images):
-    """That tool outputs list of files executor will need to change and paths to graphical patterns if some.
-    Use that tool only when you 100% sure you found all the files Executor will need to modify.
+    """That tool outputs list of files programmer will need to change and paths to graphical patterns if some.
+    Use that tool only when you 100% sure you found all the files programmer will need to modify.
     If not, do additional research. Include only the files you convinced will be useful.
-    Provide only existing files, do not provide that you'll be implementing.
+    Provide only existing files, do not provide files to be implemented.
 
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
@@ -41,9 +41,6 @@ def final_response(files_to_work_on, reference_files, template_images):
     :param template_images: ["List of", "template", "images"],
     """
     pass
-
-#stop_sequence = "\n```\n"
-stop_sequence = None
 
 #llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
@@ -65,7 +62,7 @@ with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
 
 # node functions
 def call_model_researcher(state):
-    state = call_model(state, llms, stop_sequence_to_add=stop_sequence)
+    state = call_model(state, llms)
     return state
 
 
@@ -75,7 +72,7 @@ def after_agent_condition(state):
 
     if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
         return "agent"
-    elif last_message.tool_call["tool"] == "final_response":
+    elif last_message.json5_tool_calls[0]["tool"] == "final_response":
         return "human"
     else:
         return "tool"
@@ -117,7 +114,7 @@ class Researcher():
         inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=f"Go")]}
         researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
-        tool_json = find_tool_json(researcher_response.content)
+        tool_json = find_tools_json(researcher_response.content)[0]
         text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
         image_paths = tool_json["tool_input"]["template_images"]
 
