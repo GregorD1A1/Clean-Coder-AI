@@ -9,7 +9,7 @@ work_dir = os.getenv("WORK_DIR")
 
 def create_coderignore():
     coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
-    default_ignore_content = "/.env\n/.clean_coder/\n"
+    default_ignore_content = ".env\n.clean_coder/\n"
     os.makedirs(os.path.dirname(coderignore_path), exist_ok=True)
     if not os.path.exists(coderignore_path):
         with open(coderignore_path, 'w', encoding='utf-8') as file:
@@ -27,6 +27,7 @@ def file_folder_ignored(path, ignore_patterns):
     path = path.rstrip('/')  # Remove trailing slash if present
 
     for pattern in ignore_patterns:
+        print(f"pattern: {pattern}, path: {path}")
         pattern = pattern.rstrip('/')  # Remove trailing slash from pattern if present
 
         if fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(f"{path}/", f"{pattern}/"):
