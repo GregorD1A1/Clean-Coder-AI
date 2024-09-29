@@ -27,7 +27,6 @@ def file_folder_ignored(path, ignore_patterns):
     path = path.rstrip('/')  # Remove trailing slash if present
 
     for pattern in ignore_patterns:
-        print(f"pattern: {pattern}, path: {path}")
         pattern = pattern.rstrip('/')  # Remove trailing slash from pattern if present
 
         if fnmatch.fnmatch(path, pattern) or fnmatch.fnmatch(f"{path}/", f"{pattern}/"):

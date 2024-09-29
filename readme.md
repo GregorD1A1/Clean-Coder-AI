@@ -36,6 +36,7 @@ or check detailed instructions [how to start in documentation](https://clean-cod
 - [Speak to Clean Coder](https://clean-coder.dev/features/talk_to_cc/) instead of writing.
 - Automatic file linting prevents from introducing incorrect changes and [log check for self-debug](https://clean-coder.dev/advanced_features_installation/logs_check/).
 - File Researcher agent with (but not only) [RAG tool](https://clean-coder.dev/advanced_features_installation/similarity_search_for_researcher/) for effective searching of project files.
+- [Sensitive files protection](https://clean-coder.dev/features/sensitive_file_protection/) from being watched by AI.
 
 ## 📺 Demo videos
 
