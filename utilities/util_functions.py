@@ -18,7 +18,7 @@ todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
-def print_formatted(content, width=None, color=None, on_color=None, bold=False):
+def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
     if width:
         lines = content.split('\n')
         lines = [textwrap.fill(line, width=width) for line in lines]
@@ -27,7 +27,7 @@ def print_formatted(content, width=None, color=None, on_color=None, bold=False):
         content = f"\033[1m{content}\033[0m"
     if color:
         content = colored(content, color, on_color=on_color, force_color='True')
-    print(content)
+    print(content, end=end)
 
 
 def check_file_contents(files, work_dir):

@@ -5,6 +5,8 @@ from langgraph.prebuilt import ToolInvocation
 from langgraph.graph import END
 from langchain_core.messages.ai import AIMessage
 from tools.tools_coder_pipeline import TOOL_NOT_EXECUTED_WORD
+from utilities.graphics import loading_animation
+import threading
 
 bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json5', '```' tags.
 Code inside of json should be provided in the way that not makes json invalid.
@@ -17,14 +19,22 @@ no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to exe
 # nodes
 def call_model(state, llms):
     messages = state["messages"]
-    for llm in llms:
-        try:
-            response = llm.invoke(messages)
-            break
-        except Exception as e:
-            print_formatted(f"Exception happened: { type(e).__name__} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
-    else:
-        raise Exception("Can not receive response from any llm")
+    loading_animation.is_running = True
+    loading_thread = threading.Thread(target=loading_animation)
+    loading_thread.daemon = True
+    loading_thread.start()
+    try:
+        for llm in llms:
+            try:
+                response = llm.invoke(messages)
+                break
+            except Exception as e:
+                print_formatted(f"\nException happened: {type(e).__name__} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
+        else:
+            raise Exception("Can not receive response from any llm")
+    finally:
+        loading_animation.is_running = False
+        loading_thread.join()
 
     # Replicate returns string instead of AI Message, we need to handle it
     if 'Replicate' in str(llm):

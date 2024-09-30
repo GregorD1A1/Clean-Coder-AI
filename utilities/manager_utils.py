@@ -18,7 +18,7 @@ PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
 actualize_description_prompt_template = """After task been executed, actualize description of project progress. 
-Write what have been done in the project so far in up to 7 sentences. Never imagine facts. Do not write what need to be 
+Write what have been done in the project so far in up to 10 sentences. Never imagine facts. Do not write what need to be 
 done in future and do not write project description, if that not needed to describe progress.
 
 Previous progress description, before last task execution:
