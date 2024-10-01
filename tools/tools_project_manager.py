@@ -144,10 +144,11 @@ tool_input:
     todoist_api.update_section(section_id=epic_id, name=new_epic_name)
     return "Epic modified successfully"
 
+
 @tool
 def finish_project_planning():
     """Call that tool when all task in Todoist correctly reflect work for nearest time. No extra tasks or tasks with
-overlapping scope allowed. Tasks should be in execution order. First task in order will be executed after human acceptance.
+overlapping scope allowed. Tasks should be in execution order. That tool makes first task to be executed.
 tool_input:
 {}
 """
@@ -155,9 +156,12 @@ tool_input:
         "Project planning finished. Provide your proposition of changes in task list or type (o)k to continue...\n"
     )
     if human_message not in ['o', 'ok']:
-        return human_message
+        return TOOL_NOT_EXECUTED_WORD + human_message
 
     first_epic_id = todoist_api.get_sections(project_id=PROJECT_ID)[0].id
+    tasks_first_epic = todoist_api.get_tasks(project_id=PROJECT_ID, section_id=first_epic_id)
+    if not tasks_first_epic:
+        return TOOL_NOT_EXECUTED_WORD + "Closest epic is empty. Close it if its scope been completely executed or add tasks into it if not."
     # Get first task and it's name and description
     task = todoist_api.get_tasks(project_id=PROJECT_ID, section_id=first_epic_id)[0]
     task_name_description = f"{task.content}\n{task.description}"
