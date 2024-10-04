@@ -14,3 +14,5 @@ Example:
 - self.id_number = str(ObjectId())
 + self.user_id = str(ObjectId())
 + self.email = email
+
+When adjusting your plan with user feedback, always provide complete version of plan. Do not provide unnecesary elements. Do not reference to previous version of plan - write it from zero instead.

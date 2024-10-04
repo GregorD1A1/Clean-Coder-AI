@@ -1,0 +1,34 @@
+services:
+  project_manager:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: project_manager
+    environment:
+      - WORK_DIR=${WORK_DIR}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TODOIST_API_KEY=${TODOIST_API_KEY}
+      - TODOIST_PROJECT_ID=${TODOIST_PROJECT_ID}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - LOG_FILE=${LOG_FILE:-}
+    volumes:
+      - .:/app
+      - ${WORK_DIR}:/workdir
+    command: python project_manager.py
+
+  clean_coder_pipeline:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: clean_coder_pipeline
+    environment:
+      - WORK_DIR=${WORK_DIR}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - LOG_FILE=${LOG_FILE:-}
+    volumes:
+      - .:/app
+      - ${WORK_DIR}:/workdir
+    command: python clean_coder_pipeline.py
