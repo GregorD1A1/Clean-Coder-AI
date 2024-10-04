@@ -27,7 +27,7 @@ python clean_coder_pipeline.py
 ```
 or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
 
-You can also [deploy with Docker]("https://clean-coder.dev/quick_start/run_with_docker/")
+You can also [deploy with Docker](https://clean-coder.dev/quick_start/run_with_docker/).
 
 
 ## ✨ Key advantages:
