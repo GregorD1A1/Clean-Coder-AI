@@ -14,6 +14,7 @@ openai_client = OpenAI()
 class VoiceRecorder:
     def __init__(self):
         self.microphone_available = True
+        self.error_message = ""
         try:
             import sounddevice
             import soundfile

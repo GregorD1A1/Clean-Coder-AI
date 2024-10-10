@@ -41,7 +41,7 @@ def call_model(state, llms):
         response = AIMessage(content=str(response))
     response.json5_tool_calls = find_tools_json(response.content)
     print("")
-    print_formatted(response.content, color="black", on_color="on_white")
+    print_formatted(response.content, color="magenta", on_color="on_white")
     state["messages"].append(response)
 
     if response.json5_tool_calls == "No json found in response.":

@@ -13,9 +13,7 @@ def user_input(prompt=""):
         if recorder.microphone_available:
             user_sentence = record_voice_message()
         else:
-            print_formatted(
-                "Install 'sudo apt-get install libportaudio2' (Linux) or 'brew install portaudio' (Mac) to use microphone feature.", color="light_red"
-            )
+            print_formatted("Install 'sudo apt-get install libportaudio2' (Linux) or 'brew install portaudio' (Mac) to use microphone feature.", color="red")
             user_sentence = input()
 
     return user_sentence

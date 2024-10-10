@@ -15,6 +15,9 @@ services:
     volumes:
       - .:/Clean_Coder
       - ${WORK_DIR}:/work_dir
+    # Uncomment (linux) or adjust (other systems) the following line to use microphone
+    # devices:
+    #   - "/dev/snd:/dev/snd"
     command: python project_manager.py
 
   clean_coder_pipeline:
@@ -31,4 +34,7 @@ services:
     volumes:
       - .:/Clean_Coder
       - ${WORK_DIR}:/work_dir
+    # Uncomment (linux) or adjust (other systems) the following line to use microphone
+    # devices:
+    #   - "/dev/snd:/dev/snd"
     command: python clean_coder_pipeline.py
