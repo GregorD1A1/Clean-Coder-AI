@@ -13,7 +13,7 @@ def print_ascii_logo():
     print(colored(logo, color="yellow"))
     print(colored(writing, color="white"))
 
-def loading_animation(message="Waiting for response", color="cyan"):
+def loading_animation(message="I'm thinking...", color="cyan"):
     frames = [
         "🌘🌑🌑🌑🌑🌑🌑🌑",
         "🌗🌘🌑🌑🌑🌑🌑🌑",
@@ -43,7 +43,7 @@ def loading_animation(message="Waiting for response", color="cyan"):
     try:
         for frame in itertools.cycle(frames):
             print_formatted(frame, color=color, end='\r' + message + ' ')  # Print the frame on the same line after the message
-            time.sleep(0.1)  # Adjust the sleep time for better animation speed
+            time.sleep(0.07)  # Adjust the sleep time for better animation speed
             if not loading_animation.is_running:
                 break
     finally:

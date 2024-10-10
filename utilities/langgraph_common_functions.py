@@ -29,7 +29,7 @@ def call_model(state, llms):
                 response = llm.invoke(messages)
                 break
             except Exception as e:
-                print_formatted(f"\nException happened: {type(e).__name__} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
+                print_formatted(f"\nException happened: {e} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
         else:
             raise Exception("Can not receive response from any llm")
     finally:
@@ -40,7 +40,8 @@ def call_model(state, llms):
     if 'Replicate' in str(llm):
         response = AIMessage(content=str(response))
     response.json5_tool_calls = find_tools_json(response.content)
-    print_formatted(response.content, on_color="on_blue")
+    print("")
+    print_formatted(response.content, color="black", on_color="on_white")
     state["messages"].append(response)
 
     if response.json5_tool_calls == "No json found in response.":

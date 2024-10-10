@@ -1,7 +1,7 @@
 FROM python:3.10-slim
 
 # Set working directory
-WORKDIR /app
+WORKDIR /Clean_Coder
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -20,11 +20,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create workdir
-RUN mkdir /workdir
+RUN mkdir /work_dir
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV WORK_DIR=/workdir
+ENV WORK_DIR=/work_dir
 
 # Default command
 CMD ["python", "project_manager.py"]

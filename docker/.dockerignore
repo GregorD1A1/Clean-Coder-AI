@@ -4,7 +4,6 @@
 __pycache__/
 env/
 venv/
-.clean_coder/
 *.pyc
 *.pyo
 *.pyd
