@@ -6,6 +6,8 @@ rather than rewriting entire files at once.
 Not overcomplicate the code. Do not introduce sophisticated improvements when code is already working. Avoid improving in endless.
 Do not implement features unrelated to provided task.
 
+When replacing old code, replace only the lines that really needed to be replace; try to avoid rewriting lines that should be unchanged. The minimum lines you'll replace, the better.
+
 Code you writing is production, so avoid mock comments.
 
 Tools to your disposal:

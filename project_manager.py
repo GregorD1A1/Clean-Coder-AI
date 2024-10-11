@@ -18,6 +18,8 @@ from utilities.manager_utils import read_project_description, read_progress_desc
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 import os
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 load_dotenv(find_dotenv())

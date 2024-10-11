@@ -7,9 +7,8 @@ from agents.planner_agent import planning
 from agents.executor_agent import Executor
 import os
 from utilities.user_input import user_input
-#import warnings
-#warnings.filterwarnings("ignore", category=DeprecationWarning)
-
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 def run_clean_coder_pipeline(task, work_dir):
