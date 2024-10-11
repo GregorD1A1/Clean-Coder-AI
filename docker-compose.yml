@@ -1,0 +1,40 @@
+services:
+  project_manager:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: project_manager
+    environment:
+      - WORK_DIR=/work_dir
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - TODOIST_API_KEY=${TODOIST_API_KEY}
+      - TODOIST_PROJECT_ID=${TODOIST_PROJECT_ID}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - LOG_FILE=${LOG_FILE:-}
+    volumes:
+      - .:/Clean_Coder
+      - ${WORK_DIR}:/work_dir
+    # Uncomment (linux) or adjust (other systems) the following line to use microphone
+    # devices:
+    #   - "/dev/snd:/dev/snd"
+    command: python project_manager.py
+
+  clean_coder_pipeline:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: clean_coder_pipeline
+    environment:
+      - WORK_DIR=/work_dir
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - COHERE_API_KEY=${COHERE_API_KEY}
+      - LOG_FILE=${LOG_FILE:-}
+    volumes:
+      - .:/Clean_Coder
+      - ${WORK_DIR}:/work_dir
+    # Uncomment (linux) or adjust (other systems) the following line to use microphone
+    # devices:
+    #   - "/dev/snd:/dev/snd"
+    command: python clean_coder_pipeline.py

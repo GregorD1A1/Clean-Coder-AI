@@ -31,6 +31,7 @@ Think step by step which function/code block you want to change before proposing
 """
 
 
+
 def prepare_list_dir_tool(work_dir):
     @tool
     def list_dir(directory):
@@ -41,9 +42,10 @@ tool input:
 """
         try:
             if file_folder_ignored(directory, forbidden_files_and_folders):
-                return "You are not allowed to work with this directory."
+                return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
-            return files
+
+            return f"Content of directory {directory}:\n" + "\n".join(files)
         except Exception as e:
             return f"{type(e).__name__}: {e}"
 
@@ -59,7 +61,7 @@ tool input:
 """
         try:
             if file_folder_ignored(filename, forbidden_files_and_folders):
-                return "You are not allowed to work with this file."
+                return f"You are not allowed to work with {filename}."
             with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
                 lines = file.readlines()
             formatted_lines = [f"{i+1}|{line[:-1]}\n" for i, line in enumerate(lines)]

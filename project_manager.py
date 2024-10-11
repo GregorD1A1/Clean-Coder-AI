@@ -11,14 +11,15 @@ from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
-from tools.tools_project_manager import add_task, modify_task, delete_task, finish_project_planning, reorder_tasks
+from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
-from utilities.util_functions import read_project_description, read_progress_description, get_project_tasks
+from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 import os
-import time
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 load_dotenv(find_dotenv())
@@ -28,8 +29,9 @@ see_file = prepare_see_file_tool(work_dir)
 tools = [
     add_task,
     modify_task,
-    delete_task,
     reorder_tasks,
+    create_epic,
+    modify_epic,
     list_dir,
     see_file,
     ask_human_tool,
@@ -37,9 +39,12 @@ tools = [
 ]
 rendered_tools = render_text_description(tools)
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.4).with_config({"run_name": "Manager"})
-#llm = ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4).with_config({"run_name": "Manager"})
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
+llms = []
+if os.getenv("OPENAI_API_KEY"):
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 
 
 class AgentState(TypedDict):
@@ -58,7 +63,7 @@ What have been done so far:
 {progress_description}"""
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/agents/prompts/manager_system.prompt", "r") as f:
+with open(f"{current_dir}/prompts/manager_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 system_message = SystemMessage(
@@ -68,7 +73,7 @@ system_message = SystemMessage(
 
 # node functions
 def call_model_manager(state):
-    state = call_model(state, llm)
+    state = call_model(state, llms)
     state = cut_off_context(state)
     return state
 
@@ -100,7 +105,7 @@ def actualize_tasks_list_and_progress_description(state):
         content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
         tasks_and_progress_message=True
     )
-    state["messages"].append(tasks_and_progress_msg)
+    state["messages"].insert(-2, tasks_and_progress_msg)
     return state
 
 
@@ -109,6 +114,7 @@ def cut_off_context(state):
     last_messages_excluding_system = [msg for msg in state["messages"][-20:] if msg.type != "system"]
     state["messages"] = [system_message] + last_messages_excluding_system
     return state
+
 
 # workflow definition
 manager_workflow = StateGraph(AgentState)

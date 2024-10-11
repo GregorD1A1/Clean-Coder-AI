@@ -33,8 +33,6 @@ def vdb_available():
 
 def retrieve(question):
     retrieval = collection.query(query_texts=[question], n_results=8)
-    print("retrieval: ", retrieval)
-
     reranked_docs = cohere_client.rerank(
         query=question,
         documents=retrieval["documents"][0],
@@ -42,7 +40,6 @@ def retrieve(question):
         model="rerank-english-v3.0",
         #return_documents=True,
     )
-    print("reranked_docs: ", reranked_docs)
     reranked_indexes = [result.index for result in reranked_docs.results]
     response = ""
     for index in reranked_indexes:

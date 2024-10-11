@@ -5,7 +5,7 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langgraph.graph import END, StateGraph
 from dotenv import load_dotenv, find_dotenv
 from utilities.util_functions import print_formatted, check_file_contents, convert_images, get_joke
-from utilities.langgraph_common_functions import call_model, ask_human, after_ask_human_condition
+from utilities.langgraph_common_functions import ask_human, after_ask_human_condition
 import os
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
@@ -13,18 +13,24 @@ from langchain_anthropic import ChatAnthropic
 
 load_dotenv(find_dotenv())
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.3).with_config({"run_name": "Planer"})
-llm_voter = llm.with_config({"run_name": "Voter"})
+llms_planners = []
+if os.getenv("OPENAI_API_KEY"):
+    llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
 
+llm_planner = llms_planners[0].with_fallbacks(llms_planners[1:])
+# copy planers, but exchange config name
+llm_voter = llm_planner.with_config({"run_name": "Voter"})
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
     voter_messages: Sequence[BaseMessage]
 
-current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/prompts/planer_system.prompt", "r") as f:
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+with open(f"{parent_dir}/prompts/planer_system.prompt", "r") as f:
     planer_system_prompt_template = f.read()
-with open(f"{current_dir}/prompts/voter_system.prompt", "r") as f:
+with open(f"{parent_dir}/prompts/voter_system.prompt", "r") as f:
     voter_system_prompt_template = f.read()
 
 planer_system_message = SystemMessage(content=planer_system_prompt_template)
@@ -37,7 +43,7 @@ def call_planers(state):
     nr_plans = 3
     print(f"\nGenerating plan propositions. While I'm thinking...\n")
     print_formatted(get_joke(), color="red")
-    plan_propositions_messages = llm.batch([messages for _ in range(nr_plans)])
+    plan_propositions_messages = llm_planner.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
         state["voter_messages"].append(AIMessage(content="_"))
         state["voter_messages"].append(HumanMessage(content=f"Proposition nr {i+1}:\n\n" + proposition.content))
@@ -56,7 +62,7 @@ def call_planers(state):
 
 def call_model_corrector(state):
     messages = state["messages"]
-    response = llm.invoke(messages)
+    response = llm_planner.invoke(messages)
     print_formatted(response.content)
     state["messages"].append(response)
 
