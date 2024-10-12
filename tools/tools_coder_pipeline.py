@@ -217,6 +217,7 @@ tool input:
 :param endpoint: endpoint to navigate.
 :param login_required: provide True, if page is available only for logged in user.
 :param commands: list of commands to execute on page one after another. Every command is json with 'action', 'selector' and 'value' (optional) keys.
+action can be 'fill', 'click', 'hover'.
 Example:
 commands: [
 {"action": "fill", "selector": "#username", "value": "uname"},
@@ -224,34 +225,45 @@ commands: [
 {"action": "hover", "selector": ".main-page button[type='reload']"},
 ],
 """
-        p = sync_playwright().start()
-        browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
-        if login_required:
-            page.goto(f'http://localhost:{frontend_port}/login')
-            page.fill('#username', 'uname@test.pl')
-            page.fill('#password', 'pass')
-            page.click('.login-form button[type="submit"]')
-        page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
+        try:
+            p = sync_playwright().start()
+            browser = p.chromium.launch(headless=False)
+            page = browser.new_page()
+            if login_required:
+                page.goto(f'http://localhost:{frontend_port}/login')
+                page.fill('#username', 'uname@test.pl')
+                page.fill('#password', 'pass')
+                page.click('.login-form button[type="submit"]')
+            page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
 
-        for command in commands:
-            action = command.get('action')
-            selector = command.get('selector')
-            value = command.get('value')
-            if action == 'fill':
-                page.fill(selector, value)
-            elif action == 'click':
-                page.click(selector)
-            elif action == 'hover':
-                page.hover(selector)
+            for command in commands:
+                action = command.get('action')
+                selector = command.get('selector')
+                value = command.get('value')
+                if action == 'fill':
+                    page.fill(selector, value)
+                elif action == 'click':
+                    page.click(selector)
+                elif action == 'hover':
+                    page.hover(selector)
 
-        page.screenshot(path='E://Eksperiments/screenshot.png')
-        screenshot_bytes = page.screenshot()
-        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
-        print(screenshot_base64)
-        browser.close()
+            page.screenshot(path='E://Eksperiments/screenshot.png')
+            screenshot_bytes = page.screenshot()
+            screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+            print(screenshot_base64)
+            browser.close()
 
-        return screenshot_base64
+            return [{
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": screenshot_base64,
+                },
+            }]
+
+        except Exception as e:
+            return f"{type(e).__name__}: {e}"
 
     return watch_web_page
 
