@@ -252,6 +252,8 @@ commands: [
 
         return screenshot_base64
 
+    return watch_web_page
+
 
 if __name__ == '__main__':
     pass
