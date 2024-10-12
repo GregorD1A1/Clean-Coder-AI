@@ -250,7 +250,6 @@ commands: [
             page.screenshot(path='E://Eksperiments/screenshot.png')
             screenshot_bytes = page.screenshot()
             screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
-            print(screenshot_base64)
             browser.close()
 
             return [{

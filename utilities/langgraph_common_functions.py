@@ -62,9 +62,8 @@ def call_tool(state, tool_executor):
         state["messages"].append(HumanMessage(content="No tool called"))
         return state
     json5_tool_calls = last_message.json5_tool_calls
-    tool_response = ""
-    for tool_call in json5_tool_calls:
-        tool_response += str(tool_executor.invoke(ToolInvocation(**tool_call))) + "\n\n###\n\n"
+    tool_responses = [str(tool_executor.invoke(ToolInvocation(**tool_call))) for tool_call in json5_tool_calls]
+    tool_response = "\n\n###\n\n".join(tool_responses)
     '''
     try:
         response = tool_executor.invoke(ToolInvocation(**tool_call))
