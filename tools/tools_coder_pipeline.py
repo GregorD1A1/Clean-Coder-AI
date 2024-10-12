@@ -1,6 +1,6 @@
 from langchain.tools import tool
 import os
-import playwright
+from playwright.sync_api import sync_playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
@@ -224,14 +224,15 @@ commands: [
 {"action": "hover", "selector": ".main-page button[type='reload']"},
 ],
 """
-        browser = playwright.chromium.launch(headless=False)
+        p = sync_playwright().start()
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         if login_required:
             page.goto(f'http://localhost:{frontend_port}/login')
             page.fill('#username', 'uname@test.pl')
             page.fill('#password', 'pass')
             page.click('.login-form button[type="submit"]')
-        page.goto(f'http://localhost:{frontend_port}/{endpoint}')
+        page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
 
         for command in commands:
             action = command.get('action')
@@ -256,4 +257,10 @@ commands: [
 
 
 if __name__ == '__main__':
-    pass
+    tool = prepare_watch_web_page_tool(5173)
+    tool.invoke({"endpoint", True, [
+        {"action": "fill", "selector": "#username", "value": "uname"},
+        {"action": "click", "selector": ".login-form button[type='submit']"},
+        {"action": "hover", "selector": ".main-page button[type='reload']"},
+    ]})
+
