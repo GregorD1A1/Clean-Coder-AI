@@ -122,8 +122,10 @@ class Executor():
 
         # safety mechanism for looped wrong tool call
         last_human_messages = [m for m in state["messages"] if m.type == "human"][-5:]
-        tool_not_executed_human_msgs = [m for m in last_human_messages if m.content.startswith(TOOL_NOT_EXECUTED_WORD)]
-        if len(tool_not_executed_human_msgs) == 4:
+        tool_not_executed_msgs = [
+            m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
+        ]
+        if len(tool_not_executed_msgs) == 4:
             print("Seems like AI been looped. Please suggest it how to introduce change correctly:")
             return "human_help"
 

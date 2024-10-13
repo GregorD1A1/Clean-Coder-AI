@@ -42,7 +42,7 @@ def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
     print(f"\nGenerating plan propositions. While I'm thinking...\n")
-    print_formatted(get_joke(), color="red")
+    print_formatted(get_joke(), color="green")
     plan_propositions_messages = llm_planner.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
         state["voter_messages"].append(AIMessage(content="_"))

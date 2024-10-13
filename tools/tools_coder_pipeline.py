@@ -46,7 +46,7 @@ tool input:
                 return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
 
-            return f"Content of directory {directory}:\n" + "\n".join(files)
+            return f"Content of directory '{directory}':\n" + "\n".join(files)
         except Exception as e:
             return f"{type(e).__name__}: {e}"
 
@@ -209,6 +209,7 @@ def ask_human_tool(prompt):
 
 
 def prepare_watch_web_page_tool(frontend_port):
+    p = sync_playwright().start()
     @tool
     def watch_web_page(endpoint, login_required, commands):
         """
@@ -225,53 +226,52 @@ commands: [
 {"action": "hover", "selector": ".main-page button[type='reload']"},
 ],
 """
-        try:
-            p = sync_playwright().start()
-            browser = p.chromium.launch(headless=False)
-            page = browser.new_page()
-            if login_required:
-                page.goto(f'http://localhost:{frontend_port}/login')
-                page.fill('#username', 'uname@test.pl')
-                page.fill('#password', 'pass')
-                page.click('.login-form button[type="submit"]')
-            page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
+        #try:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        if login_required:
+            page.goto(f'http://localhost:{frontend_port}/login')
+            page.fill('#username', 'uname@test.pl')
+            page.fill('#password', 'pass')
+            page.click('.login-form button[type="submit"]')
+        page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
 
-            for command in commands:
-                action = command.get('action')
-                selector = command.get('selector')
-                value = command.get('value')
-                if action == 'fill':
-                    page.fill(selector, value)
-                elif action == 'click':
-                    page.click(selector)
-                elif action == 'hover':
-                    page.hover(selector)
+        for command in commands:
+            action = command.get('action')
+            selector = command.get('selector')
+            value = command.get('value')
+            if action == 'fill':
+                page.fill(selector, value)
+            elif action == 'click':
+                page.click(selector)
+            elif action == 'hover':
+                page.hover(selector)
 
-            page.screenshot(path='E://Eksperiments/screenshot.png')
-            screenshot_bytes = page.screenshot()
-            screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
-            browser.close()
+        page.screenshot(path='E://Eksperiments/screenshot.png')
+        screenshot_bytes = page.screenshot()
+        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+        browser.close()
 
-            return [{
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/png",
-                    "data": screenshot_base64,
+        return [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{screenshot_base64}",
                 },
-            }]
+            },
+        ]
 
-        except Exception as e:
-            return f"{type(e).__name__}: {e}"
+        #except Exception as e:
+        #    return f"{type(e).__name__}: {e}"
 
     return watch_web_page
 
 
 if __name__ == '__main__':
     tool = prepare_watch_web_page_tool(5173)
-    tool.invoke({"endpoint", True, [
-        {"action": "fill", "selector": "#username", "value": "uname"},
-        {"action": "click", "selector": ".login-form button[type='submit']"},
-        {"action": "hover", "selector": ".main-page button[type='reload']"},
-    ]})
+    tool.invoke({
+        "endpoint": "/",
+        "login_required": False,
+        "commands": []
+    })
 
