@@ -1,9 +1,9 @@
 services:
-  project_manager:
+  manager:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: project_manager
+    container_name: manager
     environment:
       - WORK_DIR=/work_dir
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -18,13 +18,13 @@ services:
     # Uncomment (linux) or adjust (other systems) the following line to use microphone
     # devices:
     #   - "/dev/snd:/dev/snd"
-    command: python project_manager.py
+    command: python manager.py
 
-  clean_coder_pipeline:
+  single_task_coder:
     build:
       context: .
       dockerfile: docker/Dockerfile
-    container_name: clean_coder_pipeline
+    container_name: single_task_coder
     environment:
       - WORK_DIR=/work_dir
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -37,4 +37,4 @@ services:
     # Uncomment (linux) or adjust (other systems) the following line to use microphone
     # devices:
     #   - "/dev/snd:/dev/snd"
-    command: python clean_coder_pipeline.py
+    command: python single_task_coder.py

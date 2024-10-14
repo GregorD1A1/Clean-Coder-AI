@@ -104,6 +104,7 @@ def check_application_logs():
     except Exception as e:
         return f"{type(e).__name__}: {e}"
 
+
 def see_image(filename, work_dir):
     try:
         with open(join_paths(work_dir, filename), 'rb') as image_file:
