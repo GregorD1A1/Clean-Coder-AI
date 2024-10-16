@@ -8,7 +8,7 @@ Clean Coder is your AI-powered software project assistant. Delegate planning, ma
 <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
 <br>
 <td align="center">
-<a href="https://https://clean-coder.dev/" target="_blank"><strong>Documentation</strong></a>
+<a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
 </td>
 </div>
 
