@@ -20,15 +20,15 @@ cd Clean-Coder-AI
 
 pip install -r requirements.txt
 
-# provide path to the project directory you'll work on
-export WORK_DIR=/path/to/your/project/dir
+# create file with envinronment variables from template
+cp .env.template .env
 
-export OPENAI_API_KEY=your_api_key_here
-export ANTHROPIC_API_KEY=your_api_key_here
+# open .env in text editor, provide api keys and work directory, save and close
+nano .env
 
 python clean_coder_pipeline.py
 ```
-or check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
+or (recommended) check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
 
 You can also [deploy with Docker](https://clean-coder.dev/quick_start/run_with_docker/).
 
