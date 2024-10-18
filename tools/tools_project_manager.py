@@ -82,7 +82,6 @@ tool_input:
         todoist_api.delete_task(task_id=task_id)
         return "Task deleted successfully"
 
-
     return "Task modified successfully"
 
 
