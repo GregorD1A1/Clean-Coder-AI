@@ -1,3 +1,5 @@
+import json
+
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
@@ -111,14 +113,32 @@ class Researcher():
     def research_task(self, task):
         print("Researcher starting its work")
         system_message = system_prompt_template.format(task=task, tools=self.rendered_tools)
-        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=f"Go")]}
+        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content="Go")]}
         researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
-        tool_json = find_tools_json(researcher_response.content)[0]
-        text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
-        image_paths = tool_json["tool_input"]["template_images"]
+        try:
+            tool_json_list = find_tools_json(researcher_response.content)
+            if not tool_json_list:
+                raise ValueError("No tool JSON found in researcher response")
 
-        return text_files, image_paths
+            tool_json_str = tool_json_list[0]
+            tool_json = json.loads(tool_json_str)
+
+            text_files = set(tool_json["tool_input"]["files_to_work_on"] + tool_json["tool_input"]["reference_files"])
+            image_paths = tool_json["tool_input"]["template_images"]
+
+            return text_files, image_paths
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
+            print(f"Problematic JSON string: {tool_json_str}")
+        except KeyError as e:
+            print(f"Missing key in tool_json: {e}")
+            print(f"tool_json contents: {tool_json}")
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            print(f"Researcher response content: {researcher_response.content}")
+
+        return set(), []  # Return empty set and list if there's an error
 
 
 if __name__ == "__main__":

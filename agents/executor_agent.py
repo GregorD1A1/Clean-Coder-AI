@@ -20,7 +20,6 @@ from utilities.langgraph_common_functions import (call_model, call_tool, ask_hum
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 from utilities.user_input import user_input
 
-
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")
 
@@ -33,11 +32,14 @@ tool input:
 implemented changes work correctly."""
     print_formatted(test_instruction, color="blue")
 
-#llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
-#llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
+
+# llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
+# llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"}))
+    llms.append(
+        ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, max_tokens=2000, timeout=120).with_config(
+            {"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Executor"}))
 
@@ -45,7 +47,9 @@ if os.getenv("OPENAI_API_KEY"):
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
+
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
 with open(f"{parent_dir}/prompts/executor_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
@@ -72,7 +76,7 @@ class Executor():
 
         executor_workflow.set_entry_point("agent")
 
-        #executor_workflow.add_edge("agent", "checker")
+        # executor_workflow.add_edge("agent", "checker")
         executor_workflow.add_edge("tool", "agent")
         executor_workflow.add_edge("human_help", "agent")
         executor_workflow.add_conditional_edges("agent", self.after_agent_condition)

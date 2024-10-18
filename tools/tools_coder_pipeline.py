@@ -31,7 +31,6 @@ Think step by step which function/code block you want to change before proposing
 """
 
 
-
 def prepare_list_dir_tool(work_dir):
     @tool
     def list_dir(directory):
@@ -50,6 +49,7 @@ tool input:
             return f"{type(e).__name__}: {e}"
 
     return list_dir
+
 
 def prepare_see_file_tool(work_dir):
     @tool
