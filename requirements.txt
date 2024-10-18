@@ -7,7 +7,7 @@ langchain_anthropic==0.2.1
 langchain-openai==0.2.1
 langchain_mistralai==0.2.0
 replicate==0.31.0
-playwright==1.43.0
+playwright==1.47.0
 libsass==0.23.0
 openai==1.50.2
 cohere==5.10.0

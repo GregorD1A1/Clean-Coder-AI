@@ -5,7 +5,7 @@ from utilities.util_functions import print_formatted
 from utilities.manager_utils import actualize_progress_description_file
 from utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv
-from clean_coder_pipeline import run_clean_coder_pipeline
+from single_task_coder import run_clean_coder_pipeline
 import uuid
 import requests
 import json

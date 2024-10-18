@@ -1,6 +1,6 @@
 from langchain.tools import tool
 import os
-import playwright
+from playwright.sync_api import sync_playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
@@ -8,6 +8,7 @@ from utilities.start_project_functions import file_folder_ignored, forbidden_fil
 from utilities.util_functions import join_paths
 from utilities.user_input import user_input
 from rag.retrieval import retrieve
+import base64
 
 
 load_dotenv(find_dotenv())
@@ -44,7 +45,7 @@ tool input:
                 return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
 
-            return f"Content of directory {directory}:\n" + "\n".join(files)
+            return f"Content of directory '{directory}':\n" + "\n".join(files)
         except Exception as e:
             return f"{type(e).__name__}: {e}"
 
@@ -207,31 +208,70 @@ def ask_human_tool(prompt):
         return f"{type(e).__name__}: {e}"
 
 
-# function under development
-def make_screenshot(self, endpoint, login_needed, commands):
-    browser = playwright.chromium.launch(headless=False)
-    page = browser.new_page()
-    if login_needed:
-        page.goto('http://localhost:5555/login')
-        page.fill('#username', 'uname')
-        page.fill('#password', 'passwd')
-        page.click('.login-form button[type="submit"]')
-    page.goto(f'http://localhost:5555/{endpoint}')
+def prepare_watch_web_page_tool(frontend_port):
+    p = sync_playwright().start()
+    @tool
+    def watch_web_page(endpoint, login_required, commands):
+        """
+Use that tool to watch web page. Useful after you introduced changes, for self-test.
+tool input:
+:param endpoint: endpoint to navigate.
+:param login_required: provide True, if page is available only for logged in user.
+:param commands: list of commands to execute on page one after another. Every command is json with 'action', 'selector' and 'value' (optional) keys.
+action can be 'fill', 'click', 'hover'.
+Example:
+commands: [
+{"action": "fill", "selector": "#username", "value": "uname"},
+{"action": "click", "selector": ".login-form button[type='submit']"},
+{"action": "hover", "selector": ".main-page button[type='reload']"},
+],
+"""
+        #try:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        if login_required:
+            page.goto(f'http://localhost:{frontend_port}/login')
+            page.fill('#username', 'uname@test.pl')
+            page.fill('#password', 'pass')
+            page.click('.login-form button[type="submit"]')
+        page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
 
-    for command in commands:
-        action = command.get('action')
-        selector = command.get('selector')
-        value = command.get('value')
-        if action == 'fill':
-            page.fill(selector, value)
-        elif action == 'click':
-            page.click(selector)
-        elif action == 'hover':
-            page.hover(selector)
+        for command in commands:
+            action = command.get('action')
+            selector = command.get('selector')
+            value = command.get('value')
+            if action == 'fill':
+                page.fill(selector, value)
+            elif action == 'click':
+                page.click(selector)
+            elif action == 'hover':
+                page.hover(selector)
 
-    page.screenshot(path=join_paths(self.work_dir, 'screenshots/screenshot.png'))
-    browser.close()
+        page.screenshot(path='E://Eksperiments/screenshot.png')
+        screenshot_bytes = page.screenshot()
+        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+        browser.close()
+
+        return [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{screenshot_base64}",
+                },
+            },
+        ]
+
+        #except Exception as e:
+        #    return f"{type(e).__name__}: {e}"
+
+    return watch_web_page
 
 
 if __name__ == '__main__':
-    pass
+    tool = prepare_watch_web_page_tool(5173)
+    tool.invoke({
+        "endpoint": "/",
+        "login_required": False,
+        "commands": []
+    })
+

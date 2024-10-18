@@ -1,7 +1,7 @@
 import os
 from tools.tools_coder_pipeline import (
     ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
 )
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
@@ -22,6 +22,7 @@ from utilities.user_input import user_input
 
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")
+frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
@@ -125,8 +126,10 @@ class Executor():
 
         # safety mechanism for looped wrong tool call
         last_human_messages = [m for m in state["messages"] if m.type == "human"][-5:]
-        tool_not_executed_human_msgs = [m for m in last_human_messages if m.content.startswith(TOOL_NOT_EXECUTED_WORD)]
-        if len(tool_not_executed_human_msgs) == 4:
+        tool_not_executed_msgs = [
+            m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
+        ]
+        if len(tool_not_executed_msgs) == 4:
             print("Seems like AI been looped. Please suggest it how to introduce change correctly:")
             return "human_help"
 
@@ -173,4 +176,8 @@ def prepare_tools(work_dir):
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
     tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    if frontend_port:
+        watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
+        tools.append(watch_web_page_tool)
+
     return tools
