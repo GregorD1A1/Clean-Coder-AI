@@ -165,10 +165,27 @@ def print_formatted_code(code, language, start_line=None, line_number=None, titl
         else:
             console.print("[bold red]Error: No code to display[/bold red]")
     except Exception as e:
-        console.print(f"[bold red]Error formatting code: {str(e)}[/bold red]")
         if code is not None:
             console.print("Fallback rendering:")
-            console.print(Syntax(code, lexer, word_wrap=True))
+            syntax = Syntax(
+                code,
+                lexer,
+                line_numbers=True,
+                theme="monokai",
+                word_wrap=True,
+                padding=(1, 1),
+            )
+
+            snippet_title = title or f"{language_tmp.capitalize() if isinstance(language_tmp, str) else 'Code'} Snippet"
+
+            styled_code = Panel(
+                syntax,
+                border_style="bold yellow",
+                title=snippet_title,
+                expand=False
+            )
+
+            console.print(Padding(styled_code, 1))
         else:
             console.print("[bold red]Error: Code is None[/bold red]")
 
@@ -189,7 +206,7 @@ def print_formatted_content(content):
             if tool and not code:
                 print_tool_message(tool_name=tool, tool_input=input_text or '', color="light_blue")
             elif isinstance(input_text, str):
-                print_formatted(input_text, color="light_blue", bold=True)
+                print_formatted_code(code=input_text, language=part[1], start_line=start_line, line_number=line_number)
             elif code:
                 filename = extract_from_json(part[2], parent_name='tool_input', property_name='filename')
                 filename = filename if filename else input_text
