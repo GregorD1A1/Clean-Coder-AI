@@ -1,4 +1,7 @@
+from json import JSONDecodeError
+
 from langchain_core.messages import HumanMessage
+from utilities.util_functions import print_error, print_formatted_content
 from utilities.util_functions import find_tools_json, print_formatted
 from utilities.user_input import user_input
 from langgraph.prebuilt import ToolInvocation
@@ -42,18 +45,20 @@ def call_model(state, llms):
     if 'Replicate' in str(llm):
         response = AIMessage(content=str(response))
     response.json5_tool_calls = find_tools_json(response.content)
-    print("")
-    print_formatted(response.content, color="magenta", on_color="on_white")
+
+    # Process and print the content
+    print_formatted_content(response.content)
+
     state["messages"].append(response)
 
     if response.json5_tool_calls == "No json found in response.":
         state["messages"].append(HumanMessage(content=no_json_msg))
-        print("\nNo json provided, asked to provide one.")
+        print_error('\nNo json provided, asked to provide one.')
         return state
     for tool_call in response.json5_tool_calls:
         if tool_call is None or "tool" not in tool_call:
             state["messages"].append(HumanMessage(content=bad_json_format_msg))
-            print("\nBad json format provided, asked to provide again.")
+            print_error('\nBad json format provided, asked to provide again.')
             return state
     return state
 
