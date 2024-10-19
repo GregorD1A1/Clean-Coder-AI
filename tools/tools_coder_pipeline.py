@@ -231,9 +231,9 @@ commands: [
         page = browser.new_page()
         if login_required:
             page.goto(f'http://localhost:{frontend_port}/login')
-            page.fill('#email', 'uname@test.pl')
-            page.fill('#password', 'pass')
-            page.click('.login-form button[type="submit"]')
+            page.fill('input[type="email"]', 'uname@test.pl')
+            page.fill('input[type="password"]', 'pass')
+            page.click('button[type="submit"]')
         page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
 
         for command in commands:
@@ -271,7 +271,6 @@ if __name__ == '__main__':
     tool = prepare_watch_web_page_tool(5173)
     tool.invoke({
         "endpoint": "/",
-        "login_required": False,
+        "login_required": True,
         "commands": []
     })
-
