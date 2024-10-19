@@ -213,7 +213,7 @@ def prepare_watch_web_page_tool(frontend_port):
     @tool
     def watch_web_page(endpoint, login_required, commands):
         """
-Use that tool to watch web page. Useful after you introduced changes, for self-test.
+Use that tool to watch web page. Use it after you introduced changes, for self-test. Try to use it as fast as possible, it costs nothing.
 tool input:
 :param endpoint: endpoint to navigate.
 :param login_required: provide True, if page is available only for logged in user.
