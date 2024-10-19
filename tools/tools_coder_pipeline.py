@@ -231,7 +231,7 @@ commands: [
         page = browser.new_page()
         if login_required:
             page.goto(f'http://localhost:{frontend_port}/login')
-            page.fill('#username', 'uname@test.pl')
+            page.fill('#email', 'uname@test.pl')
             page.fill('#password', 'pass')
             page.click('.login-form button[type="submit"]')
         page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
