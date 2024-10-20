@@ -32,7 +32,6 @@ Think step by step which function/code block you want to change before proposing
 """
 
 
-
 def prepare_list_dir_tool(work_dir):
     @tool
     def list_dir(directory):
@@ -46,11 +45,12 @@ tool input:
                 return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
 
-            return f"Content of directory '{directory}':\n" + "\n".join(files)
+            return f"Content of directory {directory}:\n" + "\n".join(files)
         except Exception as e:
             return f"{type(e).__name__}: {e}"
 
     return list_dir
+
 
 def prepare_see_file_tool(work_dir):
     @tool
@@ -268,9 +268,13 @@ commands: [
 
 
 if __name__ == '__main__':
+    """
     tool = prepare_watch_web_page_tool(5173)
     tool.invoke({
         "endpoint": "/",
         "login_required": True,
         "commands": []
     })
+    """
+    list_dir = prepare_list_dir_tool("E://takzyli")
+    print(list_dir.invoke({}))
