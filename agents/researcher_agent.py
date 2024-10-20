@@ -1,3 +1,5 @@
+import json
+
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai.chat_models import ChatMistralAI
@@ -110,7 +112,8 @@ class Researcher():
     def research_task(self, task):
         print("Researcher starting its work")
         system_message = system_prompt_template.format(task=task, tools=self.rendered_tools)
-        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}
+        inputs = {
+            "messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}
         researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
         tool_json = find_tools_json(researcher_response.content)[0]
