@@ -218,12 +218,14 @@ tool input:
 :param endpoint: endpoint to navigate.
 :param login_required: provide True, if page is available only for logged in user.
 :param commands: list of commands to execute on page one after another. Every command is json with 'action', 'selector' and 'value' (optional) keys.
-action can be 'fill', 'click', 'hover'.
+action can be 'fill', 'click', 'hover' or 'wait'.
+value for wait is in milliseconds.
 Example:
 commands: [
 {"action": "fill", "selector": "#username", "value": "uname"},
 {"action": "click", "selector": ".login-form button[type='submit']"},
 {"action": "hover", "selector": ".main-page button[type='reload']"},
+{"action": "wait", "value": 5000},
 ],
 """
         #try:
@@ -234,18 +236,25 @@ commands: [
             page.fill('input[type="email"]', 'uname@test.pl')
             page.fill('input[type="password"]', 'pass')
             page.click('button[type="submit"]')
-        page.goto(url=f'http://localhost:{frontend_port}/{endpoint}')
+            page.wait_for_load_state('networkidle')
+        page.goto(url=f'http://localhost:{frontend_port}{endpoint}')
 
-        for command in commands:
-            action = command.get('action')
-            selector = command.get('selector')
-            value = command.get('value')
-            if action == 'fill':
-                page.fill(selector, value)
-            elif action == 'click':
-                page.click(selector)
-            elif action == 'hover':
-                page.hover(selector)
+        try:
+            for command in commands:
+                action = command.get('action')
+                selector = command.get('selector')
+                value = command.get('value')
+                if action == 'fill':
+                    page.fill(selector, value)
+                elif action == 'click':
+                    page.click(selector)
+                elif action == 'hover':
+                    page.hover(selector)
+                elif action == 'wait':
+                    page.wait_for_timeout(value)
+        except Exception as e:
+            print(f"{type(e).__name__}: {e}")
+            pass
 
         page.screenshot(path='E://Eksperiments/screenshot.png')
         screenshot_bytes = page.screenshot()
@@ -268,13 +277,12 @@ commands: [
 
 
 if __name__ == '__main__':
-    """
+
     tool = prepare_watch_web_page_tool(5173)
     tool.invoke({
         "endpoint": "/",
         "login_required": True,
-        "commands": []
+        "commands": [
+
+        ]
     })
-    """
-    list_dir = prepare_list_dir_tool("E://takzyli")
-    print(list_dir.invoke({}))
