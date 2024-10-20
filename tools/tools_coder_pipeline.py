@@ -238,6 +238,7 @@ commands: [
             page.click('button[type="submit"]')
             page.wait_for_load_state('networkidle')
         page.goto(url=f'http://localhost:{frontend_port}{endpoint}')
+        page.wait_for_load_state('networkidle')
 
         try:
             for command in commands:
@@ -280,7 +281,7 @@ if __name__ == '__main__':
 
     tool = prepare_watch_web_page_tool(5173)
     tool.invoke({
-        "endpoint": "/",
+        "endpoint": "/intern_survey",
         "login_required": True,
         "commands": [
 
