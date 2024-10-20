@@ -13,10 +13,10 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from tools.tools_coder_pipeline import (
-    prepare_list_dir_tool, prepare_see_file_tool, retrieve_files_by_semantic_query
+     prepare_see_file_tool, retrieve_files_by_semantic_query
 )
 from rag.retrieval import vdb_available
-from utilities.util_functions import find_tools_json, print_formatted
+from utilities.util_functions import find_tools_json, list_directory_tree
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )
@@ -48,10 +48,10 @@ def final_response(files_to_work_on, reference_files, template_images):
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
+if openai_api_key:
+    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
 if anthropic_api_key:
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
-if openai_api_key:
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -82,9 +82,8 @@ def after_agent_condition(state):
 
 class Researcher():
     def __init__(self, work_dir):
-        list_dir = prepare_list_dir_tool(work_dir)
         see_file = prepare_see_file_tool(work_dir)
-        tools = [list_dir, see_file, final_response]
+        tools = [see_file, final_response]
         if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
         self.rendered_tools = render_text_description(tools)
@@ -113,7 +112,9 @@ class Researcher():
     def research_task(self, task):
         print("Researcher starting its work")
         system_message = system_prompt_template.format(task=task, tools=self.rendered_tools)
-        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content="Go")]}
+
+        inputs = {"messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}
+
         researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
 
         try:

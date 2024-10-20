@@ -9,7 +9,7 @@ work_dir = os.getenv("WORK_DIR")
 
 def create_coderignore():
     coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
-    default_ignore_content = ".env\n.clean_coder/\n"
+    default_ignore_content = ".*\nnode_modules/\nvenv/\n __pycache__\n*.pyc\n*.log"
     os.makedirs(os.path.dirname(coderignore_path), exist_ok=True)
     if not os.path.exists(coderignore_path):
         with open(coderignore_path, 'w', encoding='utf-8') as file:

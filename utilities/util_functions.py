@@ -7,6 +7,7 @@ import textwrap
 import xml.etree.ElementTree as ET
 import base64
 import requests
+from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 
 from dotenv import load_dotenv, find_dotenv
 from pygments.util import ClassNotFound
@@ -396,3 +397,31 @@ def get_joke():
     except Exception as e:
         joke = f"Failed to receive joke :/"
     return joke
+
+
+def list_directory_tree(work_dir):
+    tree = []
+    for root, dirs, files in os.walk(work_dir):
+        # Filter out forbidden directories and files
+        dirs[:] = [d for d in dirs if not file_folder_ignored(d, forbidden_files_and_folders)]
+        files = [f for f in files if not file_folder_ignored(f, forbidden_files_and_folders)]
+
+        rel_path = os.path.relpath(root, work_dir)
+        if rel_path == '.':
+            # This is the root directory, skip it
+            continue
+
+        depth = rel_path.count(os.sep)
+        indent = "│   " * (depth - 1)
+
+        # Add current directory to the tree
+        tree.append(f"{indent}{'└──' if depth > 0 else ''}📁 {os.path.basename(root)}")
+
+        # Add files to the tree
+        file_indent = "│   " * depth + "├── "
+        for i, file in enumerate(files):
+            if i == len(files) - 1:
+                file_indent = "│   " * depth + "└── "
+            tree.append(f"{file_indent}{file}")
+
+    return "Content of directory tree:\n" + "\n".join(tree)
