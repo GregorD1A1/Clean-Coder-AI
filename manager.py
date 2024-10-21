@@ -10,13 +10,13 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain.tools.render import render_text_description
 from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
 from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
+from utilities.util_functions import render_tools
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -37,7 +37,7 @@ tools = [
     ask_human_tool,
     finish_project_planning,
 ]
-rendered_tools = render_text_description(tools)
+rendered_tools = render_tools(tools)
 
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 llms = []

@@ -10,13 +10,12 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain.tools.render import render_text_description
 from langchain.tools import tool
 from tools.tools_coder_pipeline import (
      prepare_see_file_tool, retrieve_files_by_semantic_query
 )
 from rag.retrieval import vdb_available
-from utilities.util_functions import find_tools_json, list_directory_tree
+from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )
@@ -48,10 +47,12 @@ def final_response(files_to_work_on, reference_files, template_images):
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
-if openai_api_key:
-    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+if os.getenv("MISTRAL_API_KEY"):
+    llms.append(ChatMistralAI(model="mistral-large-latest").with_config({"run_name": "Researcher"}))
 if anthropic_api_key:
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+if openai_api_key:
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -86,7 +87,7 @@ class Researcher():
         tools = [see_file, final_response]
         if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
-        self.rendered_tools = render_text_description(tools)
+        self.rendered_tools = render_tools(tools)
         self.tool_executor = ToolExecutor(tools)
 
         # workflow definition
