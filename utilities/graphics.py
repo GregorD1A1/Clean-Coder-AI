@@ -1,7 +1,8 @@
 import itertools
 import sys
 import time
-from utilities.util_functions import print_formatted
+
+from utilities.print_formatters import print_formatted
 
 
 def print_ascii_logo():
