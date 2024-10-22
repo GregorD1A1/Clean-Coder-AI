@@ -1,7 +1,7 @@
 import os
 from tools.tools_coder_pipeline import (
     ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
 )
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
@@ -37,6 +37,8 @@ implemented changes work correctly."""
 # llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 # llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
+if os.getenv("MISTRAL_API_KEY"):
+    llms.append(ChatMistralAI(model="ministral-8b-latest").with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
 if os.getenv("ANTHROPIC_API_KEY"):
@@ -176,8 +178,5 @@ def prepare_tools(work_dir):
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
     tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
-    if frontend_port:
-        watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
-        tools.append(watch_web_page_tool)
 
     return tools
