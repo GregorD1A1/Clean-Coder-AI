@@ -48,7 +48,7 @@ def final_response(files_to_work_on, reference_files, template_images):
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
 if os.getenv("MISTRAL_API_KEY"):
-    llms.append(ChatMistralAI(model="mistral-large-latest").with_config({"run_name": "Researcher"}))
+    llms.append(ChatMistralAI(model="ministral-8b-latest").with_config({"run_name": "Researcher"}))
 if anthropic_api_key:
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
 if openai_api_key:
