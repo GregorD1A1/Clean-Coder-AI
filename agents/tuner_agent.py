@@ -1,21 +1,22 @@
 import os
 from tools.tools_coder_pipeline import (
     ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
 )
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
-from langgraph.graph import StateGraph, END
+from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
+from langchain.tools.render import render_text_description
 from langchain.tools import tool
+from langchain_core.tools import Tool
+from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from langchain_mistralai import ChatMistralAI
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools
-from utilities.print_formatters import print_formatted
-from utilities.langgraph_common_functions import (call_model, call_tool,
+from utilities.util_functions import check_file_contents, print_formatted, check_application_logs
+from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 from utilities.user_input import user_input
 
@@ -37,10 +38,10 @@ implemented changes work correctly."""
 # llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(
-        ChatAnthropic(model='claude-3-haiku-20240307', temperature=0, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"})
+        ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"})
     )
 
 
@@ -50,15 +51,15 @@ class AgentState(TypedDict):
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-with open(f"{parent_dir}/prompts/executor_system.prompt", "r") as f:
+with open(f"{parent_dir}/prompts/tuner_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 
-class Executor():
+class Tuner():
     def __init__(self, files, work_dir):
         self.work_dir = work_dir
         tools = prepare_tools(work_dir)
-        rendered_tools = render_tools(tools)
+        rendered_tools = render_text_description(tools)
         self.tool_executor = ToolExecutor(tools)
         self.system_message = SystemMessage(
             content=system_prompt_template.format(executor_tools=rendered_tools)
@@ -68,10 +69,11 @@ class Executor():
         # workflow definition
         executor_workflow = StateGraph(AgentState)
 
-        executor_workflow.add_node("agent", self.call_model_executor)
-        executor_workflow.add_node("tool", self.call_tool_executor)
+        executor_workflow.add_node("agent", self.call_model_tuner)
+        executor_workflow.add_node("tool", self.call_tool_tuner)
         executor_workflow.add_node("check_log", self.check_log)
         executor_workflow.add_node("human_help", self.agent_looped_human_help)
+        executor_workflow.add_node("human_end_process_confirmation", ask_human)
 
         executor_workflow.set_entry_point("agent")
 
@@ -79,11 +81,13 @@ class Executor():
         executor_workflow.add_edge("tool", "agent")
         executor_workflow.add_edge("human_help", "agent")
         executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
+        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
+        executor_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
 
         self.executor = executor_workflow.compile()
 
     # node functions
-    def call_model_executor(self, state):
+    def call_model_tuner(self, state):
         state = call_model(state, llms)
         last_message = state["messages"][-1]
         if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
@@ -92,7 +96,7 @@ class Executor():
             print("\nToo many jsons provided, asked to provide one.")
         return state
 
-    def call_tool_executor(self, state):
+    def call_tool_tuner(self, state):
         last_ai_message = state["messages"][-1]
         state = call_tool(state, self.tool_executor)
         for tool_call in last_ai_message.json5_tool_calls:
@@ -132,9 +136,17 @@ class Executor():
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
         elif last_message.json5_tool_calls[0]["tool"] == "final_response":
-            return END
+            return "check_log" if log_file_path else "human_end_process_confirmation"
         else:
             return "tool"
+
+    def after_check_log_condition(self, state):
+        last_message = state["messages"][-1]
+
+        if last_message.content.endswith("Logs are correct"):
+            return "human_end_process_confirmation"
+        else:
+            return "agent"
 
     # just functions
     def exchange_file_contents(self, state):
@@ -164,5 +176,8 @@ def prepare_tools(work_dir):
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
     tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    #if frontend_port:
+    #    watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
+    #    tools.append(watch_web_page_tool)
 
     return tools

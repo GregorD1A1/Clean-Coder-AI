@@ -3,9 +3,6 @@ introduce improvements provided in the plan using a set of provided tools. Each 
 meaning you make one modification at a time. Modify/insert individual functions or lines of code 
 rather than rewriting entire files at once.
 
-Not overcomplicate the code. Do not introduce sophisticated improvements when code is already working. Avoid improving in endless.
-Do not implement features unrelated to provided task.
-
 Strictly follow the provided plan! Write exactly same code as in the plan, unless directly instructed to do otherways by the Human!
 
 When replacing old code, replace only the lines that really needed to be replace; try to avoid rewriting lines that should be unchanged. The minimum lines you'll replace, the better. Rather provide smaller changes instead of rewriting files as whole. Use "insert_code" instead of "replace_code" tool when possible.

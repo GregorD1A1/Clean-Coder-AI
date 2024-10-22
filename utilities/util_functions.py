@@ -166,3 +166,17 @@ def list_directory_tree(work_dir):
             tree.append(f"{file_indent}{file}")
 
     return "Content of directory tree:\n" + "\n".join(tree)
+
+
+def render_tools(tools) -> str:
+    from inspect import signature
+    descriptions = []
+    for tool in tools:
+        if hasattr(tool, "func") and tool.func:
+            sig = signature(tool.func)
+            description = f"tool_name: {tool.name}{sig}\n{tool.description}"
+        else:
+            description = f"{tool.name} - {tool.description}"
+
+        descriptions.append(description)
+    return "\n+++\n".join(descriptions)
