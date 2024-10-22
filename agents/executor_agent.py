@@ -7,16 +7,14 @@ from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
-from langgraph.graph import StateGraph
+from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
-from langchain_core.tools import Tool
-from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai import ChatMistralAI
 from utilities.util_functions import check_file_contents, print_formatted, check_application_logs, render_tools
-from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
+from utilities.langgraph_common_functions import (call_model, call_tool,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 from utilities.user_input import user_input
 
@@ -37,8 +35,6 @@ implemented changes work correctly."""
 # llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 # llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
-if os.getenv("MISTRAL_API_KEY"):
-    llms.append(ChatMistralAI(model="ministral-8b-latest").with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
 if os.getenv("ANTHROPIC_API_KEY"):
@@ -75,7 +71,6 @@ class Executor():
         executor_workflow.add_node("tool", self.call_tool_executor)
         executor_workflow.add_node("check_log", self.check_log)
         executor_workflow.add_node("human_help", self.agent_looped_human_help)
-        executor_workflow.add_node("human_end_process_confirmation", ask_human)
 
         executor_workflow.set_entry_point("agent")
 
@@ -83,8 +78,6 @@ class Executor():
         executor_workflow.add_edge("tool", "agent")
         executor_workflow.add_edge("human_help", "agent")
         executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
-        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
-        executor_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
 
         self.executor = executor_workflow.compile()
 
@@ -138,17 +131,9 @@ class Executor():
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
         elif last_message.json5_tool_calls[0]["tool"] == "final_response":
-            return "check_log" if log_file_path else "human_end_process_confirmation"
+            return END
         else:
             return "tool"
-
-    def after_check_log_condition(self, state):
-        last_message = state["messages"][-1]
-
-        if last_message.content.endswith("Logs are correct"):
-            return "human_end_process_confirmation"
-        else:
-            return "agent"
 
     # just functions
     def exchange_file_contents(self, state):
