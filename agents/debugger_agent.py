@@ -9,15 +9,12 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain.tools.render import render_text_description
 from langchain.tools import tool
-from langchain_core.tools import Tool
 from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-
 from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs
+from utilities.util_functions import check_file_contents, check_application_logs, render_tools
 from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
                                                   bad_json_format_msg, multiple_jsons_msg, no_json_msg)
 from utilities.user_input import user_input
@@ -57,11 +54,11 @@ with open(f"{parent_dir}/prompts/tuner_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 
-class Tuner():
+class Debugger():
     def __init__(self, files, work_dir):
         self.work_dir = work_dir
         tools = prepare_tools(work_dir)
-        rendered_tools = render_text_description(tools)
+        rendered_tools = render_tools(tools)
         self.tool_executor = ToolExecutor(tools)
         self.system_message = SystemMessage(
             content=system_prompt_template.format(executor_tools=rendered_tools)
@@ -157,7 +154,7 @@ class Tuner():
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
         file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
-        state["messages"].insert(0, file_contents_msg)
+        state["messages"].insert(1, file_contents_msg)  # insert after the system msg
         return state
 
     def do_task(self, task, plan, text_files):

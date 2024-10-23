@@ -146,24 +146,26 @@ def list_directory_tree(work_dir):
         # Filter out forbidden directories and files
         dirs[:] = [d for d in dirs if not file_folder_ignored(d, forbidden_files_and_folders)]
         files = [f for f in files if not file_folder_ignored(f, forbidden_files_and_folders)]
-
         rel_path = os.path.relpath(root, work_dir)
-        if rel_path == '.':
-            # This is the root directory, skip it
-            continue
-
         depth = rel_path.count(os.sep)
-        indent = "│   " * (depth - 1)
+        indent = "│ " * depth
 
         # Add current directory to the tree
         tree.append(f"{indent}{'└──' if depth > 0 else ''}📁 {os.path.basename(root)}")
 
+        # Check if the total number of items exceeds the threshold
+        total_items = len(dirs) + len(files)
+        if total_items > 30:
+            file_indent = "│ " * (depth + 1)
+            tree.append(f"{file_indent}Too many files/folders to display ({total_items} items)")
+            dirs.clear()
+            continue
+
         # Add files to the tree
-        file_indent = "│   " * depth + "├── "
+        file_indent = "│ " * (depth + 1)
         for i, file in enumerate(files):
-            if i == len(files) - 1:
-                file_indent = "│   " * depth + "└── "
-            tree.append(f"{file_indent}{file}")
+            connector = "└── " if i == len(files) - 1 else "├── "
+            tree.append(f"{file_indent}{connector}{file}")
 
     return "Content of directory tree:\n" + "\n".join(tree)
 
@@ -180,3 +182,7 @@ def render_tools(tools) -> str:
 
         descriptions.append(description)
     return "\n+++\n".join(descriptions)
+
+
+if __name__ == "__main__":
+    print(list_directory_tree(work_dir))

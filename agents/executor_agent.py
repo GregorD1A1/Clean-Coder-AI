@@ -1,7 +1,7 @@
 import os
 from tools.tools_coder_pipeline import (
-    ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
+    ask_human_tool, TOOL_NOT_EXECUTED_WORD, prepare_create_file_tool, prepare_replace_code_tool,
+    prepare_insert_code_tool
 )
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
@@ -13,10 +13,13 @@ from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai import ChatMistralAI
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools
 from utilities.print_formatters import print_formatted
-from utilities.langgraph_common_functions import (call_model, call_tool,
-                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
+from utilities.util_functions import (
+    check_file_contents, check_application_logs, render_tools, find_tools_json
+)
+from utilities.langgraph_common_functions import (
+    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+)
 from utilities.user_input import user_input
 
 load_dotenv(find_dotenv())
@@ -25,8 +28,8 @@ frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
-def final_response(test_instruction):
-    """Call that tool when all changes are implemented to tell the job is done.
+def finish(test_instruction):
+    """Call that tool when all plan steps are implemented to finish your job.
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
 implemented changes work correctly."""
@@ -85,11 +88,6 @@ class Executor():
     # node functions
     def call_model_executor(self, state):
         state = call_model(state, llms)
-        last_message = state["messages"][-1]
-        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
-            state["messages"].append(
-                HumanMessage(content=multiple_jsons_msg))
-            print("\nToo many jsons provided, asked to provide one.")
         return state
 
     def call_tool_executor(self, state):
@@ -131,7 +129,7 @@ class Executor():
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response":
+        elif last_message.json5_tool_calls[0]["tool"] == "finish":
             return END
         else:
             return "tool"
@@ -143,26 +141,27 @@ class Executor():
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
         file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
-        state["messages"].insert(0, file_contents_msg)
+        state["messages"].insert(1, file_contents_msg)  # insert after the system msg
         return state
 
-    def do_task(self, task, plan, text_files):
+    def do_task(self, task, plan):
         print("\n\n\nExecutor starting its work")
-        file_contents = check_file_contents(text_files, self.work_dir)
+        file_contents = check_file_contents(self.files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
-        self.executor.invoke(inputs, {"recursion_limit": 150})
+        final_response = self.executor.invoke(inputs, {"recursion_limit": 150})
+        test_instruction = find_tools_json(final_response['messages'][-1].content)[0]["tool_input"]
+
+        return test_instruction
 
 
 def prepare_tools(work_dir):
-    list_dir = prepare_list_dir_tool(work_dir)
-    see_file = prepare_see_file_tool(work_dir)
     replace_code = prepare_replace_code_tool(work_dir)
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
-    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    tools = [replace_code, insert_code, create_file, ask_human_tool, finish]
 
     return tools
