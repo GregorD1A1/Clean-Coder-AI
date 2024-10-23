@@ -16,8 +16,10 @@ def run_clean_coder_pipeline(task, work_dir):
     plan = planning(task, file_paths, image_paths, work_dir)
 
     executor = Executor(file_paths, work_dir)
-    executor.do_task(task, plan)
-
+    test_instruction = executor.do_task(task, plan)
+    human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
+    if human_message in ['o', 'ok']:
+        return
     debugger = Debugger(file_paths, work_dir)
     debugger.do_task(task, plan, file_paths)
 
@@ -26,6 +28,6 @@ if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
 
-    task = user_input("Provide task to be executed. ")
+    task = user_input("Provide task to be executed.")
     work_dir = os.getenv("WORK_DIR")
     run_clean_coder_pipeline(task, work_dir)

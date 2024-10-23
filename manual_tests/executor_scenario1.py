@@ -9,6 +9,8 @@ from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 def setup_work_dir():
+    if os.path.exists("sandbox_work_dir"):
+        cleanup_work_dir()
     os.makedirs("sandbox_work_dir")
     shutil.copy2("projects_files/main_scenario_1.py", "sandbox_work_dir/main.py")
 

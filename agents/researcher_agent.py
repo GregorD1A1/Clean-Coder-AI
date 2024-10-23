@@ -1,5 +1,3 @@
-import json
-
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai.chat_models import ChatMistralAI
@@ -12,7 +10,7 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
 from tools.tools_coder_pipeline import (
-     prepare_see_file_tool, retrieve_files_by_semantic_query
+     prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
 from rag.retrieval import vdb_available
 from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
@@ -84,7 +82,8 @@ def after_agent_condition(state):
 class Researcher():
     def __init__(self, work_dir):
         see_file = prepare_see_file_tool(work_dir)
-        tools = [see_file, final_response]
+        list_dir = prepare_list_dir_tool(work_dir)
+        tools = [see_file, list_dir, final_response]
         if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
         self.rendered_tools = render_tools(tools)

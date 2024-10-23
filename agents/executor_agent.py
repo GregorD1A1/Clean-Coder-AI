@@ -13,9 +13,12 @@ from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai import ChatMistralAI
-from utilities.util_functions import check_file_contents, print_formatted, check_application_logs, render_tools
-from utilities.langgraph_common_functions import (call_model, call_tool,
-                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
+from utilities.util_functions import (
+    check_file_contents, print_formatted, check_application_logs, render_tools, find_tools_json
+)
+from utilities.langgraph_common_functions import (
+    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+)
 from utilities.user_input import user_input
 
 load_dotenv(find_dotenv())
@@ -148,7 +151,10 @@ class Executor():
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
-        self.executor.invoke(inputs, {"recursion_limit": 150})
+        final_response = self.executor.invoke(inputs, {"recursion_limit": 150})
+        test_instruction = find_tools_json(final_response['messages'][-1].content)[0]["tool_input"]
+
+        return test_instruction
 
 
 def prepare_tools(work_dir):
