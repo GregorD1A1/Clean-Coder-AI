@@ -165,7 +165,6 @@ def prepare_create_file_tool(work_dir):
         """
 Create new file with provided code. If you need to create directory, all directories in provided path will be
 automatically created.
-
 Do not write files longer than 1000 words. If you need to create big files, start small, and next add new functions
 with another tools.
 tool input:
