@@ -5,7 +5,7 @@ import shutil
 def cleanup_work_dir():
     shutil.rmtree("sandbox_work_dir")
 
-executor = Executor({}, "test_work_dir")
+executor = Executor(set(), "sandbox_work_dir")
 
 task = "Create fastapi app with few endpoints."
 plan = """1. Create main.py in flask looking like:
