@@ -1,7 +1,7 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-from utilities.util_functions import print_formatted
+from utilities.print_formatters import print_formatted
 from utilities.manager_utils import actualize_progress_description_file
 from utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv

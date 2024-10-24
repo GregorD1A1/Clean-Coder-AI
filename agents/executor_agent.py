@@ -6,7 +6,7 @@ from tools.tools_coder_pipeline import (
 from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langgraph.prebuilt.tool_executor import ToolExecutor
+from langgraph.prebuilt.tool_executor import ToolExecutor, ToolInvocation
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
@@ -18,9 +18,9 @@ from utilities.util_functions import (
     check_file_contents, check_application_logs, render_tools, find_tools_json
 )
 from utilities.langgraph_common_functions import (
-    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help
 )
-from utilities.user_input import user_input
+
 
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")
@@ -73,8 +73,7 @@ class Executor():
 
         executor_workflow.add_node("agent", self.call_model_executor)
         executor_workflow.add_node("tool", self.call_tool_executor)
-        executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human_help", self.agent_looped_human_help)
+        executor_workflow.add_node("human_help", agent_looped_human_help)
 
         executor_workflow.set_entry_point("agent")
 
@@ -92,26 +91,21 @@ class Executor():
 
     def call_tool_executor(self, state):
         last_ai_message = state["messages"][-1]
-        state = call_tool(state, self.tool_executor)
+        last_message = state["messages"][-1]
+        if not hasattr(last_message, "json5_tool_calls"):
+            state["messages"].append(HumanMessage(content="No tool called"))
+            return state
+        json5_tool_calls = last_message.json5_tool_calls
+        # reverse to make code changes from later lines to starting ones
+        json5_tool_calls.reverse()
+        tool_responses = [self.tool_executor.invoke(ToolInvocation(**tool_call)) for tool_call in json5_tool_calls]
+        tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
+        response_message = HumanMessage(content=tool_response)
+        state["messages"].append(response_message)
         for tool_call in last_ai_message.json5_tool_calls:
             if tool_call["tool"] == "create_file_with_code":
                 self.files.add(tool_call["tool_input"]["filename"])
         self.exchange_file_contents(state)
-        return state
-
-    def check_log(self, state):
-        # Add logs
-        logs = check_application_logs()
-        log_message = HumanMessage(content="Logs:\n" + logs)
-
-        state["messages"].append(log_message)
-        return state
-
-    def agent_looped_human_help(self, state):
-        human_message = user_input(
-            "It seems the agent repeatedly tries to introduce wrong changes. Help him to find his mistakes."
-        )
-        state["messages"].append(HumanMessage(content=human_message))
         return state
 
     # Conditional edge functions
@@ -155,7 +149,7 @@ class Executor():
         final_response = self.executor.invoke(inputs, {"recursion_limit": 150})
         test_instruction = find_tools_json(final_response['messages'][-1].content)[0]["tool_input"]
 
-        return test_instruction
+        return test_instruction, self.files
 
 
 def prepare_tools(work_dir):

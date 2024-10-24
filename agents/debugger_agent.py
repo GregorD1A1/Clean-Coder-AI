@@ -15,8 +15,10 @@ from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.print_formatters import print_formatted
 from utilities.util_functions import check_file_contents, check_application_logs, render_tools
-from utilities.langgraph_common_functions import (call_model, call_tool, ask_human, after_ask_human_condition,
-                                                  bad_json_format_msg, multiple_jsons_msg, no_json_msg)
+from utilities.langgraph_common_functions import (
+    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
+    agent_looped_human_help,
+)
 from utilities.user_input import user_input
 
 load_dotenv(find_dotenv())
@@ -37,10 +39,12 @@ implemented changes work correctly."""
 # llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Debugger"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(
-        ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"})
+        ChatAnthropic(
+            model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120
+        ).with_config({"run_name": "Debugger"})
     )
 
 
@@ -50,7 +54,7 @@ class AgentState(TypedDict):
 
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-with open(f"{parent_dir}/prompts/tuner_system.prompt", "r") as f:
+with open(f"{parent_dir}/prompts/debugger_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 
@@ -68,10 +72,10 @@ class Debugger():
         # workflow definition
         executor_workflow = StateGraph(AgentState)
 
-        executor_workflow.add_node("agent", self.call_model_tuner)
-        executor_workflow.add_node("tool", self.call_tool_tuner)
+        executor_workflow.add_node("agent", self.call_model_debugger)
+        executor_workflow.add_node("tool", self.call_tool_debugger)
         executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human_help", self.agent_looped_human_help)
+        executor_workflow.add_node("human_help", agent_looped_human_help)
         executor_workflow.add_node("human_end_process_confirmation", ask_human)
 
         executor_workflow.set_entry_point("agent")
@@ -86,7 +90,7 @@ class Debugger():
         self.executor = executor_workflow.compile()
 
     # node functions
-    def call_model_tuner(self, state):
+    def call_model_debugger(self, state):
         state = call_model(state, llms)
         last_message = state["messages"][-1]
         if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
@@ -95,7 +99,7 @@ class Debugger():
             print("\nToo many jsons provided, asked to provide one.")
         return state
 
-    def call_tool_tuner(self, state):
+    def call_tool_debugger(self, state):
         last_ai_message = state["messages"][-1]
         state = call_tool(state, self.tool_executor)
         for tool_call in last_ai_message.json5_tool_calls:
@@ -110,13 +114,6 @@ class Debugger():
         log_message = HumanMessage(content="Logs:\n" + logs)
 
         state["messages"].append(log_message)
-        return state
-
-    def agent_looped_human_help(self, state):
-        human_message = user_input(
-            "It seems the agent repeatedly tries to introduce wrong changes. Help him to find his mistakes."
-        )
-        state["messages"].append(HumanMessage(content=human_message))
         return state
 
     # Conditional edge functions
@@ -162,7 +159,7 @@ class Debugger():
         file_contents = check_file_contents(text_files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
-            HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
+            HumanMessage(content=f"Task: {task}\n\n######\n\nPlan which developer implemented already:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
         self.executor.invoke(inputs, {"recursion_limit": 150})

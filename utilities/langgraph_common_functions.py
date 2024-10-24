@@ -84,6 +84,13 @@ def ask_human(state):
     return state
 
 
+def agent_looped_human_help(state):
+    human_message = user_input(
+        "It seems the agent repeatedly tries to introduce wrong changes. Help him to find his mistakes."
+    )
+    state["messages"].append(HumanMessage(content=human_message))
+    return state
+
 # conditions
 def after_ask_human_condition(state):
     last_message = state["messages"][-1]

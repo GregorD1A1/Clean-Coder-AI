@@ -112,7 +112,7 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -146,7 +146,7 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -172,7 +172,7 @@ tool input:
 :param code: Code to write in the file.
 """
         try:
-            human_message = user_input("Type (o)k if you accept or provide commentary.")
+            human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
             if human_message not in ['o', 'ok']:
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 

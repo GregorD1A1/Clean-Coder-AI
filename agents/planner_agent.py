@@ -65,7 +65,7 @@ def call_planers(state):
     # Process and print the content
     print_formatted(f"Chosen plan:", color="light_blue")
     print_formatted_content(plan.content)
-    print_formatted(f"\nPlease read the plan carefully.", color="light_blue")
+    print_formatted(f"\nPlease read the plan carefully. Never accept plan you don't understand.", color="light_blue")
 
     return state
 

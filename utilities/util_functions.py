@@ -184,5 +184,12 @@ def render_tools(tools) -> str:
     return "\n+++\n".join(descriptions)
 
 
+def invoke_tool(tool_call, tools):
+    tool_name_to_tool = {tool.name: tool for tool in tools}
+    name = tool_call["name"]
+    requested_tool = tool_name_to_tool[name]
+    return requested_tool.invoke(tool_call["arguments"])
+
+
 if __name__ == "__main__":
     print(list_directory_tree(work_dir))

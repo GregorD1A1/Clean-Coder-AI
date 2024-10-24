@@ -4,6 +4,7 @@ from agents.executor_agent import Executor
 from agents.debugger_agent import Debugger
 import os
 from utilities.user_input import user_input
+from utilities.print_formatters import print_formatted
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -16,7 +17,9 @@ def run_clean_coder_pipeline(task, work_dir):
     plan = planning(task, file_paths, image_paths, work_dir)
 
     executor = Executor(file_paths, work_dir)
-    test_instruction = executor.do_task(task, plan)
+    test_instruction, file_paths = executor.do_task(task, plan)
+    print_formatted(test_instruction, color="blue")
+
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:
         return
