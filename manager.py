@@ -17,6 +17,7 @@ from utilities.manager_utils import read_project_description, read_progress_desc
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 from utilities.util_functions import render_tools
+from utilities.start_project_functions import create_project_description_file
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -51,7 +52,11 @@ class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
-project_description = read_project_description()
+if os.path.exists(os.path.join(work_dir, '.clean_coder/project_description.txt')):
+    project_description = read_project_description()
+else:
+    project_description = create_project_description_file()
+
 tool_executor = ToolExecutor(tools)
 tasks_progress_template = """Actual list of tasks you planned in Todoist:
 

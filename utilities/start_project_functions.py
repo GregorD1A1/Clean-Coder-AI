@@ -1,5 +1,7 @@
 import os
 import fnmatch
+from utilities.user_input import user_input
+from utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 
 
@@ -14,7 +16,7 @@ def create_coderignore():
     if not os.path.exists(coderignore_path):
         with open(coderignore_path, 'w', encoding='utf-8') as file:
             file.write(default_ignore_content)
-        print(".coderignore file created successfully.")
+        print_formatted(".coderignore file created successfully.", color="green")
 
 
 def read_coderignore():
@@ -34,15 +36,16 @@ def file_folder_ignored(path, ignore_patterns):
 
     return False
 
-def create_project_discription_file():
-    # Create project_description.txt file if it doesn't exist inside of .clean_coder folder
-    project_description_path = os.path.join(work_dir, '.clean_coder', 'project_description.txt')
-    if not os.path.exists(project_description_path):
-        with open(project_description_path, 'w', encoding='utf-8') as file:
-            file.write("# Describe your project detailly here: ")
+
+def create_project_description_file():
+    project_description_path = os.path.normpath(os.path.join(work_dir, '.clean_coder', 'project_description.txt'))
+    project_description = user_input("Describe your project as much detail as possible here.")
+    with open(project_description_path, 'w', encoding='utf-8') as file:
+        file.write(project_description)
+    print_formatted(f"Project description saved. You can edit it in {project_description_path}.", color="green")
+    return project_description
 
 
 # Create .coderignore file with default values if it doesn't exist
 create_coderignore()
 forbidden_files_and_folders = read_coderignore()
-create_project_discription_file()
