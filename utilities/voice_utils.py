@@ -5,7 +5,6 @@ import queue
 import sys
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
-from utilities.util_functions import print_formatted
 
 load_dotenv(find_dotenv())
 openai_client = OpenAI()
