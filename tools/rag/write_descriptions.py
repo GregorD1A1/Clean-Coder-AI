@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_anthropic import ChatAnthropic
+from langchain_openai import ChatOpenAI
+from utilities.util_functions import join_paths
 import chromadb
 from dotenv import load_dotenv, find_dotenv
 
@@ -43,9 +44,11 @@ def write_descriptions(subfolders_with_files=['/']):
 Write what file is responsible for.\n\n'''\n{code}'''
 """
     )
-    llm = ChatAnthropic(model='claude-3-5-sonnet-20240620')
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     chain = prompt | llm | StrOutputParser()
 
+    description_folder = join_paths(work_dir, '.clean_coder/files_and_folders_descriptions')
+    Path(description_folder).mkdir(parents=True, exist_ok=True)
     # iterate over all files, take 8 files at once
     batch_size = 8
     for i in range(0, len(all_files), batch_size):
@@ -55,8 +58,7 @@ Write what file is responsible for.\n\n'''\n{code}'''
 
         for file_path, description in zip(files_iteration, descriptions):
             file_name = file_path.relative_to(work_dir).as_posix().replace('/', '=')
-            output_path = Path(work_dir + '.clean_coder/files_and_folders_descriptions') / f"{file_name}.txt"
-            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path = join_paths(description_folder, f"{file_name}.txt")
 
             with open(output_path, 'w', encoding='utf-8') as out_file:
                 out_file.write(description)

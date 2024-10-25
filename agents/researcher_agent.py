@@ -12,7 +12,7 @@ from langchain.tools import tool
 from tools.tools_coder_pipeline import (
      prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
-from rag.retrieval import vdb_available
+from tools.rag.retrieval import vdb_available
 from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
