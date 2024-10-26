@@ -95,8 +95,8 @@ researcher = researcher_workflow.compile()
 
 
 def planning(task, text_files, image_paths, work_dir):
-    print("\n\n\nPlanner starting its work")
-    file_contents = check_file_contents(text_files, work_dir)
+    print("\n\nPlanner starting its work")
+    file_contents = check_file_contents(text_files, work_dir, line_numbers=False)
     images = convert_images(image_paths)
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"
     message_without_imgs = HumanMessage(content=message_content_without_imgs)

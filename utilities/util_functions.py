@@ -16,24 +16,27 @@ todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
-def check_file_contents(files, work_dir):
+def check_file_contents(files, work_dir, line_numbers=True):
     file_contents = str()
     for file_name in files:
-        file_content = watch_file(file_name, work_dir)
+        file_content = watch_file(file_name, work_dir, line_numbers)
         file_contents += file_content + "\n\n###\n\n"
 
     return file_contents
 
 
-def watch_file(filename, work_dir):
-    # if file_folder_ignored(filename, forbidden_files_and_folders):
-    #    return "You are not allowed to work with this file."
+def watch_file(filename, work_dir, line_numbers=True):
+    if file_folder_ignored(filename, forbidden_files_and_folders):
+        return "You are not allowed to work with this file."
     try:
         with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
             lines = file.readlines()
     except FileNotFoundError:
         return "File not exists."
-    formatted_lines = [f"{i + 1}|{line[:-1]}\n" for i, line in enumerate(lines)]
+    if line_numbers:
+        formatted_lines = [f"{i + 1}|{line[:-1]}\n" for i, line in enumerate(lines)]
+    else:
+        formatted_lines = [f"{line[:-1]}\n" for line in lines]
     file_content = "".join(formatted_lines)
     file_content = filename + ":\n\n" + file_content
 

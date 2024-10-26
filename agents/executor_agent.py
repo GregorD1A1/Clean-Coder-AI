@@ -135,7 +135,7 @@ class Executor():
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
         file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
-        state["messages"].insert(1, file_contents_msg)  # insert after the system msg
+        state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
         return state
 
     def do_task(self, task, plan):
