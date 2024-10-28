@@ -23,7 +23,7 @@ def run_clean_coder_pipeline(task, work_dir):
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:
         return
-    debugger = Debugger(file_paths, work_dir)
+    debugger = Debugger(file_paths, work_dir, human_message)
     debugger.do_task(task, plan, file_paths)
 
 

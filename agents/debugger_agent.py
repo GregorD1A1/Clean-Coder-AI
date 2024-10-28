@@ -59,7 +59,7 @@ with open(f"{parent_dir}/prompts/debugger_system.prompt", "r") as f:
 
 
 class Debugger():
-    def __init__(self, files, work_dir):
+    def __init__(self, files, work_dir, human_feedback):
         self.work_dir = work_dir
         tools = prepare_tools(work_dir)
         rendered_tools = render_tools(tools)
@@ -68,6 +68,7 @@ class Debugger():
             content=system_prompt_template.format(executor_tools=rendered_tools)
         )
         self.files = files
+        self.human_feedback = human_feedback
 
         # workflow definition
         executor_workflow = StateGraph(AgentState)
@@ -160,7 +161,8 @@ class Debugger():
         inputs = {"messages": [
             self.system_message,
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan which developer implemented already:\n\n{plan}"),
-            HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
+            HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True),
+            HumanMessage(content=f"Human feedback: {self.human_feedback}")
         ]}
         self.executor.invoke(inputs, {"recursion_limit": 150})
 
