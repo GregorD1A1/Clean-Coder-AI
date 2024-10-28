@@ -9,7 +9,7 @@ Clean Coder is your AI-powered software project assistant. Delegate planning, ma
 <br>
 <td align="center">
 <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
-<a href="https://discord.gg/GAAqQN5P/" target="_blank"><strong>Discord</strong></a>
+<a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
 </td>
 </div>
 
