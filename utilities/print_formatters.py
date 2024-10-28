@@ -1,9 +1,9 @@
+import json
 import re
 import json5
 import textwrap
 
 from termcolor import colored
-from itertools import zip_longest
 from json import JSONDecodeError
 from rich.panel import Panel
 from rich.syntax import Syntax
@@ -11,6 +11,15 @@ from rich.console import Console
 from rich.padding import Padding
 from pygments.util import ClassNotFound
 from pygments.lexers import get_lexer_by_name
+
+
+def is_valid_path(path_str):
+    # Check if the path format is valid
+    try:
+        path = os.path.normpath(path_str)
+        return True
+    except Exception:
+        return False
 
 
 def extract_from_json(content, parent_name=None, property_name=None):
@@ -47,21 +56,6 @@ def is_valid_json(content):
         return False
 
 
-def extract_code_blocks(text):
-    """
-    Extract code blocks from the given text.
-
-    Args:
-        text (str): The input text containing code blocks.
-
-    Returns:
-        list: A list of tuples containing (language, code) for each code block.
-    """
-    code_block_pattern = r'```(?:(\w+)\n)?(.*?)```'
-    matches = re.findall(code_block_pattern, text, flags=re.DOTALL)
-    return [(lang or None, code.strip()) for lang, code in matches]
-
-
 def split_text_and_code(text):
     """
     Split the input text into text and code parts.
@@ -72,18 +66,22 @@ def split_text_and_code(text):
     Returns:
         list: A list of tuples containing ('text', content) or ('code', language, content).
     """
-    code_block_pattern = r'```(?:\w+\n)?.*?```'
-    parts = re.split(code_block_pattern, text, flags=re.DOTALL)
-    text_parts = [part.strip() for part in parts if part.strip()]
-
-    code_blocks = extract_code_blocks(text)
+    # Updated pattern to match JSON5 blocks prefixed by 'json5'
+    pattern = r'(```(?:(\w+)\n)?(.*?)```)|(?:json5\s*\n)?(\{.*?\})|([^`]+)'
+    matches = re.finditer(pattern, text, flags=re.DOTALL)
 
     result = []
-    for text_part, code_block in zip_longest(text_parts, code_blocks, fillvalue=None):
-        if text_part:
-            result.append(('text', text_part))
-        if code_block:
-            result.append(('code', *code_block))
+    for match in matches:
+        if match.group(1):  # Code block
+            language = match.group(2) or None
+            content = match.group(3).strip()
+            result.append(('code', language, content))
+        elif match.group(4):  # JSON5 block
+            content = match.group(4).strip()
+            result.append(('code', 'json', content))
+        elif match.group(5):  # Text part
+            content = match.group(5).strip()
+            result.append(('text', content))
 
     return result
 
@@ -154,19 +152,22 @@ def print_formatted_content(content):
             line_number = extract_from_json(part[2], parent_name='tool_input', property_name='line_number')
             start_line = extract_from_json(part[2], parent_name='tool_input', property_name='start_line')
 
-            if tool and not code:
+            if tool and code is None:
                 print_tool_message(tool_name=tool, tool_input=input_text or '', color="light_blue")
-            elif isinstance(input_text, str):
+            elif isinstance(input_text, str) and code is None:
                 print_formatted_code(code=input_text, language=part[1], start_line=start_line, line_number=line_number)
             elif code:
+
                 filename = extract_from_json(part[2], parent_name='tool_input', property_name='filename')
-                filename = filename if filename else input_text
                 language = part[1] if part[1] else 'text'
+
+                if is_valid_path(filename):
+                    print_tool_message(tool_name=tool, color="light_blue")
                 print_formatted_code(code=code.strip(), language=language, start_line=start_line,
                                      line_number=line_number, title=filename)
 
 
-def get_message_by_tool_name(tool_name, tool_input):
+def get_message_by_tool_name(tool_name):
     if tool_name == 'create_file_with_code':
         return "Let's create a new file..."
     elif tool_name == 'see_file':
@@ -191,8 +192,10 @@ def get_message_by_tool_name(tool_name, tool_input):
         return "Let's modify the epic:"
     elif tool_name == 'finish_project_planning':
         return "Project planning is finished"
+    elif tool_name == 'finish':
+        return "The work is Done!"
 
-    return tool_input
+    return tool_name
 
 
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
@@ -215,8 +218,16 @@ def safe_int(value):
         return None
 
 
-def print_formatted_code(code, language, start_line=None, line_number=None, title=''):
+def print_formatted_code(code, language, start_line=1, line_number=None, title=''):
     console = Console()
+
+    # Ensure start_line is an integer
+    if not isinstance(start_line, int):
+        start_line = 1
+
+    # Ensure line_number is an integer if provided
+    if line_number is not None and not isinstance(line_number, int):
+        line_number = 1
 
     # Ensure the language is set correctly for TypeScript
     language_tmp = 'typescript' if language in ['json5', 'typescript'] else language
@@ -246,6 +257,9 @@ def print_formatted_code(code, language, start_line=None, line_number=None, titl
 
             snippet_title = title or f"{language_tmp.capitalize() if isinstance(language_tmp, str) else 'Code'} Snippet"
 
+            if len(snippet_title) > 100:
+                snippet_title = 'Code Snippet'
+
             styled_code = Panel(
                 syntax,
                 border_style="bold yellow",
@@ -257,12 +271,12 @@ def print_formatted_code(code, language, start_line=None, line_number=None, titl
         else:
             console.print("[bold red]Error: No code to display[/bold red]")
     except Exception as e:
-        if code is not None:
-            console.print("Fallback rendering:")
+        if code:
             syntax = Syntax(
                 code,
                 lexer,
                 line_numbers=True,
+                start_line=start_line,
                 theme="monokai",
                 word_wrap=True,
                 padding=(1, 1),
@@ -291,9 +305,26 @@ def print_comment(message: str) -> None:
 
 
 def print_tool_message(tool_name, tool_input=None, color=None):
-    message = get_message_by_tool_name(tool_name, tool_input)
+    message = get_message_by_tool_name(tool_name)
 
-    print_formatted(content=message, color=color, bold=True)
-
-    if tool_input:
+    if tool_input is None:
+        print_formatted(content=message, color=color, bold=True)
+    elif tool_name == 'final_response':
+        json_string = json.dumps(tool_input, indent=2)
+        print_formatted_code(code=json_string, language='json', title='Files:')
+    elif tool_name == 'see_file':
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=tool_input, color='cyan', bold=True)
+    elif tool_name == 'finish':
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=tool_input["test_instruction"], color=color, bold=True)
+    elif tool_name == 'final_response':
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=tool_input["test_instruction"], color='orange', bold=True)
+    elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
         print_formatted(content=tool_input, color=color, bold=True)
+    else:
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=tool_input, color=color, bold=True)
+
+
