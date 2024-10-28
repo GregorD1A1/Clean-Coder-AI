@@ -1,6 +1,7 @@
 import itertools
 import sys
 import time
+from termcolor import colored
 
 from utilities.print_formatters import print_formatted
 
@@ -10,8 +11,8 @@ def print_ascii_logo():
         logo = f.read()
     with open("assets/Clean_Coder_writing.txt", "r") as f:
         writing = f.read()
-    print_formatted(logo, color="yellow")
-    print_formatted(writing, color="white")
+    print(colored(logo, color="yellow"))
+    print(colored(writing, color="white"))
 
 
 def loading_animation(message="I'm thinking...", color="cyan"):
