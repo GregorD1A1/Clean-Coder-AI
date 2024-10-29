@@ -39,12 +39,12 @@ implemented changes work correctly."""
 # llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
 # llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms.append(ChatAnthropic(
+        model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120
+    ).with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
-if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(
-        ChatAnthropic(model='claude-3-haiku-20240307', temperature=0, max_tokens=2000, timeout=120).with_config({"run_name": "Executor"})
-    )
 
 
 class AgentState(TypedDict):
