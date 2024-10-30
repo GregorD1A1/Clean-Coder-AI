@@ -22,4 +22,4 @@ keyboard==0.13.5
 json5==0.9.25
 pygments==2.18.0
 rich==13.9.2
-requests==2.26.0
+requests==2.32.3
