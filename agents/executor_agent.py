@@ -99,7 +99,8 @@ class Executor():
         # reverse to make code changes from later lines to starting ones
         json5_tool_calls.reverse()
         tool_responses = [self.tool_executor.invoke(ToolInvocation(**tool_call)) for tool_call in json5_tool_calls]
-        tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
+        filtered_responses = [resp for resp in tool_responses if resp is not None]  # Filter out NoneType responses
+        tool_response = "\n\n###\n\n".join(filtered_responses) if len(filtered_responses) > 1 else filtered_responses[0] if filtered_responses else None
         response_message = HumanMessage(content=tool_response)
         state["messages"].append(response_message)
         for tool_call in last_ai_message.json5_tool_calls:
