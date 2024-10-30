@@ -308,6 +308,8 @@ def print_comment(message: str) -> None:
 
 def print_tool_message(tool_name, tool_input=None, color=None):
     message = get_message_by_tool_name(tool_name)
+    print("tool_name", tool_name)
+    print("tool_input", tool_input)
 
     if tool_input is None:
         print_formatted(content=message, color=color, bold=True)
@@ -316,15 +318,20 @@ def print_tool_message(tool_name, tool_input=None, color=None):
     elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
-    elif tool_name in ['see_file', 'insert_code', 'replace_code', 'create_file_with_code']:
+    elif tool_name in ['see_file', 'insert_code', 'create_file_with_code']:
+        print("dzik")
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
     elif tool_name == 'list_dir':
         print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=f'{tool_input}/', color='yellow', bold=True)
+        print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
+    elif tool_name == 'replace_code':
+        message = f"Let's insert code on the place of lines {tool_input['start_line']} to {tool_input['end_line']}"
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=tool_input, color='yellow', bold=True)
     elif tool_name == 'finish':
         print_formatted(content=message, color='yellow', bold=True)
-        print_formatted(content=tool_input.get("test_instruction", ""), color=color, bold=True)
+        print_formatted(content=tool_input, color=color, bold=True)
     elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
         print_formatted(content=tool_input, color=color, bold=True)
     else:
