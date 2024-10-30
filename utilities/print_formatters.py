@@ -89,6 +89,7 @@ def split_text_and_code(text):
 
 def extract_and_split_content(content):
     result = []
+
     for part in split_text_and_code(content):
         if part[0] == 'text':
             result.extend(process_text_content(part[1]))
@@ -100,8 +101,10 @@ def extract_and_split_content(content):
 def process_text_content(text_content):
     if is_potential_json(text_content):
         json_data = parse_json(text_content)
+
         if json_data and is_valid_tool_input(json_data):
             return process_tool_input(json_data['tool_input'])
+
     return [('text', text_content)]
 
 
@@ -152,7 +155,7 @@ def print_formatted_content(content):
             json_data = extract_from_json(code_content)
 
             if not isinstance(json_data, dict):
-                print_error(f"Invalid JSON structure.")
+                print_formatted_code(code=code_content, language=language, start_line=1, line_number=None)
                 continue
 
             tool = json_data.get('tool')
@@ -308,8 +311,6 @@ def print_comment(message: str) -> None:
 
 def print_tool_message(tool_name, tool_input=None, color=None):
     message = get_message_by_tool_name(tool_name)
-    print("tool_name", tool_name)
-    print("tool_input", tool_input)
 
     if tool_input is None:
         print_formatted(content=message, color=color, bold=True)
@@ -319,7 +320,6 @@ def print_tool_message(tool_name, tool_input=None, color=None):
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
     elif tool_name in ['see_file', 'insert_code', 'create_file_with_code']:
-        print("dzik")
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
     elif tool_name == 'list_dir':

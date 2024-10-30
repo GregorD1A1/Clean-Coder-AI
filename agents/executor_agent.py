@@ -33,7 +33,7 @@ def finish(test_instruction):
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
 implemented changes work correctly."""
-    print_formatted(test_instruction, color="blue")
+    print_formatted(content=test_instruction, color="blue")
 
 
 # llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
