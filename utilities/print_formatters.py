@@ -2,6 +2,7 @@ import json
 import re
 import json5
 import textwrap
+import os
 
 from termcolor import colored
 from json import JSONDecodeError
@@ -145,22 +146,33 @@ def print_formatted_content(content):
     for part in content_parts:
         if part[0] == 'text':
             print_comment(part[1])
-        elif part[0] in ['code', 'json']:
-            tool = extract_from_json(part[2], parent_name='tool')
-            input_text = extract_from_json(part[2], parent_name='tool_input')
-            code = extract_from_json(part[2], parent_name='tool_input', property_name='code')
-            line_number = extract_from_json(part[2], parent_name='tool_input', property_name='line_number')
-            start_line = extract_from_json(part[2], parent_name='tool_input', property_name='start_line')
+        elif part[0] == 'code':
+            language = part[1]
+            code_content = part[2]
+            json_data = extract_from_json(code_content)
+
+            if not isinstance(json_data, dict):
+                print_error(f"Invalid JSON structure.")
+                continue
+
+            tool = json_data.get('tool')
+            tool_input = json_data.get('tool_input', {})
+
+            if isinstance(tool_input, str):
+                print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
+
+                if not is_valid_path(tool_input):
+                    print_formatted_code(code=tool_input, language=language, start_line=1, line_number=None)
+                continue
+
+            code = tool_input.get('code')
+            line_number = tool_input.get('line_number')
+            start_line = tool_input.get('start_line')
+            filename = tool_input.get('filename')
 
             if tool and code is None:
-                print_tool_message(tool_name=tool, tool_input=input_text or '', color="light_blue")
-            elif isinstance(input_text, str) and code is None:
-                print_formatted_code(code=input_text, language=part[1], start_line=start_line, line_number=line_number)
+                print_tool_message(tool_name=tool, tool_input=tool_input or '', color="light_blue")
             elif code:
-
-                filename = extract_from_json(part[2], parent_name='tool_input', property_name='filename')
-                language = part[1] if part[1] else 'text'
-
                 if is_valid_path(filename):
                     print_tool_message(tool_name=tool, color="light_blue")
                 print_formatted_code(code=code.strip(), language=language, start_line=start_line,
@@ -168,34 +180,24 @@ def print_formatted_content(content):
 
 
 def get_message_by_tool_name(tool_name):
-    if tool_name == 'create_file_with_code':
-        return "Let's create a new file..."
-    elif tool_name == 'see_file':
-        return "Looking at the file content..."
-    elif tool_name == 'list_dir':
-        return "Let's list files in a directory:"
-    elif tool_name == 'retrieve_files_by_semantic_query':
-        return "Let's find files by semantic query..."
-    elif tool_name == 'insert_code':
-        return "Let's add some code..."
-    elif tool_name == 'replace_code':
-        return "Some code needs to be updated..."
-    elif tool_name == 'add_task':
-        return "It's time to add a new task:"
-    elif tool_name == 'modify_task':
-        return "Let's modify the task:"
-    elif tool_name == 'reorder_tasks':
-        return "Let's reorder tasks..."
-    elif tool_name == 'create_epic':
-        return "Let's create an epic..."
-    elif tool_name == 'modify_epic':
-        return "Let's modify the epic:"
-    elif tool_name == 'finish_project_planning':
-        return "Project planning is finished"
-    elif tool_name == 'finish':
-        return "The work is Done!"
-
-    return tool_name
+    tool_messages = {
+        "add_task": "It's time to add a new task:",
+        "modify_task": "Let's modify the task:",
+        "reorder_tasks": "Let's reorder tasks...",
+        "create_epic": "Let's create an epic...",
+        "modify_epic": "Let's modify the epic:",
+        "finish_project_planning": "Project planning is finished",
+        "list_dir": "Let's list files in a directory:",
+        "see_file": "Looking at the file content...",
+        "retrieve_files_by_semantic_query": "Let's find files by semantic query...",
+        "insert_code": "Let's add some code...",
+        "replace_code": "Some code needs to be updated...",
+        "create_file_with_code": "Let's create a new file...",
+        "ask_human_tool": "Ask human for input or actions.",
+        "watch_web_page": "Visiting a web page...",
+        "finish": "Hurray! The work is DONE!"
+    }
+    return f'\n{tool_messages.get(tool_name, "")}'
 
 
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
@@ -301,7 +303,7 @@ def print_error(message: str) -> None:
 
 
 def print_comment(message: str) -> None:
-    print_formatted(content=message, color="dark_grey", bold=False)
+    print_formatted(content=message, color="dark_grey", bold=False, width=None)
 
 
 def print_tool_message(tool_name, tool_input=None, color=None):
@@ -309,18 +311,20 @@ def print_tool_message(tool_name, tool_input=None, color=None):
 
     if tool_input is None:
         print_formatted(content=message, color=color, bold=True)
+    elif tool_name == 'ask_human':
+        pass
     elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
-    elif tool_name == 'see_file':
+    elif tool_name in ['see_file', 'insert_code', 'replace_code', 'create_file_with_code']:
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
+    elif tool_name == 'list_dir':
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=f'{tool_input}/', color='yellow', bold=True)
     elif tool_name == 'finish':
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=tool_input["test_instruction"], color=color, bold=True)
-    elif tool_name == 'final_response':
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=tool_input["test_instruction"], color='orange', bold=True)
+        print_formatted(content=message, color='yellow', bold=True)
+        print_formatted(content=tool_input.get("test_instruction", ""), color=color, bold=True)
     elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
         print_formatted(content=tool_input, color=color, bold=True)
     else:

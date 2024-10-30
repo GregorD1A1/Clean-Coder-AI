@@ -18,8 +18,7 @@ def run_clean_coder_pipeline(task, work_dir):
 
     executor = Executor(file_paths, work_dir)
     test_instruction, file_paths = executor.do_task(task, plan)
-    print_formatted('***********************************************', color="blue")
-    print_formatted(test_instruction, color="blue")
+    # print_formatted(test_instruction, color="blue")
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:
