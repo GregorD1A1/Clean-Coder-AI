@@ -39,7 +39,7 @@ def file_folder_ignored(path, ignore_patterns):
 
 def create_project_description_file():
     project_description_path = os.path.normpath(os.path.join(work_dir, '.clean_coder', 'project_description.txt'))
-    project_description = user_input("Describe your project as much detail as possible here.")
+    project_description = user_input("Describe your project in as much detail as possible here.")
     with open(project_description_path, 'w', encoding='utf-8') as file:
         file.write(project_description)
     print_formatted(f"Project description saved. You can edit it in {project_description_path}.", color="green")

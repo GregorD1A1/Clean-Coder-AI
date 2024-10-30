@@ -99,6 +99,7 @@ def extract_and_split_content(content):
 
 def process_text_content(text_content):
     if is_potential_json(text_content):
+        # ta linijka się wywala, jeśli w tekscie są użyte nawiasy kwadratowe nie do jsona
         json_data = parse_json(text_content)
         if json_data and is_valid_tool_input(json_data):
             return process_tool_input(json_data['tool_input'])
@@ -319,7 +320,6 @@ def print_tool_message(tool_name, tool_input=None, color=None):
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
     elif tool_name in ['see_file', 'insert_code', 'create_file_with_code']:
-        print("dzik")
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
     elif tool_name == 'list_dir':
