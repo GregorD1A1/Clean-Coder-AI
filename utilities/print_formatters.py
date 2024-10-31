@@ -95,22 +95,10 @@ def safe_int(value):
         return None
 
 
-def print_formatted_code(code, language, start_line=1, line_number=None, title=''):
+def print_formatted_code(code, language, start_line=1, title=''):
     console = Console()
 
-    # Ensure start_line is an integer
-    if not isinstance(start_line, int):
-        start_line = 1
-
-    # Ensure line_number is an integer if provided
-    if line_number is not None and not isinstance(line_number, int):
-        line_number = 1
-
-    if code is None or (isinstance(code, str) and code.strip() == ""):
-        console.print("[bold red]Error: No code to display[/bold red]")
-        return
-
-    start_line = safe_int(start_line) or safe_int(line_number)
+    start_line = safe_int(start_line)
 
     try:
         lexer = get_lexer_by_name(language or 'text')
@@ -177,14 +165,14 @@ def print_error(message: str) -> None:
 def print_tool_message(tool_name, tool_input=None):
     message = get_message_by_tool_name(tool_name)
 
-    if tool_input is None:
-        print_formatted(content=message, color='blue', bold=True)
-    elif tool_name == 'ask_human':
+    if tool_name == 'ask_human':
         pass
     elif tool_name == 'see_file':
+        message = "Looking at the file content..."
         print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
     elif tool_name == 'list_dir':
+        message = "Listing files in a directory..."
         print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
     elif tool_name == 'create_file_with_code':
@@ -201,7 +189,7 @@ def print_tool_message(tool_name, tool_input=None):
         message = f"Let's insert code on the place of lines {tool_input['start_line']} to {tool_input['end_line']}"
         language = tool_input['filename'].split(".")[-1]
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line'], title=tool_input['filename'], line_number=tool_input['end_line'])
+        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line'], title=tool_input['filename'])
 
     elif tool_name == 'add_task':
         message = "Let's add a task..."
@@ -209,12 +197,13 @@ def print_tool_message(tool_name, tool_input=None):
         print_formatted_code(code=tool_input['task_description'], title=tool_input['task_name'], language='text')
 
     elif tool_name == 'finish':
+        message = "Hurray! The work is DONE!"
         print_formatted(content=message, color='cyan', bold=True)
         print_formatted(content=tool_input, color='blue', bold=True)
     elif tool_name == 'final_response_researcher':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
-    elif tool_name == 'final_response_researcher':
+    elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Instruction:')
     elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
