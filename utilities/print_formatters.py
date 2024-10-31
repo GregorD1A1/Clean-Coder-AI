@@ -58,42 +58,22 @@ def is_valid_json(content):
 
 
 def split_text_and_code(text):
-    """
-    Split the input text into text and code parts.
-
-    Args:
-        text (str): The input text containing code blocks.
-
-    Returns:
-        list: A list of tuples containing ('text', content) or ('code', language, content).
-    """
-    # Updated pattern to match JSON5 blocks prefixed by 'json5'
-    pattern = r'(```(?:(\w+)\n)?(.*?)```)|(?:json5\s*\n)?(\{.*?\})|([^`]+)'
-    matches = re.finditer(pattern, text, flags=re.DOTALL)
-
+    pattern = r'```(\w+)\s*\n(.*?)\n\s*```'
+    parts = re.split(pattern, text, flags=re.DOTALL)
     result = []
-    for match in matches:
-        if match.group(1):  # Code block
-            language = match.group(2) or None
-            content = match.group(3).strip()
-            result.append(('code', language, content))
-        elif match.group(4):  # JSON5 block
-            content = match.group(4).strip()
-            result.append(('code', 'json', content))
-        elif match.group(5):  # Text part
-            content = match.group(5).strip()
-            result.append(('text', content))
 
-    return result
+    i = 0
+    while i < len(parts):
+        if i == 0 or i % 3 == 0:  # Text parts
+            if parts[i].strip():
+                result.append(('text', parts[i].strip()))
+        else:  # Code block parts
+            language = parts[i]
+            content = parts[i + 1]
+            result.append(('code', language, content.strip()))
+            i += 1  # Skip the next part as we've already processed it
+        i += 1
 
-
-def extract_and_split_content(content):
-    result = []
-    for part in split_text_and_code(content):
-        if part[0] == 'text':
-            result.extend(process_text_content(part[1]))
-        elif part[0] == 'code':
-            result.append(process_code_content(*part[1:]))
     return result
 
 
@@ -101,8 +81,10 @@ def process_text_content(text_content):
     if is_potential_json(text_content):
         # ta linijka się wywala, jeśli w tekscie są użyte nawiasy kwadratowe nie do jsona
         json_data = parse_json(text_content)
+
         if json_data and is_valid_tool_input(json_data):
             return process_tool_input(json_data['tool_input'])
+
     return [('text', text_content)]
 
 
@@ -142,7 +124,7 @@ def process_code_content(language, code_content):
 
 
 def print_formatted_content(content):
-    content_parts = extract_and_split_content(content)
+    content_parts = split_text_and_code(content)
 
     for part in content_parts:
         if part[0] == 'text':
@@ -153,7 +135,7 @@ def print_formatted_content(content):
             json_data = extract_from_json(code_content)
 
             if not isinstance(json_data, dict):
-                print_error(f"Invalid JSON structure.")
+                print_formatted_code(code=code_content, language=language, start_line=1, line_number=None)
                 continue
 
             tool = json_data.get('tool')
@@ -309,8 +291,6 @@ def print_comment(message: str) -> None:
 
 def print_tool_message(tool_name, tool_input=None, color=None):
     message = get_message_by_tool_name(tool_name)
-    print("tool_name", tool_name)
-    print("tool_input", tool_input)
 
     if tool_input is None:
         print_formatted(content=message, color=color, bold=True)
