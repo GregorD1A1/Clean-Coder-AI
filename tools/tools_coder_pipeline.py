@@ -94,19 +94,19 @@ Explain here thing you look only: good query is "<Thing I'm looking for>", bad q
 
 def prepare_insert_code_tool(work_dir):
     @tool
-    def insert_code(filename, line_number, code):
+    def insert_code(filename, start_line, code):
         """
 Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
 Proper indentation is important.
 tool input:
 :param filename: Name and path of file to change.
-:param line_number: Line number to insert new code after.
+:param start_line: Line number to insert new code after.
 :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
 """
         try:
             with open(join_paths(work_dir, filename), 'r+', encoding='utf-8') as file:
                 file_contents = file.readlines()
-                file_contents.insert(line_number, code + '\n')
+                file_contents.insert(start_line, code + '\n')
                 file_contents = "".join(file_contents)
                 check_syntax_response = check_syntax(file_contents, filename)
                 if check_syntax_response != "Valid syntax":

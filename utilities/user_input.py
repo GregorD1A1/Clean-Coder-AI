@@ -21,7 +21,7 @@ def user_input(prompt=""):
 
 def record_voice_message():
     recorder.start_recording()
-    keyboard.wait('enter')
+    keyboard.wait('enter', suppress=True)
     recorder.stop_recording()
     print("Recording finished.\n")
     return recorder.transcribe_audio()

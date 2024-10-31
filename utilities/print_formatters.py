@@ -132,34 +132,47 @@ def print_formatted_content(content):
         elif part[0] == 'code':
             language = part[1]
             code_content = part[2]
-            json_data = extract_from_json(code_content)
+            if language in ('json','json5'):
+                try:
+                    json_data = json5.loads(code_content)
+                except ValueError:
+                    print_formatted("Badly parsed tool json:")
+                    print_formatted_code(code=code_content, language=language)
+                else:
+                    tool = json_data.get('tool')
+                    tool_input = json_data.get('tool_input', {})
+                    print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
+            else:
+                print_formatted_code(code=code_content, language=language)
 
-            if not isinstance(json_data, dict):
-                print_formatted_code(code=code_content, language=language, start_line=1, line_number=None)
-                continue
-
-            tool = json_data.get('tool')
-            tool_input = json_data.get('tool_input', {})
-
-            if isinstance(tool_input, str):
-                print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
-
-                if not is_valid_path(tool_input):
-                    print_formatted_code(code=tool_input, language=language, start_line=1, line_number=None)
-                continue
-
-            code = tool_input.get('code')
-            line_number = tool_input.get('line_number')
-            start_line = tool_input.get('start_line')
-            filename = tool_input.get('filename')
-
-            if tool and code is None:
-                print_tool_message(tool_name=tool, tool_input=tool_input or '', color="light_blue")
-            elif code:
-                if is_valid_path(filename):
-                    print_tool_message(tool_name=tool, color="light_blue")
-                print_formatted_code(code=code.strip(), language=language, start_line=start_line,
-                                     line_number=line_number, title=filename)
+            # json_data = extract_from_json(code_content)
+            #
+            # if not isinstance(json_data, dict):
+            #     print_formatted_code(code=code_content, language=language, start_line=1, line_number=None)
+            #     continue
+            #
+            # tool = json_data.get('tool')
+            # tool_input = json_data.get('tool_input', {})
+            #
+            # if isinstance(tool_input, str):
+            #     print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
+            #
+            #     if not is_valid_path(tool_input):
+            #         print_formatted_code(code=tool_input, language=language, start_line=1, line_number=None)
+            #     continue
+            #
+            # code = tool_input.get('code')
+            # line_number = tool_input.get('line_number')
+            # start_line = tool_input.get('start_line')
+            # filename = tool_input.get('filename')
+            #
+            # if tool and code is None:
+            #     print_tool_message(tool_name=tool, tool_input=tool_input or '', color="light_blue")
+            # elif code:
+            #     if is_valid_path(filename):
+            #         print_tool_message(tool_name=tool, color="light_blue")
+            #     print_formatted_code(code=code.strip(), language=language, start_line=start_line,
+            #                          line_number=line_number, title=filename)
 
 
 def get_message_by_tool_name(tool_name):
@@ -299,16 +312,24 @@ def print_tool_message(tool_name, tool_input=None, color=None):
     elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Files:')
-    elif tool_name in ['see_file', 'insert_code', 'create_file_with_code']:
+    elif tool_name in ['see_file',]:
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
+    elif tool_name == 'create_file_with_code':
+        message = "Let's create new file..."
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted_code(code=tool_input['code'], language="Whatever", title=tool_input['filename'])
     elif tool_name == 'list_dir':
         print_formatted(content=message, color=color, bold=True)
         print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
+    elif tool_name == 'insert_code':
+        message = f"Let's insert code after line {tool_input['start_line']}"
+        print_formatted(content=message, color=color, bold=True)
+        print_formatted_code(code=tool_input['code'], language="Whatever", start_line=tool_input['start_line']+1, title=tool_input['filename'])
     elif tool_name == 'replace_code':
         message = f"Let's insert code on the place of lines {tool_input['start_line']} to {tool_input['end_line']}"
         print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=tool_input, color='yellow', bold=True)
+        print_formatted_code(code=tool_input['code'], language="Whatever", start_line=tool_input['start_line'], title=tool_input['filename'], line_number=tool_input['end_line'])
     elif tool_name == 'finish':
         print_formatted(content=message, color='yellow', bold=True)
         print_formatted(content=tool_input, color=color, bold=True)

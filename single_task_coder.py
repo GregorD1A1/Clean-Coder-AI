@@ -1,3 +1,7 @@
+if __name__ == "__main__":
+    from utilities.graphics import print_ascii_logo
+    print_ascii_logo()
+
 from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
 from agents.executor_agent import Executor
@@ -28,9 +32,6 @@ def run_clean_coder_pipeline(task, work_dir):
 
 
 if __name__ == "__main__":
-    from utilities.graphics import print_ascii_logo
-    print_ascii_logo()
-
     task = user_input("Provide task to be executed.")
     work_dir = os.getenv("WORK_DIR")
     run_clean_coder_pipeline(task, work_dir)
