@@ -2,8 +2,6 @@ import json
 import re
 import json5
 import textwrap
-import os
-
 from termcolor import colored
 from json import JSONDecodeError
 from rich.panel import Panel
@@ -14,113 +12,28 @@ from pygments.util import ClassNotFound
 from pygments.lexers import get_lexer_by_name
 
 
-def is_valid_path(path_str):
-    # Check if the path format is valid
-    try:
-        path = os.path.normpath(path_str)
-        return True
-    except Exception:
-        return False
-
-
-def extract_from_json(content, parent_name=None, property_name=None):
-    if not isinstance(content, (str, dict)):
-        return content
-
-    if isinstance(content, str):
-        try:
-            json_data = json5.loads(content)
-        except (JSONDecodeError, ValueError):
-            # If parsing fails, return the stripped content
-            return content.strip()
-    else:
-        json_data = content
-
-    if isinstance(json_data, dict):
-        if parent_name and property_name:
-            parent = json_data.get(parent_name, {})
-            return parent.get(property_name) if isinstance(parent, dict) else None
-        elif property_name:
-            return json_data.get(property_name)
-        elif parent_name:
-            return json_data.get(parent_name)
-
-    return json_data
-
-
-# Helper function to check if content is valid JSON
-def is_valid_json(content):
-    try:
-        json5.loads(content)
-        return True
-    except (JSONDecodeError, TypeError):
-        return False
-
-
 def split_text_and_code(text):
     pattern = r'```(\w+)\s*\n(.*?)\n\s*```'
     parts = re.split(pattern, text, flags=re.DOTALL)
     result = []
-
-    i = 0
-    while i < len(parts):
+    for i, part in enumerate(parts):
         if i == 0 or i % 3 == 0:  # Text parts
             if parts[i].strip():
                 result.append(('text', parts[i].strip()))
-        else:  # Code block parts
+        elif i % 3 == 1:  # Code block or snippets parts
             language = parts[i]
             content = parts[i + 1]
             result.append(('code', language, content.strip()))
-            i += 1  # Skip the next part as we've already processed it
-        i += 1
 
     return result
 
 
-def process_text_content(text_content):
-    if is_potential_json(text_content):
-        # ta linijka się wywala, jeśli w tekscie są użyte nawiasy kwadratowe nie do jsona
-        json_data = parse_json(text_content)
-
-        if json_data and is_valid_tool_input(json_data):
-            return process_tool_input(json_data['tool_input'])
-
-    return [('text', text_content)]
-
-
-def is_potential_json(text):
-    return text.startswith(('{', '[')) and text.endswith(('}', ']'))
-
-
-def parse_json(text):
+def parse_tool_json(text):
     try:
         return json5.loads(text)
     except (JSONDecodeError, TypeError):
-        return None
-
-
-def is_valid_tool_input(json_data):
-    return 'tool' in json_data and 'tool_input' in json_data
-
-
-def process_tool_input(tool_input):
-    if isinstance(tool_input, dict):
-        code = tool_input.get('code')
-        if code:
-            return [create_code_tuple(tool_input)]
-    return [('text', str(tool_input))]
-
-
-def create_code_tuple(tool_input):
-    code = tool_input['code']
-    start_line = tool_input.get('start_line')
-    line_number = tool_input.get('line_number')
-    language = 'diff' if line_number is not None else tool_input.get('language', 'text')
-    return 'code', language, code, start_line, line_number
-
-
-def process_code_content(language, code_content):
-    return 'code', language, code_content, None, None
+        print_formatted("Badly parsed tool json:")
+        print_formatted_code(code=text, language=json5)
 
 
 def print_formatted_content(content):
@@ -128,51 +41,17 @@ def print_formatted_content(content):
 
     for part in content_parts:
         if part[0] == 'text':
-            print_comment(part[1])
+            print_formatted(content=part[1], color="dark_grey")
         elif part[0] == 'code':
             language = part[1]
             code_content = part[2]
             if language in ('json','json5'):
-                try:
-                    json_data = json5.loads(code_content)
-                except ValueError:
-                    print_formatted("Badly parsed tool json:")
-                    print_formatted_code(code=code_content, language=language)
-                else:
-                    tool = json_data.get('tool')
-                    tool_input = json_data.get('tool_input', {})
-                    print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
+                json_data = parse_tool_json(code_content)
+                tool = json_data.get('tool')
+                tool_input = json_data.get('tool_input', {})
+                print_tool_message(tool_name=tool, tool_input=tool_input)
             else:
                 print_formatted_code(code=code_content, language=language)
-
-            # json_data = extract_from_json(code_content)
-            #
-            # if not isinstance(json_data, dict):
-            #     print_formatted_code(code=code_content, language=language, start_line=1, line_number=None)
-            #     continue
-            #
-            # tool = json_data.get('tool')
-            # tool_input = json_data.get('tool_input', {})
-            #
-            # if isinstance(tool_input, str):
-            #     print_tool_message(tool_name=tool, tool_input=tool_input, color="blue")
-            #
-            #     if not is_valid_path(tool_input):
-            #         print_formatted_code(code=tool_input, language=language, start_line=1, line_number=None)
-            #     continue
-            #
-            # code = tool_input.get('code')
-            # line_number = tool_input.get('line_number')
-            # start_line = tool_input.get('start_line')
-            # filename = tool_input.get('filename')
-            #
-            # if tool and code is None:
-            #     print_tool_message(tool_name=tool, tool_input=tool_input or '', color="light_blue")
-            # elif code:
-            #     if is_valid_path(filename):
-            #         print_tool_message(tool_name=tool, color="light_blue")
-            #     print_formatted_code(code=code.strip(), language=language, start_line=start_line,
-            #                          line_number=line_number, title=filename)
 
 
 def get_message_by_tool_name(tool_name):
@@ -227,9 +106,6 @@ def print_formatted_code(code, language, start_line=1, line_number=None, title='
     if line_number is not None and not isinstance(line_number, int):
         line_number = 1
 
-    # Ensure the language is set correctly for TypeScript
-    language_tmp = 'typescript' if language in ['json5', 'typescript'] else language
-
     if code is None or (isinstance(code, str) and code.strip() == ""):
         console.print("[bold red]Error: No code to display[/bold red]")
         return
@@ -237,7 +113,7 @@ def print_formatted_code(code, language, start_line=1, line_number=None, title='
     start_line = safe_int(start_line) or safe_int(line_number)
 
     try:
-        lexer = get_lexer_by_name(language_tmp or 'text')
+        lexer = get_lexer_by_name(language or 'text')
     except ClassNotFound:
         lexer = get_lexer_by_name('text')
 
@@ -253,7 +129,7 @@ def print_formatted_code(code, language, start_line=1, line_number=None, title='
                 padding=(1, 1),
             )
 
-            snippet_title = title or f"{language_tmp.capitalize() if isinstance(language_tmp, str) else 'Code'} Snippet"
+            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
 
             if len(snippet_title) > 100:
                 snippet_title = 'Code Snippet'
@@ -280,7 +156,7 @@ def print_formatted_code(code, language, start_line=1, line_number=None, title='
                 padding=(1, 1),
             )
 
-            snippet_title = title or f"{language_tmp.capitalize() if isinstance(language_tmp, str) else 'Code'} Snippet"
+            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
 
             styled_code = Panel(
                 syntax,
@@ -298,45 +174,51 @@ def print_error(message: str) -> None:
     print_formatted(content=message, color="red", bold=False)
 
 
-def print_comment(message: str) -> None:
-    print_formatted(content=message, color="dark_grey", bold=False, width=None)
-
-
-def print_tool_message(tool_name, tool_input=None, color=None):
+def print_tool_message(tool_name, tool_input=None):
     message = get_message_by_tool_name(tool_name)
 
     if tool_input is None:
-        print_formatted(content=message, color=color, bold=True)
+        print_formatted(content=message, color='blue', bold=True)
     elif tool_name == 'ask_human':
         pass
-    elif tool_name == 'final_response':
-        json_string = json.dumps(tool_input, indent=2)
-        print_formatted_code(code=json_string, language='json', title='Files:')
-    elif tool_name in ['see_file',]:
-        print_formatted(content=message, color=color, bold=True)
+    elif tool_name == 'see_file':
+        print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
+    elif tool_name == 'list_dir':
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
     elif tool_name == 'create_file_with_code':
         message = "Let's create new file..."
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted_code(code=tool_input['code'], language="Whatever", title=tool_input['filename'])
-    elif tool_name == 'list_dir':
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
+        language = tool_input['filename'].split(".")[-1]
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted_code(code=tool_input['code'], language=language, title=tool_input['filename'])
     elif tool_name == 'insert_code':
         message = f"Let's insert code after line {tool_input['start_line']}"
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted_code(code=tool_input['code'], language="Whatever", start_line=tool_input['start_line']+1, title=tool_input['filename'])
+        language = tool_input['filename'].split(".")[-1]
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line']+1, title=tool_input['filename'])
     elif tool_name == 'replace_code':
         message = f"Let's insert code on the place of lines {tool_input['start_line']} to {tool_input['end_line']}"
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted_code(code=tool_input['code'], language="Whatever", start_line=tool_input['start_line'], title=tool_input['filename'], line_number=tool_input['end_line'])
+        language = tool_input['filename'].split(".")[-1]
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line'], title=tool_input['filename'], line_number=tool_input['end_line'])
+
+    elif tool_name == 'add_task':
+        message = "Let's add a task..."
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted_code(code=tool_input['task_description'], title=tool_input['task_name'], language='text')
+
     elif tool_name == 'finish':
-        print_formatted(content=message, color='yellow', bold=True)
-        print_formatted(content=tool_input, color=color, bold=True)
+        print_formatted(content=message, color='cyan', bold=True)
+        print_formatted(content=tool_input, color='blue', bold=True)
+    elif tool_name == 'final_response_researcher':
+        json_string = json.dumps(tool_input, indent=2)
+        print_formatted_code(code=json_string, language='json', title='Files:')
+    elif tool_name == 'final_response_researcher':
+        json_string = json.dumps(tool_input, indent=2)
+        print_formatted_code(code=json_string, language='json', title='Instruction:')
     elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
-        print_formatted(content=tool_input, color=color, bold=True)
+        print_formatted(content=tool_input, color="green", bold=True)
     else:
-        print_formatted(content=message, color=color, bold=True)
-        print_formatted(content=tool_input, color=color, bold=True)
-
-
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted(content=tool_input, color='blue', bold=True)

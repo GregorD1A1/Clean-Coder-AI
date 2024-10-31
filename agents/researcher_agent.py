@@ -28,7 +28,7 @@ work_dir = os.getenv("WORK_DIR")
 
 
 @tool
-def final_response(files_to_work_on, reference_files, template_images):
+def final_response_researcher(files_to_work_on, reference_files, template_images):
     """That tool outputs list of files programmer will need to change and paths to graphical patterns if some.
     Use that tool only when you 100% sure you found all the files programmer will need to modify.
     If not, do additional research. Include only the files you convinced will be useful.
@@ -73,7 +73,7 @@ def after_agent_condition(state):
 
     if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
         return "agent"
-    elif last_message.json5_tool_calls[0]["tool"] == "final_response":
+    elif last_message.json5_tool_calls[0]["tool"] == "final_response_researcher":
         return "human"
     else:
         return "tool"
@@ -83,7 +83,7 @@ class Researcher():
     def __init__(self, work_dir):
         see_file = prepare_see_file_tool(work_dir)
         list_dir = prepare_list_dir_tool(work_dir)
-        tools = [see_file, list_dir, final_response]
+        tools = [see_file, list_dir, final_response_researcher]
         if vdb_available():
             tools.append(retrieve_files_by_semantic_query)
         self.rendered_tools = render_tools(tools)
