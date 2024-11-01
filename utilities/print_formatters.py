@@ -31,7 +31,7 @@ def split_text_and_code(text):
 def parse_tool_json(text):
     try:
         return json5.loads(text)
-    except (JSONDecodeError, TypeError):
+    except ValueError:
         print_formatted("Badly parsed tool json:")
         print_formatted_code(code=text, language=json5)
 

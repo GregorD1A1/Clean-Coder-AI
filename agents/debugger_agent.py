@@ -41,7 +41,7 @@ llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(
         ChatAnthropic(
-            model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120
+            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
         ).with_config({"run_name": "Debugger"})
     )
 if os.getenv("OPENAI_API_KEY"):
@@ -97,7 +97,7 @@ class Debugger():
         if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
             state["messages"].append(
                 HumanMessage(content=multiple_jsons_msg))
-            print("\nToo many jsons provided, asked to provide one.")
+            print_formatted("\nToo many jsons provided, asked to provide one.", color="yellow")
         return state
 
     def call_tool_debugger(self, state):
@@ -122,7 +122,7 @@ class Debugger():
         last_message = state["messages"][-1]
 
         # safety mechanism for looped wrong tool call
-        last_human_messages = [m for m in state["messages"] if m.type == "human"][-5:]
+        last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
         tool_not_executed_msgs = [
             m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
         ]

@@ -87,22 +87,16 @@ class Executor():
     # node functions
     def call_model_executor(self, state):
         state = call_model(state, llms)
+        last_message = state["messages"][-1]
+        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
+            state["messages"].append(
+                HumanMessage(content=multiple_jsons_msg))
+            print_formatted("\nToo many jsons provided, asked to provide one.", color="yellow")
         return state
 
     def call_tool_executor(self, state):
         last_ai_message = state["messages"][-1]
-        last_message = state["messages"][-1]
-        if not hasattr(last_message, "json5_tool_calls"):
-            state["messages"].append(HumanMessage(content="No tool called"))
-            return state
-        json5_tool_calls = last_message.json5_tool_calls
-        # reverse to make code changes from later lines to starting ones
-        json5_tool_calls.reverse()
-        tool_responses = [self.tool_executor.invoke(ToolInvocation(**tool_call)) for tool_call in json5_tool_calls]
-        filtered_responses = [resp for resp in tool_responses if resp is not None]  # Filter out NoneType responses
-        tool_response = "\n\n###\n\n".join(filtered_responses) if len(filtered_responses) > 1 else filtered_responses[0] if filtered_responses else None
-        response_message = HumanMessage(content=tool_response)
-        state["messages"].append(response_message)
+        state = call_tool(state, self.tool_executor)
         for tool_call in last_ai_message.json5_tool_calls:
             if tool_call["tool"] == "create_file_with_code":
                 self.files.add(tool_call["tool_input"]["filename"])
@@ -114,7 +108,7 @@ class Executor():
         last_message = state["messages"][-1]
 
         # safety mechanism for looped wrong tool call
-        last_human_messages = [m for m in state["messages"] if m.type == "human"][-5:]
+        last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
         tool_not_executed_msgs = [
             m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
         ]

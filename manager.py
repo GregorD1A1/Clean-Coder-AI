@@ -45,7 +45,7 @@ llms = []
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 
 
 class AgentState(TypedDict):
