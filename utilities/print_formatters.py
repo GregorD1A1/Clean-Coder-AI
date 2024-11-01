@@ -23,7 +23,7 @@ def split_text_and_code(text):
         elif i % 3 == 1:  # Code block or snippets parts
             language = parts[i]
             content = parts[i + 1]
-            result.append(('code', language, content.strip()))
+            result.append(('snippet_or_tool', language, content.strip()))
 
     return result
 
@@ -32,8 +32,7 @@ def parse_tool_json(text):
     try:
         return json5.loads(text)
     except ValueError:
-        print_formatted("Badly parsed tool json:")
-        print_formatted_code(code=text, language="json5")
+        return None
 
 
 def print_formatted_content(content):
@@ -42,15 +41,19 @@ def print_formatted_content(content):
     for part in content_parts:
         if part[0] == 'text':
             print_formatted(content=part[1], color="dark_grey")
-        elif part[0] == 'code':
+        elif part[0] == 'snippet_or_tool':
             language = part[1]
             code_content = part[2]
-            if language in ('json','json5'):
+            if language == 'json5':    # tool call
                 json_data = parse_tool_json(code_content)
+                if not json_data:
+                    print_formatted("Badly parsed tool json:")
+                    print_formatted_code(code=code_content, language="json5")
+                    return
                 tool = json_data.get('tool')
                 tool_input = json_data.get('tool_input', {})
                 print_tool_message(tool_name=tool, tool_input=tool_input)
-            else:
+            else:       # code snippet
                 print_formatted_code(code=code_content, language=language)
 
 
@@ -163,8 +166,6 @@ def print_error(message: str) -> None:
 
 
 def print_tool_message(tool_name, tool_input=None):
-    message = get_message_by_tool_name(tool_name)
-
     if tool_name == 'ask_human':
         pass
     elif tool_name == 'see_file':
@@ -195,6 +196,10 @@ def print_tool_message(tool_name, tool_input=None):
         message = "Let's add a task..."
         print_formatted(content=message, color='blue', bold=True)
         print_formatted_code(code=tool_input['task_description'], title=tool_input['task_name'], language='text')
+    elif tool_name == 'create_epic':
+        message = "Let's create an epic..."
+        print_formatted(content=message, color='blue', bold=True)
+        print_formatted(content=tool_input, color='cyan', bold=True)
 
     elif tool_name == 'finish':
         message = "Hurray! The work is DONE!"
@@ -206,9 +211,7 @@ def print_tool_message(tool_name, tool_input=None):
     elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, language='json', title='Instruction:')
-    elif tool_input and isinstance(tool_input, str) and tool_input.strip() != "":
-        print_formatted(content=tool_input, color="green", bold=True)
     else:
+        message = f"Calling {tool_name} tool..."
         print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=tool_input, color='blue', bold=True)
-
