@@ -33,7 +33,7 @@ def parse_tool_json(text):
         return json5.loads(text)
     except ValueError:
         print_formatted("Badly parsed tool json:")
-        print_formatted_code(code=text, language=json5)
+        print_formatted_code(code=text, language="json5")
 
 
 def print_formatted_content(content):
@@ -211,3 +211,4 @@ def print_tool_message(tool_name, tool_input=None):
     else:
         print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=tool_input, color='blue', bold=True)
+
