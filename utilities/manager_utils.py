@@ -17,21 +17,10 @@ todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
-actualize_description_prompt_template = """After task been executed, actualize description of project progress. 
-Write what have been done in the project so far in up to 10 sentences. Never imagine facts. Do not write what need to be 
-done in future and do not write project description, if that not needed to describe progress.
 
-Previous progress description, before last task execution:
-{progress_description}
-
-Last task been executed:
-{task_name_description}
-
-Tester response about task implementation:
-{tester_response}
-
-Return new progress description and nothing more.
-"""
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+with open(f"{parent_dir}/prompts/actualize_project_description.prompt", "r") as f:
+    actualize_description_prompt_template = f.read()
 
 llm = ChatOpenAI(model="gpt-4o", temperature=0)
 

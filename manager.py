@@ -10,13 +10,14 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AI
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from langchain.tools.render import render_text_description
 from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
 from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
+from utilities.util_functions import render_tools
+from utilities.start_project_functions import create_project_description_file
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -37,21 +38,25 @@ tools = [
     ask_human_tool,
     finish_project_planning,
 ]
-rendered_tools = render_text_description(tools)
+rendered_tools = render_tools(tools)
 
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 llms = []
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
 
-project_description = read_project_description()
+if os.path.exists(os.path.join(work_dir, '.clean_coder/project_description.txt')):
+    project_description = read_project_description()
+else:
+    project_description = create_project_description_file()
+
 tool_executor = ToolExecutor(tools)
 tasks_progress_template = """Actual list of tasks you planned in Todoist:
 

@@ -1,8 +1,9 @@
 import itertools
 import sys
 import time
-from utilities.util_functions import print_formatted
 from termcolor import colored
+
+from utilities.print_formatters import print_formatted
 
 
 def print_ascii_logo():
@@ -12,6 +13,7 @@ def print_ascii_logo():
         writing = f.read()
     print(colored(logo, color="yellow"))
     print(colored(writing, color="white"))
+
 
 def loading_animation(message="I'm thinking...", color="cyan"):
     frames = [
@@ -42,7 +44,8 @@ def loading_animation(message="I'm thinking...", color="cyan"):
     print('\033[?25l', end='')  # Hide cursor
     try:
         for frame in itertools.cycle(frames):
-            print_formatted(frame, color=color, end='\r' + message + ' ')  # Print the frame on the same line after the message
+            print_formatted(frame, color=color,
+                            end='\r' + message + ' ')  # Print the frame on the same line after the message
             time.sleep(0.07)  # Adjust the sleep time for better animation speed
             if not loading_animation.is_running:
                 break
@@ -51,5 +54,5 @@ def loading_animation(message="I'm thinking...", color="cyan"):
         sys.stdout.write('\r' + ' ' * (len(message) + len(frames[0]) + 2) + '\r')  # Clear the entire line
         sys.stdout.flush()
 
-loading_animation.is_running = True
 
+loading_animation.is_running = True

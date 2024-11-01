@@ -1,13 +1,14 @@
 from langchain.tools import tool
 import os
-import playwright
+from playwright.sync_api import sync_playwright
 from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
 from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
 from utilities.util_functions import join_paths
 from utilities.user_input import user_input
-from rag.retrieval import retrieve
+from tools.rag.retrieval import retrieve
+import base64
 
 
 load_dotenv(find_dotenv())
@@ -31,7 +32,6 @@ Think step by step which function/code block you want to change before proposing
 """
 
 
-
 def prepare_list_dir_tool(work_dir):
     @tool
     def list_dir(directory):
@@ -50,6 +50,7 @@ tool input:
             return f"{type(e).__name__}: {e}"
 
     return list_dir
+
 
 def prepare_see_file_tool(work_dir):
     @tool
@@ -93,25 +94,25 @@ Explain here thing you look only: good query is "<Thing I'm looking for>", bad q
 
 def prepare_insert_code_tool(work_dir):
     @tool
-    def insert_code(filename, line_number, code):
+    def insert_code(filename, start_line, code):
         """
 Insert new piece of code into provided file. Use when new code need to be added without replacing old one.
 Proper indentation is important.
 tool input:
 :param filename: Name and path of file to change.
-:param line_number: Line number to insert new code after.
+:param start_line: Line number to insert new code after.
 :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
 """
         try:
             with open(join_paths(work_dir, filename), 'r+', encoding='utf-8') as file:
                 file_contents = file.readlines()
-                file_contents.insert(line_number, code + '\n')
+                file_contents.insert(start_line, code + '\n')
                 file_contents = "".join(file_contents)
                 check_syntax_response = check_syntax(file_contents, filename)
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -145,7 +146,7 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = user_input("Type (o)k if you accept or provide commentary.")
+                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -164,7 +165,6 @@ def prepare_create_file_tool(work_dir):
         """
 Create new file with provided code. If you need to create directory, all directories in provided path will be
 automatically created.
-
 Do not write files longer than 1000 words. If you need to create big files, start small, and next add new functions
 with another tools.
 tool input:
@@ -172,7 +172,7 @@ tool input:
 :param code: Code to write in the file.
 """
         try:
-            human_message = user_input("Type (o)k if you accept or provide commentary.")
+            human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
             if human_message not in ['o', 'ok']:
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -207,31 +207,83 @@ def ask_human_tool(prompt):
         return f"{type(e).__name__}: {e}"
 
 
-# function under development
-def make_screenshot(self, endpoint, login_needed, commands):
-    browser = playwright.chromium.launch(headless=False)
-    page = browser.new_page()
-    if login_needed:
-        page.goto('http://localhost:5555/login')
-        page.fill('#username', 'uname')
-        page.fill('#password', 'passwd')
-        page.click('.login-form button[type="submit"]')
-    page.goto(f'http://localhost:5555/{endpoint}')
+def prepare_watch_web_page_tool(frontend_port):
+    p = sync_playwright().start()
+    @tool
+    def watch_web_page(endpoint, login_required, commands):
+        """
+Use that tool to watch web page. Use it after you introduced changes, for self-test.
+Try to use it as often as possible, it costs nothing. Use that tool before and after any meaningful change in frontend.
+tool input:
+:param endpoint: endpoint to navigate.
+:param login_required: provide True, if page is available only for logged in user.
+:param commands: list of commands to execute on page one after another. Every command is json with 'action', 'selector' and 'value' (optional) keys.
+action can be 'fill', 'click', 'hover' or 'wait'.
+value for wait is in milliseconds.
+Example:
+commands: [
+{"action": "fill", "selector": "#username", "value": "uname"},
+{"action": "click", "selector": ".login-form button[type='submit']"},
+{"action": "hover", "selector": ".main-page button[type='reload']"},
+{"action": "wait", "value": 5000},
+],
+"""
+        #try:
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
+        if login_required:
+            page.goto(f'http://localhost:{frontend_port}/login')
+            page.fill('input[type="email"]', 'uname@test.pl')
+            page.fill('input[type="password"]', 'pass')
+            page.click('button[type="submit"]')
+            page.wait_for_load_state('networkidle')
+        page.goto(url=f'http://localhost:{frontend_port}{endpoint}')
+        page.wait_for_load_state('networkidle')
 
-    for command in commands:
-        action = command.get('action')
-        selector = command.get('selector')
-        value = command.get('value')
-        if action == 'fill':
-            page.fill(selector, value)
-        elif action == 'click':
-            page.click(selector)
-        elif action == 'hover':
-            page.hover(selector)
+        try:
+            for command in commands:
+                action = command.get('action')
+                selector = command.get('selector')
+                value = command.get('value')
+                if action == 'fill':
+                    page.fill(selector, value)
+                elif action == 'click':
+                    page.click(selector)
+                elif action == 'hover':
+                    page.hover(selector)
+                elif action == 'wait':
+                    page.wait_for_timeout(value)
+        except Exception as e:
+            print(f"{type(e).__name__}: {e}")
+            pass
 
-    page.screenshot(path=join_paths(self.work_dir, 'screenshots/screenshot.png'))
-    browser.close()
+        page.screenshot(path='E://Eksperiments/screenshot.png')
+        screenshot_bytes = page.screenshot()
+        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
+        browser.close()
+
+        return [
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{screenshot_base64}",
+                },
+            },
+        ]
+
+        #except Exception as e:
+        #    return f"{type(e).__name__}: {e}"
+
+    return watch_web_page
 
 
 if __name__ == '__main__':
-    pass
+
+    tool = prepare_watch_web_page_tool(5173)
+    tool.invoke({
+        "endpoint": "/intern_survey",
+        "login_required": True,
+        "commands": [
+
+        ]
+    })

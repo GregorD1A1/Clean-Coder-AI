@@ -1,5 +1,5 @@
+from utilities.print_formatters import print_formatted
 from utilities.voice_utils import VoiceRecorder
-from utilities.util_functions import print_formatted
 import keyboard
 
 
@@ -21,7 +21,7 @@ def user_input(prompt=""):
 
 def record_voice_message():
     recorder.start_recording()
-    keyboard.wait('enter')
+    keyboard.wait('enter', suppress=True)
     recorder.stop_recording()
     print("Recording finished.\n")
     return recorder.transcribe_audio()

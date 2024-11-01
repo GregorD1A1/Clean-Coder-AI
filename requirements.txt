@@ -7,7 +7,7 @@ langchain_anthropic==0.2.1
 langchain-openai==0.2.1
 langchain_mistralai==0.2.0
 replicate==0.31.0
-playwright==1.43.0
+playwright==1.47.0
 libsass==0.23.0
 openai==1.50.2
 cohere==5.10.0
@@ -20,3 +20,6 @@ sounddevice==0.5.0
 soundfile==0.12.1
 keyboard==0.13.5
 json5==0.9.25
+pygments==2.18.0
+rich==13.9.2
+requests==2.32.3

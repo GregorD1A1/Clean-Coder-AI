@@ -1,4 +1,6 @@
 import ast
+import time
+
 import sass
 from lxml import etree
 import re
@@ -17,6 +19,8 @@ def check_syntax(file_content, filename):
         return parse_scss(file_content)
     elif extension == "vue":
         return parse_vue_basic(file_content)
+    elif extension == "tsx":
+        return parse_tsx(file_content)
     else:
         return "Valid syntax"
 
@@ -50,8 +54,8 @@ def parse_html(html_content):
         return f"Html error occurred: {e}"
 
 
-def parse_vue_template_part(code):
-    for tag in ['div', 'p', 'span']:
+def parse_template(code):
+    for tag in ['div', 'p', 'span', 'main']:
         function_response = check_template_tag_balance(code, f'<{tag}', f'</{tag}>')
         if function_response != "Valid syntax":
             return function_response
@@ -90,21 +94,33 @@ def check_template_tag_balance(code, open_tag, close_tag):
         return f"Invalid syntax, mismatch of {open_tag} and {close_tag}"
 
 
-def check_bracket_balance(code):
+def bracket_balance(code, beginnig_bracket='{', end_bracket='}'):
     opened_brackets_count = 0
 
     for char in code:
-        if char == '{':
+        if char == beginnig_bracket:
             opened_brackets_count += 1
-        elif char == '}':
+        elif char == end_bracket:
             opened_brackets_count -= 1
             if opened_brackets_count < 0:
-                return "Invalid syntax, mismatch of { and }"
+                return f"Invalid syntax, mismatch of {beginnig_bracket} and {end_bracket}"
 
     if opened_brackets_count == 0:
         return "Valid syntax"
     else:
-        return "Invalid syntax, mismatch of { and }"
+        return f"Invalid syntax, mismatch of {beginnig_bracket} and {end_bracket}"
+
+def check_bracket_balance(code):
+    bracket_response = bracket_balance(code, beginnig_bracket='(', end_bracket=')')
+    if bracket_response != "Valid syntax":
+        return bracket_response
+    bracket_response = bracket_balance(code, beginnig_bracket='[', end_bracket=']')
+    if bracket_response != "Valid syntax":
+        return bracket_response
+    bracket_response = bracket_balance(code, beginnig_bracket='{', end_bracket='}')
+    if bracket_response != "Valid syntax":
+        return bracket_response
+    return "Valid syntax"
 
 
 def parse_scss(scss_code):
@@ -122,7 +138,7 @@ def parse_vue_basic(content):
     start_tag_template = re.search(r'<template>', content).end()
     end_tag_template = content.rindex('</template>')
     template = content[start_tag_template:end_tag_template]
-    template_part_response = parse_vue_template_part(template)
+    template_part_response = parse_template(template)
     if template_part_response != "Valid syntax":
         return template_part_response
 
@@ -175,7 +191,54 @@ def lint_vue_code(code_string):
         os.remove(temp_file_path)
 
 
+def parse_tsx(tsx_code):
+    template_response = parse_template(tsx_code)
+    if template_response != "Valid syntax":
+        return template_response
+    bracket_balance_response = check_bracket_balance(tsx_code)
+    if bracket_balance_response != "Valid syntax":
+        return bracket_balance_response
+    return "Valid syntax"
+
 
 if __name__ == "__main__":
     code = """
+import type { Metadata } from "next";
+import localFont from "next/font/local";
+import "./globals.css";
+import Header from "./Header";
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+});
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+export const metadata: Metadata = {
+  title: "Jiki Konya's Blog",
+  description: "Personal blog of Jiki Konya featuring articles on various topics",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <Header />
+        {children}
+      </body>
+    </html>
+  );
+}
+
 """
+    print(parse_tsx(code))
