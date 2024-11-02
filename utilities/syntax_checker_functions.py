@@ -1,9 +1,9 @@
 import ast
-import time
-
+import yaml
 import sass
 from lxml import etree
 import re
+from utilities.print_formatters import print_formatted
 
 
 def check_syntax(file_content, filename):
@@ -21,7 +21,10 @@ def check_syntax(file_content, filename):
         return parse_vue_basic(file_content)
     elif extension == "tsx":
         return parse_tsx(file_content)
+    elif extension in ["yml", "yaml"]:
+        return parse_yaml(file_content)
     else:
+        print_formatted(f".{extension} file syntax check unavailable - please verify line numbers manually. Please request .{extension} linter on Discord https://discord.com/invite/8gat7Pv7QJ for future support.", color="yellow")
         return "Valid syntax"
 
 
@@ -110,6 +113,7 @@ def bracket_balance(code, beginnig_bracket='{', end_bracket='}'):
     else:
         return f"Invalid syntax, mismatch of {beginnig_bracket} and {end_bracket}"
 
+
 def check_bracket_balance(code):
     bracket_response = bracket_balance(code, beginnig_bracket='(', end_bracket=')')
     if bracket_response != "Valid syntax":
@@ -160,6 +164,7 @@ def parse_vue_basic(content):
 
     return "Valid syntax"
 
+
 # function works, but not used by default as there could be problems with esprima installation
 def parse_javascript_esprima(js_content):
     import esprima
@@ -201,44 +206,17 @@ def parse_tsx(tsx_code):
     return "Valid syntax"
 
 
+def parse_yaml(yaml_string):
+    try:
+        yaml.safe_load(yaml_string)
+        return "Valid syntax"
+    except yaml.YAMLError as e:
+        return f"YAML error: {e}"
+
+
+
 if __name__ == "__main__":
     code = """
-import type { Metadata } from "next";
-import localFont from "next/font/local";
-import "./globals.css";
-import Header from "./Header";
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
-
-export const metadata: Metadata = {
-  title: "Jiki Konya's Blog",
-  description: "Personal blog of Jiki Konya featuring articles on various topics",
-};
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Header />
-        {children}
-      </body>
-    </html>
-  );
-}
 
 """
-    print(parse_tsx(code))
+    print(check_syntax(code, "dzik.ts"))
