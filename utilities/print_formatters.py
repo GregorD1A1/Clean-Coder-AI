@@ -57,27 +57,6 @@ def print_formatted_content(content):
                 print_formatted_code(code=code_content, language=language)
 
 
-def get_message_by_tool_name(tool_name):
-    tool_messages = {
-        "add_task": "It's time to add a new task:",
-        "modify_task": "Let's modify the task:",
-        "reorder_tasks": "Let's reorder tasks...",
-        "create_epic": "Let's create an epic...",
-        "modify_epic": "Let's modify the epic:",
-        "finish_project_planning": "Project planning is finished",
-        "list_dir": "Let's list files in a directory:",
-        "see_file": "Looking at the file content...",
-        "retrieve_files_by_semantic_query": "Let's find files by semantic query...",
-        "insert_code": "Let's add some code...",
-        "replace_code": "Some code needs to be updated...",
-        "create_file_with_code": "Let's create a new file...",
-        "ask_human_tool": "Ask human for input or actions.",
-        "watch_web_page": "Visiting a web page...",
-        "finish": "Hurray! The work is DONE!"
-    }
-    return f'\n{tool_messages.get(tool_name, "")}'
-
-
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
     if width:
         lines = content.split('\n')
@@ -98,67 +77,35 @@ def safe_int(value):
         return None
 
 
-def print_formatted_code(code, language, start_line=1, title=''):
+def print_formatted_code(code, language, start_line=1, title=None):
     console = Console()
 
-    start_line = safe_int(start_line)
-
     try:
-        lexer = get_lexer_by_name(language or 'text')
+        lexer = get_lexer_by_name(language)
     except ClassNotFound:
         lexer = get_lexer_by_name('text')
 
-    try:
-        if code:
-            syntax = Syntax(
-                code,
-                lexer,
-                line_numbers=True,
-                start_line=start_line,
-                theme="monokai",
-                word_wrap=True,
-                padding=(1, 1),
-            )
+    syntax = Syntax(
+        code,
+        lexer,
+        line_numbers=True,
+        start_line=start_line,
+        theme="monokai",
+        word_wrap=True,
+        padding=(1, 1),
+    )
 
-            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
+    snippet_title = title or f"{language.capitalize()} Snippet"
+    if len(snippet_title) > 100:
+        snippet_title = f"..{snippet_title[-95:]}"
 
-            if len(snippet_title) > 100:
-                snippet_title = 'Code Snippet'
-
-            styled_code = Panel(
-                syntax,
-                border_style="bold yellow",
-                title=snippet_title,
-                expand=False
-            )
-
-            console.print(Padding(styled_code, 1))
-        else:
-            console.print("[bold red]Error: No code to display[/bold red]")
-    except Exception as e:
-        if code:
-            syntax = Syntax(
-                code,
-                lexer,
-                line_numbers=True,
-                start_line=start_line,
-                theme="monokai",
-                word_wrap=True,
-                padding=(1, 1),
-            )
-
-            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
-
-            styled_code = Panel(
-                syntax,
-                border_style="bold yellow",
-                title=snippet_title,
-                expand=False
-            )
-
-            console.print(Padding(styled_code, 1))
-        else:
-            console.print("[bold red]Error: Code is None[/bold red]")
+    styled_code = Panel(
+        syntax,
+        border_style="bold yellow",
+        title=snippet_title,
+        expand=False
+    )
+    console.print(Padding(styled_code, 1))
 
 
 def print_error(message: str) -> None:
