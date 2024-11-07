@@ -17,6 +17,8 @@ from utilities.util_functions import find_tools_json, list_directory_tree, rende
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
 )
+from utilities.print_formatters import print_formatted
+from utilities.llms import llm_open_router
 import os
 
 
@@ -45,10 +47,10 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
-#if os.getenv("MISTRAL_API_KEY"):
-#    llms.append(ChatMistralAI(model="ministral-8b-latest").with_config({"run_name": "Researcher"}))
-if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+#if anthropic_api_key:
+#    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+if os.getenv("OPENROUTER_API_KEY"):
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Researcher"}))
 if openai_api_key:
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
 
@@ -110,7 +112,9 @@ class Researcher():
 
     # just functions
     def research_task(self, task):
-        print("Researcher starting its work")
+        print_formatted("Researcher starting its work", color="green")
+        print_formatted("👋 Hey! I'm looking for a files on which we will work on together!", color="light_blue")
+
         system_message = system_prompt_template.format(task=task, tools=self.rendered_tools)
         inputs = {
             "messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}

@@ -15,6 +15,7 @@ from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.print_formatters import print_formatted
 from utilities.util_functions import check_file_contents, check_application_logs, render_tools
+from utilities.llms import llm_open_router
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
     agent_looped_human_help,
@@ -44,6 +45,8 @@ if os.getenv("ANTHROPIC_API_KEY"):
             model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
         ).with_config({"run_name": "Debugger"})
     )
+if os.getenv("OPENROUTER_API_KEY"):
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Debugger"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Debugger"}))
 
@@ -156,7 +159,7 @@ class Debugger():
         return state
 
     def do_task(self, task, plan, text_files):
-        print("\n\n\nExecutor starting its work")
+        print_formatted("Debugger starting its work", color="blue")
         file_contents = check_file_contents(text_files, self.work_dir)
         inputs = {"messages": [
             self.system_message,

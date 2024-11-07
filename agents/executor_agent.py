@@ -13,6 +13,7 @@ from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai import ChatMistralAI
+from utilities.llms import llm_open_router
 from utilities.print_formatters import print_formatted
 from utilities.util_functions import (
     check_file_contents, check_application_logs, render_tools, find_tools_json
@@ -43,6 +44,8 @@ if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(
         model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120
     ).with_config({"run_name": "Executor"}))
+if os.getenv("OPENROUTER_API_KEY"):
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
 
@@ -134,7 +137,7 @@ class Executor():
         return state
 
     def do_task(self, task, plan):
-        print("\n\n\nExecutor starting its work")
+        print_formatted("\nExecutor starting its work", color="blue")
         file_contents = check_file_contents(self.files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
