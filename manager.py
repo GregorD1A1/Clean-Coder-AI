@@ -49,7 +49,8 @@ if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("openai/gpt-4o").with_config({"run_name": "Researcher"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
-
+if os.getenv("OLLAMA_MODEL"):
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Manager"}))
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]

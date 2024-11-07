@@ -48,6 +48,8 @@ if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
+if os.getenv("OLLAMA_MODEL"):
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Executor"}))
 
 
 class AgentState(TypedDict):

@@ -23,6 +23,8 @@ if os.getenv("OPENROUTER_API_KEY"):
     llms_planners.append(llm_open_router("openai/gpt-4o").with_config({"run_name": "Planer"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+if os.getenv("OLLAMA_MODEL"):
+    llms_planners.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Planer"}))
 
 llm_planner = llms_planners[0].with_fallbacks(llms_planners[1:])
 # copy planers, but exchange config name
