@@ -134,7 +134,8 @@ class Executor():
         state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
-        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
+        file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
+        file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
         state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
         return state
 

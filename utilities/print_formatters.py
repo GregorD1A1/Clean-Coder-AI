@@ -121,7 +121,7 @@ def print_tool_message(tool_name, tool_input=None):
     elif tool_name == 'list_dir':
         message = "Listing files in a directory..."
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
+        print_formatted(content=tool_input, color='cyan', bold=True)
     elif tool_name == 'create_file_with_code':
         message = "Let's create new file..."
         extension = tool_input['filename'].split(".")[-1]
