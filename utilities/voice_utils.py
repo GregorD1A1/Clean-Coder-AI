@@ -7,12 +7,12 @@ from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
-openai_client = OpenAI()
+
 
 
 class VoiceRecorder:
     def __init__(self):
-        self.microphone_available = True
+        self.libportaudio_available = True
         self.error_message = ""
         try:
             import sounddevice
@@ -20,12 +20,15 @@ class VoiceRecorder:
             self.sounddevice = sounddevice
             self.soundfile = soundfile
         except OSError:
-            self.microphone_available = False
+            self.libportaudio_available = False
         self.recording_queue = queue.Queue()
         self.sample_rate = 44100
         self.soundfile_path = tempfile.mktemp(suffix=".wav")
         self.is_recording = False
         self.recording_thread = None
+        self.openai_client = None
+        if os.getenv("OPENAI_API_KEY"):
+            self.openai_client = OpenAI()
 
     def record(self):
         with self.soundfile.SoundFile(self.soundfile_path, mode='x', samplerate=self.sample_rate, channels=1) as file:
@@ -52,7 +55,7 @@ class VoiceRecorder:
 
     def transcribe_audio(self):
         with open(self.soundfile_path, "rb") as soundfile:
-            transcription = openai_client.audio.transcriptions.create(
+            transcription = self.openai_client.audio.transcriptions.create(
                 model="whisper-1",
                 file=soundfile
             )

@@ -18,6 +18,7 @@ from utilities.langgraph_common_functions import (call_model, call_tool, bad_jso
                                                   no_json_msg)
 from utilities.util_functions import render_tools
 from utilities.start_project_functions import create_project_description_file
+from utilities.llms import llm_open_router
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -44,9 +45,12 @@ rendered_tools = render_tools(tools)
 llms = []
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
+if os.getenv("OPENROUTER_API_KEY"):
+    llms.append(llm_open_router("openai/gpt-4o").with_config({"run_name": "Researcher"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
-
+if os.getenv("OLLAMA_MODEL"):
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Manager"}))
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]

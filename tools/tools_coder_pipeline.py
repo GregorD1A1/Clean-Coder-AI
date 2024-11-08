@@ -1,7 +1,6 @@
 from langchain.tools import tool
 import os
 from playwright.sync_api import sync_playwright
-from openai import OpenAI
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
 from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
@@ -12,7 +11,6 @@ import base64
 
 
 load_dotenv(find_dotenv())
-OAIclient = OpenAI()
 
 
 TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "

@@ -11,6 +11,7 @@ from utilities.langgraph_common_functions import ask_human, after_ask_human_cond
 import os
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
+from utilities.llms import llm_open_router
 
 
 load_dotenv(find_dotenv())
@@ -18,8 +19,12 @@ load_dotenv(find_dotenv())
 llms_planners = []
 if os.getenv("OPENAI_API_KEY"):
     llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+if os.getenv("OPENROUTER_API_KEY"):
+    llms_planners.append(llm_open_router("openai/gpt-4o").with_config({"run_name": "Planer"}))
 if os.getenv("ANTHROPIC_API_KEY"):
     llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+if os.getenv("OLLAMA_MODEL"):
+    llms_planners.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Planer"}))
 
 llm_planner = llms_planners[0].with_fallbacks(llms_planners[1:])
 # copy planers, but exchange config name
@@ -95,7 +100,7 @@ researcher = researcher_workflow.compile()
 
 
 def planning(task, text_files, image_paths, work_dir):
-    print("\n\nPlanner starting its work")
+    print_formatted("\nPlanner starting its work", color="blue")
     file_contents = check_file_contents(text_files, work_dir, line_numbers=False)
     images = convert_images(image_paths)
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"

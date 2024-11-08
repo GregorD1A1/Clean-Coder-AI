@@ -3,13 +3,12 @@ import re
 import json5
 import textwrap
 from termcolor import colored
-from json import JSONDecodeError
 from rich.panel import Panel
 from rich.syntax import Syntax
 from rich.console import Console
 from rich.padding import Padding
 from pygments.util import ClassNotFound
-from pygments.lexers import get_lexer_by_name
+from pygments.lexers import get_lexer_by_name, get_lexer_for_filename
 
 
 def split_text_and_code(text):
@@ -48,34 +47,13 @@ def print_formatted_content(content):
                 json_data = parse_tool_json(code_content)
                 if not json_data:
                     print_formatted("Badly parsed tool json:")
-                    print_formatted_code(code=code_content, language="json5")
+                    print_formatted_code(code=code_content, extension="json5")
                     return
                 tool = json_data.get('tool')
                 tool_input = json_data.get('tool_input', {})
                 print_tool_message(tool_name=tool, tool_input=tool_input)
             else:       # code snippet
-                print_formatted_code(code=code_content, language=language)
-
-
-def get_message_by_tool_name(tool_name):
-    tool_messages = {
-        "add_task": "It's time to add a new task:",
-        "modify_task": "Let's modify the task:",
-        "reorder_tasks": "Let's reorder tasks...",
-        "create_epic": "Let's create an epic...",
-        "modify_epic": "Let's modify the epic:",
-        "finish_project_planning": "Project planning is finished",
-        "list_dir": "Let's list files in a directory:",
-        "see_file": "Looking at the file content...",
-        "retrieve_files_by_semantic_query": "Let's find files by semantic query...",
-        "insert_code": "Let's add some code...",
-        "replace_code": "Some code needs to be updated...",
-        "create_file_with_code": "Let's create a new file...",
-        "ask_human_tool": "Ask human for input or actions.",
-        "watch_web_page": "Visiting a web page...",
-        "finish": "Hurray! The work is DONE!"
-    }
-    return f'\n{tool_messages.get(tool_name, "")}'
+                print_formatted_code(code=code_content, extension=language)
 
 
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
@@ -98,67 +76,35 @@ def safe_int(value):
         return None
 
 
-def print_formatted_code(code, language, start_line=1, title=''):
+def print_formatted_code(code, extension, start_line=1, title=None):
     console = Console()
 
-    start_line = safe_int(start_line)
-
     try:
-        lexer = get_lexer_by_name(language or 'text')
+        lexer = get_lexer_for_filename(extension)
     except ClassNotFound:
         lexer = get_lexer_by_name('text')
 
-    try:
-        if code:
-            syntax = Syntax(
-                code,
-                lexer,
-                line_numbers=True,
-                start_line=start_line,
-                theme="monokai",
-                word_wrap=True,
-                padding=(1, 1),
-            )
+    syntax = Syntax(
+        code,
+        lexer,
+        line_numbers=True,
+        start_line=start_line,
+        theme="monokai",
+        word_wrap=True,
+        padding=(1, 1),
+    )
 
-            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
+    snippet_title = title or f"{extension.capitalize()} Snippet"
+    if len(snippet_title) > 100:
+        snippet_title = f"..{snippet_title[-95:]}"
 
-            if len(snippet_title) > 100:
-                snippet_title = 'Code Snippet'
-
-            styled_code = Panel(
-                syntax,
-                border_style="bold yellow",
-                title=snippet_title,
-                expand=False
-            )
-
-            console.print(Padding(styled_code, 1))
-        else:
-            console.print("[bold red]Error: No code to display[/bold red]")
-    except Exception as e:
-        if code:
-            syntax = Syntax(
-                code,
-                lexer,
-                line_numbers=True,
-                start_line=start_line,
-                theme="monokai",
-                word_wrap=True,
-                padding=(1, 1),
-            )
-
-            snippet_title = title or f"{language.capitalize() if isinstance(language, str) else 'Code'} Snippet"
-
-            styled_code = Panel(
-                syntax,
-                border_style="bold yellow",
-                title=snippet_title,
-                expand=False
-            )
-
-            console.print(Padding(styled_code, 1))
-        else:
-            console.print("[bold red]Error: Code is None[/bold red]")
+    styled_code = Panel(
+        syntax,
+        border_style="bold yellow",
+        title=snippet_title,
+        expand=False
+    )
+    console.print(Padding(styled_code, 1))
 
 
 def print_error(message: str) -> None:
@@ -178,24 +124,24 @@ def print_tool_message(tool_name, tool_input=None):
         print_formatted(content=f'{tool_input}/', color='cyan', bold=True)
     elif tool_name == 'create_file_with_code':
         message = "Let's create new file..."
-        language = tool_input['filename'].split(".")[-1]
+        extension = tool_input['filename'].split(".")[-1]
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted_code(code=tool_input['code'], language=language, title=tool_input['filename'])
+        print_formatted_code(code=tool_input['code'], extension=extension, title=tool_input['filename'])
     elif tool_name == 'insert_code':
         message = f"Let's insert code after line {tool_input['start_line']}"
-        language = tool_input['filename'].split(".")[-1]
+        extension = tool_input['filename'].split(".")[-1]
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line']+1, title=tool_input['filename'])
+        print_formatted_code(code=tool_input['code'], extension=extension, start_line=tool_input['start_line']+1, title=tool_input['filename'])
     elif tool_name == 'replace_code':
         message = f"Let's insert code on the place of lines {tool_input['start_line']} to {tool_input['end_line']}"
-        language = tool_input['filename'].split(".")[-1]
+        extension = tool_input['filename'].split(".")[-1]
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted_code(code=tool_input['code'], language=language, start_line=tool_input['start_line'], title=tool_input['filename'])
+        print_formatted_code(code=tool_input['code'], extension=extension, start_line=tool_input['start_line'], title=tool_input['filename'])
 
     elif tool_name == 'add_task':
         message = "Let's add a task..."
         print_formatted(content=message, color='blue', bold=True)
-        print_formatted_code(code=tool_input['task_description'], title=tool_input['task_name'], language='text')
+        print_formatted_code(code=tool_input['task_description'], title=tool_input['task_name'], extension='text')
     elif tool_name == 'create_epic':
         message = "Let's create an epic..."
         print_formatted(content=message, color='blue', bold=True)
@@ -207,10 +153,10 @@ def print_tool_message(tool_name, tool_input=None):
         print_formatted(content=tool_input, color='blue', bold=True)
     elif tool_name == 'final_response_researcher':
         json_string = json.dumps(tool_input, indent=2)
-        print_formatted_code(code=json_string, language='json', title='Files:')
+        print_formatted_code(code=json_string, extension='json', title='Files:')
     elif tool_name == 'final_response':
         json_string = json.dumps(tool_input, indent=2)
-        print_formatted_code(code=json_string, language='json', title='Instruction:')
+        print_formatted_code(code=json_string, extension='json', title='Instruction:')
     else:
         message = f"Calling {tool_name} tool..."
         print_formatted(content=message, color='blue', bold=True)
