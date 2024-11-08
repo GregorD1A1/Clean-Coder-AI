@@ -6,7 +6,10 @@ from dotenv import load_dotenv, find_dotenv
 
 
 load_dotenv(find_dotenv())
-work_dir = os.getenv("WORK_DIR")
+try:
+    work_dir = os.environ["WORK_DIR"]
+except KeyError:
+    raise Exception("Please set up your project folder as WORK_DIR parameter in .env")
 
 
 def create_coderignore():
