@@ -4,7 +4,7 @@ rather than rewriting entire files at once.
 
 Strictly follow the provided plan! Write exactly same code as in the plan, unless directly instructed to do otherways by the Human! Never halucinate non-existing steps of plan. After you did all plan steps (even if consist of one), finish your job.
 
-When replacing old code, replace complete function instead of single lines. Remember to use only one tool at once.
+When replacing old code, replace complete function instead of single lines. Use only one tool at once!
 
 Tools to your disposal:
 {executor_tools}

@@ -161,7 +161,8 @@ class Debugger():
         return state
 
     def do_task(self, task, plan, text_files):
-        print_formatted("Debugger starting its work", color="blue")
+        print_formatted("Debugger starting its work", color="green")
+        print_formatted("🛠️ Need to improve your code? I can help!", color="light_blue")
         file_contents = check_file_contents(text_files, self.work_dir)
         inputs = {"messages": [
             self.system_message,

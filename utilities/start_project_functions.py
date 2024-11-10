@@ -28,6 +28,12 @@ def read_coderignore():
         return [line.strip() for line in file if line.strip() and not line.startswith('#')]
 
 
+def read_frontend_feedback_story():
+    frontend_feedback_story_path = os.path.join(work_dir, '.clean_coder', 'frontend_feedback_story.txt')
+    with open(frontend_feedback_story_path, 'r') as file:
+        return file.read()
+
+
 def file_folder_ignored(path, ignore_patterns):
     path = path.rstrip('/')  # Remove trailing slash if present
 
@@ -49,6 +55,10 @@ def create_project_description_file():
     return project_description
 
 
+def set_up_dot_clean_coder_dir():
+    create_coderignore()
+
+
 # Create .coderignore file with default values if it doesn't exist
-create_coderignore()
+set_up_dot_clean_coder_dir()
 forbidden_files_and_folders = read_coderignore()

@@ -1,9 +1,9 @@
-<p align="center">
+<div align="center">
   <img
     src="/assets/starting_video.gif"
     alt="Starting video"
   >
-</p>
+</div>
 ![Logo](./assets/logo_wide_2.png)
 <div align="center">
 <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>

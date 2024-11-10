@@ -147,16 +147,16 @@ def print_tool_message(tool_name, tool_input=None):
         print_formatted(content=message, color='blue', bold=True)
         print_formatted(content=tool_input, color='cyan', bold=True)
 
-    elif tool_name == 'finish':
+    elif tool_name == 'final_response_executor':
         message = "Hurray! The work is DONE!"
         print_formatted(content=message, color='cyan', bold=True)
-        print_formatted(content=tool_input, color='blue', bold=True)
+        print_formatted(content=tool_input["test_instruction"], color='blue', bold=True)
     elif tool_name == 'final_response_researcher':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, extension='json', title='Files:')
     elif tool_name == 'final_response':
-        json_string = json.dumps(tool_input, indent=2)
-        print_formatted_code(code=json_string, extension='json', title='Instruction:')
+
+        print_formatted_code(code=tool_input, extension='json', title='Instruction:')
     else:
         message = f"Calling {tool_name} tool..."
         print_formatted(content=message, color='blue', bold=True)

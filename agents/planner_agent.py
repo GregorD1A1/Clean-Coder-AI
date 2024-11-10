@@ -51,7 +51,6 @@ voter_system_message = SystemMessage(content=voter_system_prompt_template)
 def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
-    print(f"\nGenerating plan propositions. While I'm thinking...\n")
     print_formatted(get_joke(), color="green")
     plan_propositions_messages = llm_planner.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
@@ -100,7 +99,7 @@ researcher = researcher_workflow.compile()
 
 
 def planning(task, text_files, image_paths, work_dir):
-    print_formatted("\nPlanner starting its work", color="blue")
+    print_formatted("📈 Planner here! Create plan of changes with me!", color="light_blue")
     file_contents = check_file_contents(text_files, work_dir, line_numbers=False)
     images = convert_images(image_paths)
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"
