@@ -11,9 +11,9 @@
   <br>
   <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
   <br>
-  <td align="center">
-  <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
-  <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
+  <td>
+    <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
+    <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
   </td>
 </div>
 
