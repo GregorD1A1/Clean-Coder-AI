@@ -4,6 +4,12 @@
 <br>
 Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
 <br>
+<p align="center">
+  <img
+    src="/assets/starting_video.gif"
+    alt="Starting video"
+  >
+</p>
 <br>
 <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
 <br>
