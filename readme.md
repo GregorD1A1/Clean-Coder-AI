@@ -1,26 +1,20 @@
+![Logo](./assets/logo_wide_2.png)
 <div align="center">
   <img
     src="/assets/starting_video.gif"
     alt="Starting video"
   >
-</div>
-![Logo](./assets/logo_wide_2.png)
-<img
-    src="/assets/logo_wide_2.png"
-    alt="Logo"
-  >
-<div align="center">
-<h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
-<br>
-Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
-<br>
-<br>
-<h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
-<br>
-<td align="center">
-<a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
-<a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
-</td>
+  <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
+  <br>
+  Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
+  <br>
+  <br>
+  <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
+  <br>
+  <td align="center">
+  <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
+  <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
+  </td>
 </div>
 
 ## 🏖️ Relax and watch it code
