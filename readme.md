@@ -5,6 +5,10 @@
   >
 </div>
 ![Logo](./assets/logo_wide_2.png)
+<img
+    src="/assets/logo_wide_2.png"
+    alt="Logo"
+  >
 <div align="center">
 <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
 <br>
