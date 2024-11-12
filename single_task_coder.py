@@ -6,6 +6,7 @@ from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
 from agents.executor_agent import Executor
 from agents.debugger_agent import Debugger
+from agents.frontend_feedback import make_feedback_screenshots
 import os
 from utilities.user_input import user_input
 from utilities.print_formatters import print_formatted
@@ -21,8 +22,8 @@ def run_clean_coder_pipeline(task, work_dir):
     plan = planning(task, file_paths, image_paths, work_dir)
 
     executor = Executor(file_paths, work_dir)
+    #vfeedback_screenshots = make_feedback_screenshots(task, plan)
     test_instruction, file_paths = executor.do_task(task, plan)
-    # print_formatted(test_instruction, color="blue")
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:

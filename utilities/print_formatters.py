@@ -150,7 +150,9 @@ def print_tool_message(tool_name, tool_input=None):
     elif tool_name == 'final_response_executor':
         message = "Hurray! The work is DONE!"
         print_formatted(content=message, color='cyan', bold=True)
-        print_formatted(content=tool_input["test_instruction"], color='blue', bold=True)
+        # if tool_input has "test_instruction" key, save it to variable, otherwise save whole tool_input. write in single line
+        test_instruction = tool_input.get('test_instruction', tool_input)
+        print_formatted(content=test_instruction, color='blue', bold=True)
     elif tool_name == 'final_response_researcher':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, extension='json', title='Files:')
