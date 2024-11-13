@@ -12,6 +12,7 @@ from utilities.util_functions import (
     check_file_contents, check_application_logs, render_tools, find_tools_json
 )
 from langchain.output_parsers import XMLOutputParser
+import textwrap
 
 
 llms = []
@@ -261,6 +262,8 @@ You helping a programmer that creates new frontend feature to see if changes he 
 Your task is to think what screenshots needed to be provided to programmer in order to make him understand if change been implemented correctly.
 Provide as less screenshots as possible (only that really needed).
 
+Treat every screenshot instruction as a separate user story, and do not assume any prior actions or state from one scenario to the next. Begin each screenshot instruction as if it is the only one being performed.
+
 Do not care about different layout sizes (as mobile).
 
 If you don't know some needed information, as endpoint name or element selectors, never imagine it or use placeholders; instead, ask on the end of your response in the <questions> field.
@@ -416,20 +419,31 @@ def make_feedback_screenshots(task, plan):
 
     playwright_codes = xml_parser_chain.invoke(final_output_prompt)["response"]
     playwright_start = """
-from playwright.sync_api import sync_playwright
+from playwright._impl._errors import TimeoutError
 
-p = sync_playwright().start()
+
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
+try:
 """
     playwright_end = """
+    
+    output = "Screenshot done properly"
+except TimeoutError as e:
+    output = f"{type(e).__name__}: {e}"
 browser.close()
 """
+    from playwright.sync_api import sync_playwright
+    p = sync_playwright().start()
     for i, playwright_code in enumerate(playwright_codes):
         playwright_code = playwright_code[f"screenshot_{i+1}"]
-        code = playwright_start + playwright_code + playwright_end
+        indented_playwright_code = textwrap.indent(playwright_code, '    ')
+        code = playwright_start + indented_playwright_code + playwright_end
+        print(f"Code nr {i+1}:")
         print(code)
-        exec(code)
+        code_execution_variables = {'p': p}
+        exec(code, {}, code_execution_variables)
+        print(code_execution_variables["output"])
 
 
 if __name__ == "__main__":

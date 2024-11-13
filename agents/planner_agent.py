@@ -7,7 +7,8 @@ from dotenv import load_dotenv, find_dotenv
 
 from utilities.print_formatters import print_formatted, print_formatted_content
 from utilities.util_functions import check_file_contents, convert_images, get_joke
-from utilities.langgraph_common_functions import ask_human, after_ask_human_condition
+from utilities.langgraph_common_functions import after_ask_human_condition
+from utilities.user_input import user_input
 import os
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
@@ -74,6 +75,17 @@ def call_planers(state):
     return state
 
 
+def ask_human_planner(state):
+    human_message = user_input("Type (o)k if you accept or provide commentary.")
+    if human_message in ['o', 'ok']:
+        state["messages"].append(HumanMessage(content="Approved by human"))
+    else:
+        state["messages"].append(HumanMessage(
+            content=f"Plan been rejected by human. Improve it following his commentary: {human_message}"
+        ))
+    return state
+
+
 def call_model_corrector(state):
     messages = state["messages"]
     response = llm_planner.invoke(messages)
@@ -88,7 +100,7 @@ researcher_workflow = StateGraph(AgentState)
 
 researcher_workflow.add_node("planers", call_planers)
 researcher_workflow.add_node("agent", call_model_corrector)
-researcher_workflow.add_node("human", ask_human)
+researcher_workflow.add_node("human", ask_human_planner)
 researcher_workflow.set_entry_point("planers")
 
 researcher_workflow.add_edge("planers", "human")

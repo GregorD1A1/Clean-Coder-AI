@@ -1,6 +1,6 @@
 <div align="center">
   <img
-    src="/assets/starting_video.gif"
+    src="https://i.imgur.com/ao7kuGq.gif"
     alt="Starting video"
   >
   <img src="/assets/logo_wide_2.png" alt="Logo">

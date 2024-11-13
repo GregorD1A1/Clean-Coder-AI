@@ -10,13 +10,15 @@ Here are rules about how to write your code:
 page.screenshot(path='E://Eksperiments/screenshot.png')
 ```
 4. Return xml only.
+5. Treat every screenshot as separate user story, and do not assume any prior actions or state from one scenario to the next. Begin each screenshot instruction as if it is the only one being performed.
+
 
 Example of your output:
 '''
 <response>
 <screenshot_1>
 # Go to page
-page.goto(f'http://localhost:5173/registration')
+page.goto(f'http://localhost:5173/registration', timeout=10000)
 # Fullfil data
 page.fill('input[name="fullName"]', "Updated User Name")
 page.fill('input[name="startDate"]', "2026-01-15")
@@ -28,7 +30,7 @@ page.screenshot(path='E://Eksperiments/screenshot.png')
 <screenshot_1>
 <screenshot_2>
 # Go to page
-page.goto(f'http://localhost:5173/home')
+page.goto(f'http://localhost:5173/home', timeout=10000)
 # Make screenshot
 page.screenshot(path='E://Eksperiments/screenshot.png')
 </screenshot_2>

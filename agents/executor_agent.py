@@ -141,7 +141,7 @@ class Executor():
 
     def do_task(self, task, plan):
         print_formatted("Executor starting its work", color="green")
-        print_formatted("✔️ I follow the plan and will implement necessary changes!", color="light_blue")
+        print_formatted("✅ I follow the plan and will implement necessary changes!", color="light_blue")
         file_contents = check_file_contents(self.files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
