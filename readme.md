@@ -1,4 +1,4 @@
-![Alt text](https://i.imgur.com/ao7kuGq.gif)
+
 <div align="center">
   <img
     url="https://i.imgur.com/ao7kuGq.gif"
@@ -19,7 +19,7 @@
 </div>
 
 ## 🏖️ Relax and watch it code
-
+![Alt text](https://i.imgur.com/ao7kuGq.gif)
 ```
 git clone https://github.com/GregorD1A1/Clean-Coder-AI
 cd Clean-Coder-AI
