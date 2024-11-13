@@ -1,7 +1,7 @@
 
 <div align="center">
   <img
-    url="https://i.imgur.com/uKPAuFx.jpeg"
+    src="https://i.imgur.com/uKPAuFx.jpeg"
     alt="Starting video"
   >
   <!--<img src="/assets/logo_wide_2.png" alt="Logo">-->
