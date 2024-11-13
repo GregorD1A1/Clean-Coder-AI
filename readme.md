@@ -1,7 +1,7 @@
 
 <div align="center">
   <img
-    src="https://i.imgur.com/uKPAuFx.jpeg"
+    src="https://i.imgur.com/ao7kuGq.gif"
     alt="Starting video"
   >
   <!--<img src="/assets/logo_wide_2.png" alt="Logo">-->
@@ -19,7 +19,7 @@
 </div>
 
 ## 🏖️ Relax and watch it code
-![Alt text](https://i.imgur.com/uKPAuFx.jpeg)
+
 ```
 git clone https://github.com/GregorD1A1/Clean-Coder-AI
 cd Clean-Coder-AI
