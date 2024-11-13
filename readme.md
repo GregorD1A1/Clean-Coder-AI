@@ -4,6 +4,7 @@
     alt="Starting video"
   >
   <br>
+  ---
   <br>
   <img src="/assets/logo_wide_2.png" alt="Logo">
   <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
