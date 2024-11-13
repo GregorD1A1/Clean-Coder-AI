@@ -1,3 +1,4 @@
+![Alt text](https://i.imgur.com/ao7kuGq.gif)
 <div align="center">
   <img
     url="https://i.imgur.com/ao7kuGq.gif"
