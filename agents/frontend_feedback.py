@@ -13,6 +13,7 @@ from utilities.util_functions import (
 )
 from langchain.output_parsers import XMLOutputParser
 import textwrap
+from playwright.sync_api import sync_playwright
 
 
 llms = []
@@ -34,8 +35,11 @@ story = story.format(frontend_port=5173)
 
 # read prompt from file
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-with open(f"{parent_dir}/prompts/frontend_feedback.prompt", "r") as f:
+with open(f"{parent_dir}/prompts/frontend_feedback_code_writing.prompt", "r") as f:
     prompt_template = f.read()
+with open(f"{parent_dir}/prompts/frontend_feedback_scenarios_planning.prompt", "r") as f:
+    scenarios_planning_prompt_template = f.read()
+
 
 task = """Create Page for Intern Profile Editing
 1. Implement a new page in the frontend where interns can update their profile information.
@@ -256,147 +260,6 @@ This plan outlines the necessary steps to create a new page for intern profile e
 """
 
 
-scenarios_planning_prompt_template = """You are the frontend visual tester.
-You helping a programmer that creates new frontend feature to see if changes he implemented work by providing a screenshots of application.
-
-Your task is to think what screenshots needed to be provided to programmer in order to make him understand if change been implemented correctly.
-Provide as less screenshots as possible (only that really needed).
-
-Treat every screenshot instruction as a separate user story, and do not assume any prior actions or state from one scenario to the next. Begin each screenshot instruction as if it is the only one being performed.
-
-Do not care about different layout sizes (as mobile).
-
-If you don't know some needed information, as endpoint name or element selectors, never imagine it or use placeholders; instead, ask on the end of your response in the <questions> field.
-Although, never ask questions if answer is provided in the plan. You will be penalized for asking not necessary questions.
-Write 'Everything clear.' inside of <questions></questions> if you have no questions.
-###
-Example 1:
-<task_given_to_programmer>
-Update contact information page with fax information.
-</task_given_to_programmer>
-<plan_of_programmers_actions>
-here is a code we need to add to contact page:
-```vue
-<code with fax here>
-```
-also update router file:
-```js
-<code with router of contact page, showing page placed under /contact endpoint>
-```
-</plan_of_programmers_actions>
-
-Your output:
-'''
-<response>
-<reasoning>
-In order to test update of contact page, we need to go to the /contact endpoint and make screenshot here to veryfy if contact page has fax available on it.
-<reasoning>
-<screenshots>
-<screenshot_1>
-Go to /contact endpoint and make screenshot.
-</screenshot_1>
-</screenshots>
-<questions>
-Everything clear.
-</questions>
-</response>
-'''
-###
-Example 2:
-<task_given_to_programmer>
-Make 'about us' page more prettier.
-</task_given_to_programmer>
-<plan_of_programmers_actions>
-here is a code we need to update 'about us' page with:
-```vue
-<code diff here>
-```
-</plan_of_programmers_actions>
-
-Your output:
-'''
-<response>
-<reasoning>
-In order to test update of 'about us' page, we need to go to it and make screenshot. However, we don't have any information about name of it's endpoint.
-<reasoning>
-<screenshots>
-<screenshot_1>
-Endpoint name of 'about us' page need to be figuring out before going here and making screenshot.
-</screenshot_1>
-</screenshots>
-<questions>
-1. Provide an endpoint name of 'about us' page.
-</questions>
-</response>
-'''
-###
-Example 3:
-<task_given_to_programmer>
-Create new page with user survey. Should be available only for logged in users.
-</task_given_to_programmer>
-<plan_of_programmers_actions>
-Create new page with survey under /survey-page endpoint. verification is required.
-```vue
-<code of survey page here>
-```
-</plan_of_programmers_actions>
-
-Your output:
-'''
-<response>
-<reasoning>
-In order to test creating of survey page, we need to log in go to the /survey-page endpoint and make screenshot to veryfy if survey page exists and looks as intended. Also, we need to go to /survey-page endpoint without login and confirm it is not accessible.
-</reasoning>
-
-<screenshots>
-<screenshot_1>
-Log in, then go to /survey-page endpoint and make screenshot.
-</screenshot_1>
-<screenshot_2>
-Go to /survey-page endpoint without login and also make screenshot to confirm it is not accessible.
-</screenshot_2>
-</screenshots>
-<questions>
-Everything clear.
-</questions>
-</response>
-'''
-###
-Example 4:
-<task_given_to_programmer>
-Modify logic of backend registration, to separate normal users and admins.
-</task_given_to_programmer>
-<plan_of_programmers_actions>
-Modify register_user function in registration.py with next code:
-```python
-some code here
-```
-</plan_of_programmers_actions>
-
-Your output:
-'''
-<response>
-<reasoning>
-Provided change is related to the backend logic and does not affect frontend. Therefore, no screenshots required.
-</reasoning>
-<screenshots>
-</screenshots>
-<questions>
-Everything clear.
-</questions>
-</response>
-'''
-###
-Actual task and plan:
-<task_given_to_programmer>
-{task}
-</task_given_to_programmer>
-
-<plan_of_programmers_actions>
-{plan}
-</plan_of_programmers_actions>
-"""
-
 def debug_print(response):
     print(response.content)
     return response
@@ -408,8 +271,12 @@ def make_feedback_screenshots(task, plan):
         plan=plan,
     )
     xml_parser_chain = llm | debug_print | XMLOutputParser()
-    scenarios = xml_parser_chain.invoke(scenarios_planning_prompt)
-    screenshots = scenarios["response"][1]["screenshots"]
+    response = xml_parser_chain.invoke(scenarios_planning_prompt)
+    questions = response["response"][1]["questions"]
+    if questions != "Everything clear.":
+        print(f"I have a questions:\n{questions}")
+        return
+    screenshots = response["response"][2]["screenshots"]
 
     screenshots_xml = ""
     for i, screenshot in enumerate(screenshots):
@@ -433,7 +300,6 @@ except TimeoutError as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
 """
-    from playwright.sync_api import sync_playwright
     p = sync_playwright().start()
     for i, playwright_code in enumerate(playwright_codes):
         playwright_code = playwright_code[f"screenshot_{i+1}"]

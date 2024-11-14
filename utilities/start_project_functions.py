@@ -30,8 +30,12 @@ def read_coderignore():
 
 def read_frontend_feedback_story():
     frontend_feedback_story_path = os.path.join(work_dir, '.clean_coder', 'frontend_feedback_story.txt')
-    with open(frontend_feedback_story_path, 'r') as file:
-        return file.read()
+    if os.path.exists(frontend_feedback_story_path):
+        with open(frontend_feedback_story_path, 'r') as file:
+            return file.read()
+    else:
+        # handle creation of story file logic
+        return "<Story file does not exist."
 
 
 def file_folder_ignored(path, ignore_patterns):
