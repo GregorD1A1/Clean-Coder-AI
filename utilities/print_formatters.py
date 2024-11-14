@@ -154,13 +154,13 @@ def print_tool_message(tool_name, tool_input=None):
         print("Tool input:")
         print(tool_input)
         test_instruction = tool_input.get('test_instruction', tool_input)
-        print_formatted(content=test_instruction, color='blue', bold=True)
+        print_formatted_code(code=test_instruction, extension='text', title='Instruction:')
     elif tool_name == 'final_response_researcher':
         json_string = json.dumps(tool_input, indent=2)
         print_formatted_code(code=json_string, extension='json', title='Files:')
-    elif tool_name == 'final_response':
-
-        print_formatted_code(code=tool_input, extension='json', title='Instruction:')
+    elif tool_name == 'final_response_debugger':
+        print_formatted_code(code=tool_input, extension='text', title='Instruction:')
+        print_formatted("Have any questions about Clean Coder or want to share your experience? Check out our Discord server https://discord.com/invite/8gat7Pv7QJ 😉", color='green')
     else:
         message = f"Calling {tool_name} tool..."
         print_formatted(content=message, color='blue', bold=True)

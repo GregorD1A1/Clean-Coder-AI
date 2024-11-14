@@ -28,7 +28,7 @@ frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
-def final_response(test_instruction):
+def final_response_debugger(test_instruction):
     """Call that tool when all changes are implemented to tell the job is done.
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
@@ -179,7 +179,7 @@ def prepare_tools(work_dir):
     replace_code = prepare_replace_code_tool(work_dir)
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
-    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response_debugger]
     #if frontend_port:
     #    watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
     #    tools.append(watch_web_page_tool)

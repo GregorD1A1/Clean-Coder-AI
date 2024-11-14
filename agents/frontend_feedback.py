@@ -273,8 +273,9 @@ def make_feedback_screenshots(task, plan):
     xml_parser_chain = llm | debug_print | XMLOutputParser()
     response = xml_parser_chain.invoke(scenarios_planning_prompt)
     questions = response["response"][1]["questions"]
-    if questions != "Everything clear.":
-        print(f"I have a questions:\n{questions}")
+    print({"questions": questions})
+    if questions != "\nEverything clear.\n":
+        print(f"I have a questions:{questions}")
         return
     screenshots = response["response"][2]["screenshots"]
 
