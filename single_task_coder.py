@@ -22,7 +22,7 @@ def run_clean_coder_pipeline(task, work_dir):
     plan = planning(task, file_paths, image_paths, work_dir)
 
     executor = Executor(file_paths, work_dir)
-    vfeedback_screenshots = make_feedback_screenshots(task, plan)
+    vfeedback_screenshots = make_feedback_screenshots(task, plan, work_dir)
     test_instruction, file_paths = executor.do_task(task, plan)
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")

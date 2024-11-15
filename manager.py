@@ -4,7 +4,6 @@ if __name__ == "__main__":
 
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -41,7 +40,6 @@ tools = [
 ]
 rendered_tools = render_tools(tools)
 
-#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 llms = []
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))

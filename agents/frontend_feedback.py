@@ -1,7 +1,6 @@
 import os
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from dotenv import load_dotenv, find_dotenv
+from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
@@ -14,6 +13,7 @@ from utilities.util_functions import (
 from langchain.output_parsers import XMLOutputParser
 import textwrap
 from playwright.sync_api import sync_playwright
+from agents.file_answerer import ResearchFileAnswerer
 
 
 llms = []
@@ -265,7 +265,7 @@ def debug_print(response):
     return response
 
 
-def make_feedback_screenshots(task, plan):
+def make_feedback_screenshots(task, plan, work_dir):
     scenarios_planning_prompt = scenarios_planning_prompt_template.format(
         task=task,
         plan=plan,
@@ -274,15 +274,22 @@ def make_feedback_screenshots(task, plan):
     response = xml_parser_chain.invoke(scenarios_planning_prompt)
     questions = response["response"][1]["questions"]
     print({"questions": questions})
-    if questions != "\nEverything clear.\n":
-        print(f"I have a questions:{questions}")
-        return
+
     screenshots = response["response"][2]["screenshots"]
 
     screenshots_xml = ""
     for i, screenshot in enumerate(screenshots):
         screenshots_xml += f"<screenshot_{i+1}>{screenshot[f'screenshot_{i+1}']}</screenshot_{i+1}>\n"
 
+    # fulfill the mussing informations
+    if questions.strip() != "Everything clear.":
+        print(f"I have a questions:{questions}")
+        file_answerer = ResearchFileAnswerer(work_dir=work_dir)
+        answers = file_answerer.research_and_answer(questions)
+        screenshots_xml += answers
+
+    print("screenshots_xml:\n", screenshots_xml)
+    print("end of screenshots xml")
     final_output_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_xml)
 
     playwright_codes = xml_parser_chain.invoke(final_output_prompt)["response"]
@@ -310,8 +317,8 @@ browser.close()
         print(code)
         code_execution_variables = {'p': p}
         exec(code, {}, code_execution_variables)
-        print(code_execution_variables["output"])
+        #code_execution_variables["output"]
 
 
 if __name__ == "__main__":
-    make_feedback_screenshots(task, plan)
+    make_feedback_screenshots(task, plan, "E://Eksperiments/Hacker_news_scraper")

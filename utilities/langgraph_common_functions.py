@@ -20,44 +20,48 @@ no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to exe
 
 
 # nodes
-def call_model(state, llms):
+def call_model(state, llms, printing=True):
     messages = state["messages"]
-    loading_animation.is_running = True
-    loading_thread = threading.Thread(target=loading_animation)
-    loading_thread.daemon = True
-    loading_thread.start()
+    if printing:
+        loading_animation.is_running = True
+        loading_thread = threading.Thread(target=loading_animation)
+        loading_thread.daemon = True
+        loading_thread.start()
     try:
         for llm in llms:
             try:
                 response = llm.invoke(messages)
                 break
             except Exception as e:
-                print_formatted(f"\nException happened: {e} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
+                if printing:
+                    print_formatted(f"\nException happened: {e} with llm: {llm.bound.__class__.__name__}. Switching to next LLM if available...", color="yellow")
         else:
-            print_formatted("Can not receive response from any llm", color="red")
+            if printing:
+                print_formatted("Can not receive response from any llm", color="red")
             sys.exit()
     finally:
-        loading_animation.is_running = False
-        loading_thread.join()
+        if printing:
+            loading_animation.is_running = False
+            loading_thread.join()
 
-    # Replicate returns string instead of AI Message, we need to handle it
-    if 'Replicate' in str(llm):
-        response = AIMessage(content=str(response))
     response.json5_tool_calls = find_tools_json(response.content)
 
-    # Process and print the content
-    print_formatted_content(response.content)
+    if printing:
+        # Process and print the content
+        print_formatted_content(response.content)
 
     state["messages"].append(response)
 
     if response.json5_tool_calls == "No json found in response.":
         state["messages"].append(HumanMessage(content=no_json_msg))
-        print_error('\nNo json provided, asked to provide one.')
+        if printing:
+            print_error('\nNo json provided, asked to provide one.')
         return state
     for tool_call in response.json5_tool_calls:
         if tool_call is None or "tool" not in tool_call:
             state["messages"].append(HumanMessage(content=bad_json_format_msg))
-            print_error('\nBad json format provided, asked to provide again.')
+            if printing:
+                print_error('\nBad json format provided, asked to provide again.')
             return state
     return state
 

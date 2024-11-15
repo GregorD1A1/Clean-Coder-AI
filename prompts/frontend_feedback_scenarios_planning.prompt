@@ -7,9 +7,14 @@ Provide as less screenshots as possible (only that really needed).
 Treat every screenshot instruction as a separate user story, and do not assume any prior actions or state from one scenario to the next. Begin each screenshot instruction as if it is the only one being performed.
 
 Do not care about different layout sizes (as mobile).
+Screenshots you propose should be able to performe by only browser automation software. If taking a screenshot requires interactions outside of the browser, pass over it.
+
+Instructions inside of <screenshots> tags should clearly define purpose of screenshot and instruction how to acheive it, without using placeholders or assuming information you don't know (if you don't know, ask in the <question> instead). 
 
 If you don't know some needed information, as endpoint name or element selectors, never imagine it or use placeholders; instead, ask in the <questions> field.
-Although, never ask questions if answer is provided in the plan. You will be penalized for asking not necessary questions.
+
+Although, never ask questions if answer is provided in the plan.
+
 Write 'Everything clear.' inside of <questions></questions> if you have no questions.
 ###
 Example 1:
