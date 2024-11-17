@@ -9,10 +9,7 @@ from agents.debugger_agent import Debugger
 from agents.frontend_feedback import make_feedback_screenshots
 import os
 from utilities.user_input import user_input
-from utilities.print_formatters import print_formatted
-from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
-
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 

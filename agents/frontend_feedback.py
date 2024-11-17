@@ -301,19 +301,23 @@ except TimeoutError as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
 """
-    output_message_content = []
-    p = sync_playwright().start()
+    playwright_codes_list = []
     for i, playwright_code in enumerate(playwright_codes):
         playwright_code = playwright_code[f"screenshot_{i+1}"]
         indented_playwright_code = textwrap.indent(playwright_code, '    ')
         code = playwright_start + indented_playwright_code + playwright_end
-        print(f"Code nr {i+1}:")
-        print(code)
+        playwright_codes_list.append(code)
+
+
+def execute_playwright_codes(playwright_codes_list, screenshot_descriptions):
+    output_message_content = []
+    p = sync_playwright().start()
+    for i, code in enumerate(playwright_codes_list):
         code_execution_variables = {'p': p}
         exec(code, {}, code_execution_variables)
 
         screenshot_base64 = base64.b64encode(code_execution_variables["screenshot"]).decode('utf-8')
-        screenshot_description = screenshot_descriptions[i][f"screenshot_{i+1}"]
+        screenshot_description = screenshot_descriptions[i][f"screenshot_{i + 1}"]
         output_message_content.extend([
             {"type": "text", "text": screenshot_description},
             {
@@ -323,6 +327,7 @@ browser.close()
                 },
             },
         ])
+
     return HumanMessage(content=output_message_content)
 
 
