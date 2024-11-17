@@ -1,15 +1,11 @@
 import os
 from langchain_openai.chat_models import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.tools import tool
+from langchain_core.messages import HumanMessage
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.llms import llm_open_router
-from utilities.print_formatters import print_formatted
 from utilities.start_project_functions import read_frontend_feedback_story
-from utilities.util_functions import (
-    check_file_contents, check_application_logs, render_tools, find_tools_json
-)
+import base64
 from langchain.output_parsers import XMLOutputParser
 import textwrap
 from playwright.sync_api import sync_playwright
@@ -29,9 +25,6 @@ if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "VFeedback"}))
 
 llm = llms[0].with_fallbacks(llms[1:])
-
-story = read_frontend_feedback_story()
-story = story.format(frontend_port=5173)
 
 # read prompt from file
 parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -266,6 +259,8 @@ def debug_print(response):
 
 
 def make_feedback_screenshots(task, plan, work_dir):
+    story = read_frontend_feedback_story()
+    story = story.format(frontend_port=os.environ["FRONTEND_PORT"])
     scenarios_planning_prompt = scenarios_planning_prompt_template.format(
         task=task,
         plan=plan,
@@ -273,12 +268,11 @@ def make_feedback_screenshots(task, plan, work_dir):
     xml_parser_chain = llm | debug_print | XMLOutputParser()
     response = xml_parser_chain.invoke(scenarios_planning_prompt)
     questions = response["response"][1]["questions"]
-    print({"questions": questions})
 
-    screenshots = response["response"][2]["screenshots"]
+    screenshot_descriptions = response["response"][2]["screenshots"]
 
     screenshots_xml = ""
-    for i, screenshot in enumerate(screenshots):
+    for i, screenshot in enumerate(screenshot_descriptions):
         screenshots_xml += f"<screenshot_{i+1}>{screenshot[f'screenshot_{i+1}']}</screenshot_{i+1}>\n"
 
     # fulfill the mussing informations
@@ -302,12 +296,12 @@ page = browser.new_page()
 try:
 """
     playwright_end = """
-    
-    output = "Screenshot done properly"
+    screenshot = page.screenshot()
 except TimeoutError as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
 """
+    output_message_content = []
     p = sync_playwright().start()
     for i, playwright_code in enumerate(playwright_codes):
         playwright_code = playwright_code[f"screenshot_{i+1}"]
@@ -317,7 +311,19 @@ browser.close()
         print(code)
         code_execution_variables = {'p': p}
         exec(code, {}, code_execution_variables)
-        #code_execution_variables["output"]
+
+        screenshot_base64 = base64.b64encode(code_execution_variables["screenshot"]).decode('utf-8')
+        screenshot_description = screenshot_descriptions[i][f"screenshot_{i+1}"]
+        output_message_content.extend([
+            {"type": "text", "text": screenshot_description},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:image/png;base64,{screenshot_base64}",
+                },
+            },
+        ])
+    return HumanMessage(content=output_message_content)
 
 
 if __name__ == "__main__":

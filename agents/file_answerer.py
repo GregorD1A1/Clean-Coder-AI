@@ -44,7 +44,7 @@ def final_response_file_answerer(answer, additional_materials):
 #llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
 if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "File Answerer"}))
 if openai_api_key:

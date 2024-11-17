@@ -6,6 +6,7 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langchain_core.load import dumps, loads
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
@@ -15,9 +16,10 @@ from langchain_community.chat_models import ChatOllama
 from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
-from utilities.util_functions import render_tools
+from utilities.util_functions import render_tools, join_paths
 from utilities.start_project_functions import create_project_description_file
 from utilities.llms import llm_open_router
+import json
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -82,6 +84,7 @@ system_message = SystemMessage(
 def call_model_manager(state):
     state = call_model(state, llms)
     state = cut_off_context(state)
+    save_messages_to_disk(state)
     return state
 
 
@@ -123,6 +126,12 @@ def cut_off_context(state):
     return state
 
 
+def save_messages_to_disk(state):
+    messages_string = dumps(state["messages"])
+    with open(join_paths(work_dir, ".clean_coder/manager_messages.json"), "w") as f:
+        json.dump(messages_string, f)
+
+
 # workflow definition
 manager_workflow = StateGraph(AgentState)
 manager_workflow.add_node("agent", call_model_manager)
@@ -135,14 +144,23 @@ manager = manager_workflow.compile()
 
 def run_manager():
     print("Manager starting its work")
-    project_tasks = get_project_tasks()
-    progress_description = read_progress_description()
-    tasks_and_progress_msg = HumanMessage(
-        content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
-        tasks_and_progress_message=True
-    )
-    start_human_message = HumanMessage(content="Go")    # Claude needs to have human message always as first
-    inputs = {"messages": [system_message, tasks_and_progress_msg, start_human_message]}
+    saved_messages_path = join_paths(work_dir, ".clean_coder/manager_messages.json")
+    if not os.path.exists(saved_messages_path):
+        # new start
+        project_tasks = get_project_tasks()
+        progress_description = read_progress_description()
+        tasks_and_progress_msg = HumanMessage(
+            content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
+            tasks_and_progress_message=True
+        )
+        start_human_message = HumanMessage(content="Go")    # Claude needs to have human message always as first
+        messages = [system_message, tasks_and_progress_msg, start_human_message]
+    else:
+        # continue previous work
+        with open(saved_messages_path, "r") as fp:
+            messages = loads(json.load(fp))
+
+    inputs = {"messages": messages}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
 
