@@ -33,22 +33,19 @@ def final_response_debugger(test_instruction):
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
 implemented changes work correctly."""
-    print_formatted(test_instruction, color="blue")
+    pass
 
-
-# llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
-# llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(
         ChatAnthropic(
-            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
+            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=60
         ).with_config({"run_name": "Debugger"})
     )
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Debugger"}))
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Debugger"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Debugger"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Debugger"}))
 
@@ -76,24 +73,24 @@ class Debugger():
         self.visual_feedback = vfeedback_screenshots_msg
 
         # workflow definition
-        executor_workflow = StateGraph(AgentState)
+        debugger_workflow = StateGraph(AgentState)
 
-        executor_workflow.add_node("agent", self.call_model_debugger)
-        executor_workflow.add_node("tool", self.call_tool_debugger)
-        executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human_help", agent_looped_human_help)
-        executor_workflow.add_node("human_end_process_confirmation", ask_human)
+        debugger_workflow.add_node("agent", self.call_model_debugger)
+        debugger_workflow.add_node("tool", self.call_tool_debugger)
+        debugger_workflow.add_node("check_log", self.check_log)
+        debugger_workflow.add_node("human_help", agent_looped_human_help)
+        debugger_workflow.add_node("human_end_process_confirmation", ask_human)
 
-        executor_workflow.set_entry_point("agent")
+        debugger_workflow.set_entry_point("agent")
 
         # executor_workflow.add_edge("agent", "checker")
-        executor_workflow.add_edge("tool", "agent")
-        executor_workflow.add_edge("human_help", "agent")
-        executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
-        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
-        executor_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
+        debugger_workflow.add_edge("tool", "agent")
+        debugger_workflow.add_edge("human_help", "agent")
+        debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
+        debugger_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
+        debugger_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
 
-        self.executor = executor_workflow.compile()
+        self.debugger = debugger_workflow.compile()
 
     # node functions
     def call_model_debugger(self, state):
@@ -137,7 +134,7 @@ class Debugger():
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response":
+        elif last_message.json5_tool_calls[0]["tool"] == "final_response_debugger":
             return "check_log" if log_file_path else "human_end_process_confirmation"
         else:
             return "tool"
@@ -173,7 +170,7 @@ class Debugger():
         ]}
         if self.visual_feedback:
             inputs["messages"].append(self.visual_feedback)
-        self.executor.invoke(inputs, {"recursion_limit": 150})
+        self.debugger.invoke(inputs, {"recursion_limit": 150})
 
 
 def prepare_tools(work_dir):

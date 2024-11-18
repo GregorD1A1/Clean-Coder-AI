@@ -159,7 +159,10 @@ def print_tool_message(tool_name, tool_input=None):
         else:
             print_code_snippet(code=tool_input["test_instruction"], extension='text', title='Instruction:')
     elif tool_name == 'final_response_debugger':
-        print_code_snippet(code=tool_input, extension='text', title='Instruction:')
+        if isinstance(tool_input, str):
+            print_code_snippet(code=tool_input, extension='text', title='Instruction:')
+        else:
+            print_code_snippet(code=tool_input["test_instruction"], extension='text', title='Instruction:')
         print_formatted("Have any questions about Clean Coder or want to share your experience? Check out our Discord server https://discord.com/invite/8gat7Pv7QJ 😉", color='green')
     else:
         message = f"Calling {tool_name} tool..."
