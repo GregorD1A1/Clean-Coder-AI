@@ -19,6 +19,7 @@ from utilities.langgraph_common_functions import (call_model, call_tool, bad_jso
 from utilities.util_functions import render_tools, join_paths
 from utilities.start_project_functions import create_project_description_file
 from utilities.llms import llm_open_router
+from utilities.print_formatters import print_formatted
 import json
 import os
 import warnings
@@ -143,7 +144,7 @@ manager = manager_workflow.compile()
 
 
 def run_manager():
-    print("Manager starting its work")
+    print_formatted("😀 Hello! I'm Manager agent. Let's plan your project together!", color="green")
     saved_messages_path = join_paths(work_dir, ".clean_coder/manager_messages.json")
     if not os.path.exists(saved_messages_path):
         # new start
