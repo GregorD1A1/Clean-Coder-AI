@@ -2,7 +2,6 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
-from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -43,16 +42,14 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
     """
     pass
 
-#llm = ChatOllama(model="gemma2:9b-instruct-fp16")
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
-#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
 llms = []
 if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Researcher"}))
 if openai_api_key:
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "Researcher"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Researcher"}))
 

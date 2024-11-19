@@ -226,7 +226,6 @@ commands: [
 {"action": "wait", "value": 5000},
 ],
 """
-        #try:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         if login_required:
@@ -285,3 +284,4 @@ if __name__ == '__main__':
 
         ]
     })
+

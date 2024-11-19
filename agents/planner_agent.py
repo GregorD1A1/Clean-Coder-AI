@@ -7,7 +7,8 @@ from dotenv import load_dotenv, find_dotenv
 
 from utilities.print_formatters import print_formatted, print_formatted_content
 from utilities.util_functions import check_file_contents, convert_images, get_joke
-from utilities.langgraph_common_functions import ask_human, after_ask_human_condition
+from utilities.langgraph_common_functions import after_ask_human_condition
+from utilities.user_input import user_input
 import os
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
@@ -18,11 +19,11 @@ load_dotenv(find_dotenv())
 
 llms_planners = []
 if os.getenv("OPENAI_API_KEY"):
-    llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+    llms_planners.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=90).with_config({"run_name": "Planer"}))
 if os.getenv("OPENROUTER_API_KEY"):
-    llms_planners.append(llm_open_router("openai/gpt-4o").with_config({"run_name": "Planer"}))
+    llms_planners.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Planer"}))
 if os.getenv("ANTHROPIC_API_KEY"):
-    llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.3, timeout=120).with_config({"run_name": "Planer"}))
+    llms_planners.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.3, timeout=90).with_config({"run_name": "Planer"}))
 if os.getenv("OLLAMA_MODEL"):
     llms_planners.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Planer"}))
 
@@ -51,7 +52,6 @@ voter_system_message = SystemMessage(content=voter_system_prompt_template)
 def call_planers(state):
     messages = state["messages"]
     nr_plans = 3
-    print(f"\nGenerating plan propositions. While I'm thinking...\n")
     print_formatted(get_joke(), color="green")
     plan_propositions_messages = llm_planner.batch([messages for _ in range(nr_plans)])
     for i, proposition in enumerate(plan_propositions_messages):
@@ -75,6 +75,17 @@ def call_planers(state):
     return state
 
 
+def ask_human_planner(state):
+    human_message = user_input("Type (o)k if you accept or provide commentary.")
+    if human_message in ['o', 'ok']:
+        state["messages"].append(HumanMessage(content="Approved by human"))
+    else:
+        state["messages"].append(HumanMessage(
+            content=f"Plan been rejected by human. Improve it following his commentary: {human_message}"
+        ))
+    return state
+
+
 def call_model_corrector(state):
     messages = state["messages"]
     response = llm_planner.invoke(messages)
@@ -89,7 +100,7 @@ researcher_workflow = StateGraph(AgentState)
 
 researcher_workflow.add_node("planers", call_planers)
 researcher_workflow.add_node("agent", call_model_corrector)
-researcher_workflow.add_node("human", ask_human)
+researcher_workflow.add_node("human", ask_human_planner)
 researcher_workflow.set_entry_point("planers")
 
 researcher_workflow.add_edge("planers", "human")
@@ -100,7 +111,7 @@ researcher = researcher_workflow.compile()
 
 
 def planning(task, text_files, image_paths, work_dir):
-    print_formatted("\nPlanner starting its work", color="blue")
+    print_formatted("📈 Planner here! Create plan of changes with me!", color="light_blue")
     file_contents = check_file_contents(text_files, work_dir, line_numbers=False)
     images = convert_images(image_paths)
     message_content_without_imgs = f"Task: {task},\n\nFiles:\n{file_contents}"

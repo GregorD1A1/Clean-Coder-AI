@@ -28,27 +28,24 @@ frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
-def final_response(test_instruction):
+def final_response_debugger(test_instruction):
     """Call that tool when all changes are implemented to tell the job is done.
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
 implemented changes work correctly."""
-    print_formatted(test_instruction, color="blue")
+    pass
 
-
-# llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
-# llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(
         ChatAnthropic(
-            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
+            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=60
         ).with_config({"run_name": "Debugger"})
     )
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Debugger"}))
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120).with_config({"run_name": "Debugger"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Debugger"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Debugger"}))
 
@@ -63,7 +60,7 @@ with open(f"{parent_dir}/prompts/debugger_system.prompt", "r") as f:
 
 
 class Debugger():
-    def __init__(self, files, work_dir, human_feedback):
+    def __init__(self, files, work_dir, human_feedback, vfeedback_screenshots_msg=None):
         self.work_dir = work_dir
         tools = prepare_tools(work_dir)
         rendered_tools = render_tools(tools)
@@ -73,26 +70,27 @@ class Debugger():
         )
         self.files = files
         self.human_feedback = human_feedback
+        self.visual_feedback = vfeedback_screenshots_msg
 
         # workflow definition
-        executor_workflow = StateGraph(AgentState)
+        debugger_workflow = StateGraph(AgentState)
 
-        executor_workflow.add_node("agent", self.call_model_debugger)
-        executor_workflow.add_node("tool", self.call_tool_debugger)
-        executor_workflow.add_node("check_log", self.check_log)
-        executor_workflow.add_node("human_help", agent_looped_human_help)
-        executor_workflow.add_node("human_end_process_confirmation", ask_human)
+        debugger_workflow.add_node("agent", self.call_model_debugger)
+        debugger_workflow.add_node("tool", self.call_tool_debugger)
+        debugger_workflow.add_node("check_log", self.check_log)
+        debugger_workflow.add_node("human_help", agent_looped_human_help)
+        debugger_workflow.add_node("human_end_process_confirmation", ask_human)
 
-        executor_workflow.set_entry_point("agent")
+        debugger_workflow.set_entry_point("agent")
 
         # executor_workflow.add_edge("agent", "checker")
-        executor_workflow.add_edge("tool", "agent")
-        executor_workflow.add_edge("human_help", "agent")
-        executor_workflow.add_conditional_edges("agent", self.after_agent_condition)
-        executor_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
-        executor_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
+        debugger_workflow.add_edge("tool", "agent")
+        debugger_workflow.add_edge("human_help", "agent")
+        debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
+        debugger_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
+        debugger_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
 
-        self.executor = executor_workflow.compile()
+        self.debugger = debugger_workflow.compile()
 
     # node functions
     def call_model_debugger(self, state):
@@ -136,7 +134,7 @@ class Debugger():
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response":
+        elif last_message.json5_tool_calls[0]["tool"] == "final_response_debugger":
             return "check_log" if log_file_path else "human_end_process_confirmation"
         else:
             return "tool"
@@ -155,12 +153,14 @@ class Debugger():
         state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
-        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
+        file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
+        file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
         state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
         return state
 
     def do_task(self, task, plan, text_files):
-        print_formatted("Debugger starting its work", color="blue")
+        print_formatted("Debugger starting its work", color="green")
+        print_formatted("🛠️ Need to improve your code? I can help!", color="light_blue")
         file_contents = check_file_contents(text_files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
@@ -168,7 +168,9 @@ class Debugger():
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True),
             HumanMessage(content=f"Human feedback: {self.human_feedback}")
         ]}
-        self.executor.invoke(inputs, {"recursion_limit": 150})
+        if self.visual_feedback:
+            inputs["messages"].append(self.visual_feedback)
+        self.debugger.invoke(inputs, {"recursion_limit": 150})
 
 
 def prepare_tools(work_dir):
@@ -177,7 +179,7 @@ def prepare_tools(work_dir):
     replace_code = prepare_replace_code_tool(work_dir)
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
-    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response]
+    tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response_debugger]
     #if frontend_port:
     #    watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
     #    tools.append(watch_web_page_tool)

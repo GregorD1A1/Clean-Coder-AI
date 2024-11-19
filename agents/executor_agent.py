@@ -29,7 +29,7 @@ frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
-def finish(test_instruction):
+def final_response_executor(test_instruction):
     """Call that tool when all plan steps are implemented to finish your job.
 tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
@@ -42,12 +42,12 @@ implemented changes work correctly."""
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(
-        model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=120
+        model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=60
     ).with_config({"run_name": "Executor"}))
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Executor"}))
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "Executor"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Executor"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Executor"}))
 
@@ -123,7 +123,7 @@ class Executor():
 
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "finish":
+        elif last_message.json5_tool_calls[0]["tool"] == "final_response_executor":
             return END
         else:
             return "tool"
@@ -134,12 +134,14 @@ class Executor():
         state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
         # Add new file contents
         file_contents = check_file_contents(self.files, self.work_dir)
-        file_contents_msg = HumanMessage(content=f"File contents:\n{file_contents}", contains_file_contents=True)
+        file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
+        file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
         state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
         return state
 
     def do_task(self, task, plan):
-        print_formatted("\nExecutor starting its work", color="blue")
+        print_formatted("Executor starting its work", color="green")
+        print_formatted("✅ I follow the plan and will implement necessary changes!", color="light_blue")
         file_contents = check_file_contents(self.files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
@@ -156,6 +158,6 @@ def prepare_tools(work_dir):
     replace_code = prepare_replace_code_tool(work_dir)
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
-    tools = [replace_code, insert_code, create_file, ask_human_tool, finish]
+    tools = [replace_code, insert_code, create_file, ask_human_tool, final_response_executor]
 
     return tools
