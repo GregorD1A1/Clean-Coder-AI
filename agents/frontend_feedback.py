@@ -10,6 +10,9 @@ from langchain.output_parsers import XMLOutputParser
 import textwrap
 from playwright.sync_api import sync_playwright
 from agents.file_answerer import ResearchFileAnswerer
+from typing import Optional, List
+from typing_extensions import Annotated, TypedDict
+from pydantic import BaseModel, Field
 
 
 llms = []
@@ -33,6 +36,25 @@ with open(f"{parent_dir}/prompts/frontend_feedback_code_writing.prompt", "r") as
 with open(f"{parent_dir}/prompts/frontend_feedback_scenarios_planning.prompt", "r") as f:
     scenarios_planning_prompt_template = f.read()
 
+
+class ScreenshotDescriptionsStructure(BaseModel):
+    analysis: Annotated[str, ..., """
+1. Summarize the task given to the programmer
+2. Break down the programmer's plan into key steps
+3. Identify which steps potentially affect the frontend
+4. List potential frontend elements that might be changed
+5. Determine the minimum number of screenshots needed to verify the changes
+[Explain your thought process for each step]
+"""]
+    questions: Annotated[Optional[str], None, "[List any questions you have about missing information here. If you have no questions, write 'Everything clear.']"]
+    screenshots: Annotated[Optional[List[str]], None, """
+<screenshot_1>
+[Clear instruction for the first screenshot]
+</screenshot_1>
+<screenshot_2>
+[Clear instruction for the second screenshot, if needed]
+</screenshot_2>
+[Add more screenshot instructions as necessary]"""]
 
 task = """Create Page for Intern Profile Editing
 1. Implement a new page in the frontend where interns can update their profile information.
@@ -258,33 +280,35 @@ def debug_print(response):
     return response
 
 
-def make_feedback_screenshots(task, plan, work_dir):
+def write_screenshot_codes(task, plan, work_dir):
     story = read_frontend_feedback_story()
     story = story.format(frontend_port=os.environ["FRONTEND_PORT"])
     scenarios_planning_prompt = scenarios_planning_prompt_template.format(
         task=task,
         plan=plan,
     )
-    xml_parser_chain = llm | debug_print | XMLOutputParser()
-    response = xml_parser_chain.invoke(scenarios_planning_prompt)
-    questions = response["response"][1]["questions"]
+    llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure)
+    xml_parser_chain = llm_screenshot_descriptions | debug_print | XMLOutputParser()
+    #response = xml_parser_chain.invoke(scenarios_planning_prompt)
+    response = llm_screenshot_descriptions.invoke(scenarios_planning_prompt)
+    questions = response.questions
 
-    screenshot_descriptions = response["response"][2]["screenshots"]
+    screenshot_descriptions = response.screenshots
 
-    screenshots_xml = ""
+    screenshots_descriptions_formatted = ""
     for i, screenshot in enumerate(screenshot_descriptions):
-        screenshots_xml += f"<screenshot_{i+1}>{screenshot[f'screenshot_{i+1}']}</screenshot_{i+1}>\n"
+        screenshots_descriptions_formatted += f"<screenshot_{i+1}>{screenshot}</screenshot_{i+1}>\n"
 
-    # fulfill the mussing informations
+    # fulfill the missing informations
     if questions.strip() != "Everything clear.":
-        print(f"I have a questions:{questions}")
+        print(f"I have a questions:\n{questions}")
         file_answerer = ResearchFileAnswerer(work_dir=work_dir)
         answers = file_answerer.research_and_answer(questions)
-        screenshots_xml += answers
+        screenshots_descriptions_formatted += f"\nAdditional info:\n{str(answers)}"
 
-    print("screenshots_xml:\n", screenshots_xml)
+    print("screenshots_xml:\n", screenshots_descriptions_formatted)
     print("end of screenshots xml")
-    final_output_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_xml)
+    final_output_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
 
     playwright_codes = xml_parser_chain.invoke(final_output_prompt)["response"]
     playwright_start = """
@@ -308,8 +332,10 @@ browser.close()
         code = playwright_start + indented_playwright_code + playwright_end
         playwright_codes_list.append(code)
 
+    return playwright_codes_list, screenshot_descriptions
 
-def execute_playwright_codes(playwright_codes_list, screenshot_descriptions):
+
+def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
     output_message_content = []
     p = sync_playwright().start()
     for i, code in enumerate(playwright_codes_list):
@@ -332,4 +358,4 @@ def execute_playwright_codes(playwright_codes_list, screenshot_descriptions):
 
 
 if __name__ == "__main__":
-    make_feedback_screenshots(task, plan, "E://Eksperiments/Hacker_news_scraper")
+    write_screenshot_codes(task, plan, "E://Eksperiments/Hacker_news_scraper")

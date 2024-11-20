@@ -23,6 +23,33 @@ Your goal is to provide clear instructions for taking screenshots that will effe
 7. Ignore different layout sizes (such as mobile) and any interactions outside the browser.
 8. Limit test scenarios to operations that can be performed directly within the application under test. Exclude screenshots that require accessing external systems like email clients or operating system functions etc.
 
+Use the following structure for your response:
+
+<response>
+<analysis>
+1. Summarize the task given to the programmer
+2. Break down the programmer's plan into key steps
+3. Identify which steps potentially affect the frontend
+4. List potential frontend elements that might be changed
+5. Determine the minimum number of screenshots needed to verify the changes
+[Explain your thought process for each step]
+</analysis>
+
+<questions>
+[List any questions you have about missing information here. If you have no questions, write "Everything clear."]
+</questions>
+
+<screenshots>
+<screenshot_1>
+[Clear instruction for the first screenshot]
+</screenshot_1>
+<screenshot_2>
+[Clear instruction for the second screenshot, if needed]
+</screenshot_2>
+[Add more screenshot instructions as necessary]
+</screenshots>
+</response>
+
 Remember:
 - Never imagine or use placeholders for missing information. Always ask in the <questions> section if you need more details.
 - Provide as few screenshots as possible, focusing only on what's truly needed to verify the implementation.
