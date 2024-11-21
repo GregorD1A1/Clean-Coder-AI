@@ -48,6 +48,10 @@ class ScreenshotDescriptionsStructure(BaseModel):
 6. Think if we can get rid of some of them
 [Explain your thought process for each step]
 """)
+    questions: Optional[str] = Field(
+        default=None,
+        description="[List questions you have about missing information here.]"
+    )
     screenshots: Optional[List[str]] = Field(default=None, description="""
 <screenshot_1>
 [Clear instruction for the first screenshot]
@@ -56,9 +60,7 @@ class ScreenshotDescriptionsStructure(BaseModel):
 [Clear instruction for the second screenshot, if needed]
 </screenshot_2>
 [Add more screenshot instructions as necessary]""")
-    questions: Optional[str] = Field(
-        default=None, description="[List any questions you have about missing information here, but ONLY if absolutely essential information is missing.]"
-    )
+
 
 
 task = """Create Page for Intern Profile Editing
