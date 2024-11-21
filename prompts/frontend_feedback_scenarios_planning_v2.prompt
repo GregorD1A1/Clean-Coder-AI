@@ -32,6 +32,7 @@ Use the following structure for your response:
 3. Identify which steps potentially affect the frontend
 4. List potential frontend elements that might be changed
 5. Determine the minimum number of screenshots needed to verify the changes
+6. Think if we can get rid of some of them
 [Explain your thought process for each step]
 </analysis>
 

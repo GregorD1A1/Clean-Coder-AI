@@ -38,23 +38,28 @@ with open(f"{parent_dir}/prompts/frontend_feedback_scenarios_planning.prompt", "
 
 
 class ScreenshotDescriptionsStructure(BaseModel):
-    analysis: Annotated[str, ..., """
+    """Output structure"""
+    analysis: str = Field(description="""
 1. Summarize the task given to the programmer
 2. Break down the programmer's plan into key steps
 3. Identify which steps potentially affect the frontend
 4. List potential frontend elements that might be changed
 5. Determine the minimum number of screenshots needed to verify the changes
+6. Think if we can get rid of some of them
 [Explain your thought process for each step]
-"""]
-    questions: Annotated[Optional[str], None, "[List any questions you have about missing information here. If you have no questions, write 'Everything clear.']"]
-    screenshots: Annotated[Optional[List[str]], None, """
+""")
+    screenshots: Optional[List[str]] = Field(default=None, description="""
 <screenshot_1>
 [Clear instruction for the first screenshot]
 </screenshot_1>
 <screenshot_2>
 [Clear instruction for the second screenshot, if needed]
 </screenshot_2>
-[Add more screenshot instructions as necessary]"""]
+[Add more screenshot instructions as necessary]""")
+    questions: Optional[str] = Field(
+        default=None, description="[List any questions you have about missing information here, but ONLY if absolutely essential information is missing.]"
+    )
+
 
 task = """Create Page for Intern Profile Editing
 1. Implement a new page in the frontend where interns can update their profile information.
@@ -286,10 +291,10 @@ def write_screenshot_codes(task, plan, work_dir):
     scenarios_planning_prompt = scenarios_planning_prompt_template.format(
         task=task,
         plan=plan,
+        story=story,
     )
     llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure)
     xml_parser_chain = llm_screenshot_descriptions | debug_print | XMLOutputParser()
-    #response = xml_parser_chain.invoke(scenarios_planning_prompt)
     response = llm_screenshot_descriptions.invoke(scenarios_planning_prompt)
     questions = response.questions
 
@@ -300,7 +305,7 @@ def write_screenshot_codes(task, plan, work_dir):
         screenshots_descriptions_formatted += f"<screenshot_{i+1}>{screenshot}</screenshot_{i+1}>\n"
 
     # fulfill the missing informations
-    if questions.strip() != "Everything clear.":
+    if questions:
         print(f"I have a questions:\n{questions}")
         file_answerer = ResearchFileAnswerer(work_dir=work_dir)
         answers = file_answerer.research_and_answer(questions)
