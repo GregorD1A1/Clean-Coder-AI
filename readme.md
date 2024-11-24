@@ -51,6 +51,8 @@ You can also [deploy with Docker](https://clean-coder.dev/quick_start/run_with_d
 
 ## 📺 Demo videos
 
+Create an entire web app ~~with~~ by Clean Coder:
+
 <div align="center">
 <a href="https://youtu.be/aNpB-Tw-YPw" title="Greg's Tech video">
   <img src="https://img.youtube.com/vi/aNpB-Tw-YPw/maxresdefault.jpg" width="600" alt="Demo video">
