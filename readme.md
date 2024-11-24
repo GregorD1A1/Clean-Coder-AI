@@ -13,10 +13,12 @@
   <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
   <br>
   <td>
-    <a href="https://clean-coder.dev" target="_blank">
+    <a href="https://clean-coder.dev" target="_blank" rel="noopener noreferrer">
       <img alt="Docs" src="https://img.shields.io/badge/docs-latest-green">
     </a>
-    <img alt="Discord" src="https://img.shields.io/discord/1300541717178744903">
+    <a href="https://discord.gg/8gat7Pv7QJ" target="_blank" rel="noopener noreferrer">
+      <img alt="Discord" src="https://img.shields.io/discord/1300541717178744903">
+    </a>
   </td>
   <img src="/assets/CC_diagram_full.png" alt="Logo">
 </div>
