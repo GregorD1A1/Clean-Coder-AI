@@ -1,3 +1,7 @@
+"""
+Functions called when new project is initialized.
+"""
+
 import os
 from utilities.user_input import user_input
 from utilities.print_formatters import print_formatted

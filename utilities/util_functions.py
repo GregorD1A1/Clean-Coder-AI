@@ -4,10 +4,10 @@ import os
 import xml.etree.ElementTree as ET
 import base64
 import requests
-from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
-
+from utilities.start_work_functions import file_folder_ignored, forbidden_files_and_folders
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
+
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
