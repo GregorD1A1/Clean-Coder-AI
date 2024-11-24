@@ -16,6 +16,7 @@
     <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
     <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
   </td>
+  <img src="/assets/CC_diagram_full.png" alt="Logo">
 </div>
 
 ## 🏖️ Relax and watch it code
