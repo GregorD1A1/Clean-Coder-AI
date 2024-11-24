@@ -12,8 +12,10 @@
   <br>
   <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
   <br>
+
 [![Docs](https://img.shields.io/badge/docs-latest-green)](https://clean-coder.dev)
 [![Discord](https://img.shields.io/discord/1300541717178744903)](https://discord.gg/8gat7Pv7QJ)
+
   <img src="/assets/CC_diagram_full.png" alt="Logo">
 </div>
 
