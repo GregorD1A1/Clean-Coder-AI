@@ -18,6 +18,8 @@
   </td>
 </div>
 
+### Tired of explaining AI what to do? Let Clean Coder handle it for you.
+
 ## 🏖️ Relax and watch it code
 
 ```

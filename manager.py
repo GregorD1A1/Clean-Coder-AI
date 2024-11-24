@@ -1,11 +1,13 @@
 if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
+from utilities.start_project_functions import dot_env_manager
+dot_env_manager()
 
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.load import dumps, loads
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
@@ -52,6 +54,7 @@ if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Manager"}))
+
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -164,6 +167,6 @@ def run_manager():
     inputs = {"messages": messages}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
-
 if __name__ == "__main__":
+
     run_manager()

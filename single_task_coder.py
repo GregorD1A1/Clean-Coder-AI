@@ -1,6 +1,8 @@
 if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
+from utilities.start_project_functions import dot_env_single_task
+dot_env_single_task()
 
 from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
