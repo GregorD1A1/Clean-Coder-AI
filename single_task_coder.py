@@ -14,6 +14,7 @@ from agents.frontend_feedback import write_screenshot_codes, execute_screenshot_
 import os
 from utilities.user_input import user_input
 from utilities.print_formatters import print_formatted
+from utilities.start_project_functions import set_up_dot_clean_coder_dir
 from concurrent.futures import ThreadPoolExecutor
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -49,8 +50,8 @@ def run_clean_coder_pipeline(task, work_dir):
     debugger.do_task(task, plan, file_paths)
 
 
-
 if __name__ == "__main__":
-    task = user_input("Provide task to be executed.")
     work_dir = os.getenv("WORK_DIR")
+    set_up_dot_clean_coder_dir(work_dir)
+    task = user_input("Provide task to be executed.")
     run_clean_coder_pipeline(task, work_dir)
