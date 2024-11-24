@@ -14,7 +14,7 @@
   <br>
   <td>
     <a href="https://clean-coder.dev">
-      <img alt="Docs" src="https://img.shields.io/badge/docs-latest-green">
+      <img alt="Docs" src="https://img.shields.io/badge/docs-latest-cyan">
     </a>
     <a href="https://discord.gg/8gat7Pv7QJ">
       <img alt="Discord" src="https://img.shields.io/discord/1300541717178744903">
