@@ -1,8 +1,14 @@
 if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
-from utilities.start_project_functions import dot_env_manager
-dot_env_manager()
+
+from dotenv import find_dotenv, load_dotenv
+from utilities.set_up_dotenv import set_up_env_manager, add_todoist_envs
+import os
+if not find_dotenv():
+    set_up_env_manager()
+elif load_dotenv(find_dotenv()) and not os.getenv("TODOIST_API_KEY"):
+    add_todoist_envs()
 
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic

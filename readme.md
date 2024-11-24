@@ -26,12 +26,6 @@ cd Clean-Coder-AI
 
 pip install -r requirements.txt
 
-# create file with envinronment variables from template
-cp .env.template .env
-
-# open .env in text editor, provide api keys and work directory, save and close
-nano .env
-
 python clean_coder_pipeline.py
 ```
 or (recommended) check detailed instructions [how to start in documentation](https://clean-coder.dev/quick_start/programmer_pipeline/).
@@ -58,6 +52,10 @@ Create an entire web app ~~with~~ by Clean Coder:
   <img src="https://img.youtube.com/vi/aNpB-Tw-YPw/maxresdefault.jpg" width="600" alt="Demo video">
 </a>
 </div>
+
+## ⛓️‍💥 Something got broken?
+
+Report bugs or propose new features for Clean Coder on our [Discord](https://discord.gg/8gat7Pv7QJ)!
 
 ## 🌱 Contibutions
 

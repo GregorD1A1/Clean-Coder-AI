@@ -1,8 +1,10 @@
 if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
-from utilities.start_project_functions import dot_env_single_task
-dot_env_single_task()
+from dotenv import find_dotenv
+from utilities.set_up_dotenv import set_up_env_coder_pipeline
+if not find_dotenv():
+    set_up_env_coder_pipeline()
 
 from agents.researcher_agent import Researcher
 from agents.planner_agent import planning
@@ -17,7 +19,7 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-use_frontend_feedback = bool(os.environ["FRONTEND_PORT"])
+use_frontend_feedback = bool(os.getenv("FRONTEND_PORT"))
 
 
 def run_clean_coder_pipeline(task, work_dir):
@@ -45,6 +47,7 @@ def run_clean_coder_pipeline(task, work_dir):
         return
     debugger = Debugger(file_paths, work_dir, human_message, vfeedback_screenshots_msg)
     debugger.do_task(task, plan, file_paths)
+
 
 
 if __name__ == "__main__":
