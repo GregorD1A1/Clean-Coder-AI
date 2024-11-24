@@ -5,9 +5,9 @@
   >
   <br>
   <img src="/assets/logo_wide_2.png" alt="Logo">
-  <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
+  <h2>Tired of explaining AI what to do? Let Clean Coder handle it for you.</h2>
   <br>
-  Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
+  Clean Coder is your 2-in-1 AI Scrum Master and Developer. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
   <br>
   <br>
   <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
@@ -17,8 +17,6 @@
     <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
   </td>
 </div>
-
-### Tired of explaining AI what to do? Let Clean Coder handle it for you.
 
 ## 🏖️ Relax and watch it code
 
