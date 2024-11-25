@@ -1,7 +1,7 @@
-langchain==0.3.7
-langchain-core==0.3.21
-langchain_community==0.3.4
-langgraph==0.2.52
+langchain==0.3.1
+langchain-core==0.3.15
+langchain_community==0.3.1
+langgraph==0.2.48
 langgraph-checkpoint-sqlite==2.0.1
 python-dotenv==1.0.1
 langchain_anthropic==0.2.1
