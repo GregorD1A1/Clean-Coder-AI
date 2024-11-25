@@ -3,7 +3,7 @@ import os
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
-from utilities.start_work_functions import file_folder_ignored, forbidden_files_and_folders
+from utilities.start_work_functions import file_folder_ignored, CoderIgnore
 from utilities.util_functions import join_paths
 from utilities.user_input import user_input
 from tools.rag.retrieval import retrieve
@@ -39,7 +39,7 @@ tool input:
 :param directory: Name of directory to list files in.
 """
         try:
-            if file_folder_ignored(directory, forbidden_files_and_folders):
+            if file_folder_ignored(directory, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
 
@@ -59,7 +59,7 @@ tool input:
 :param filename: Name and path of file to check.
 """
         try:
-            if file_folder_ignored(filename, forbidden_files_and_folders):
+            if file_folder_ignored(filename, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with {filename}."
             with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
                 lines = file.readlines()

@@ -11,12 +11,6 @@ except KeyError:
     raise Exception("Please set up your project folder as WORK_DIR parameter in .env")
 
 
-def read_coderignore():
-    coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
-    with open(coderignore_path, 'r') as file:
-        return [line.strip() for line in file if line.strip() and not line.startswith('#')]
-
-
 def read_frontend_feedback_story():
     frontend_feedback_story_path = os.path.join(work_dir, '.clean_coder', 'frontend_feedback_story.txt')
     if os.path.exists(frontend_feedback_story_path):
@@ -39,4 +33,18 @@ def file_folder_ignored(path, ignore_patterns):
     return False
 
 
-forbidden_files_and_folders = read_coderignore()
+class CoderIgnore:
+    forbidden_files_and_folders = None
+
+    @staticmethod
+    def read_coderignore():
+        coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
+        with open(coderignore_path, 'r') as file:
+            return [line.strip() for line in file if line.strip() and not line.startswith('#')]
+
+    @staticmethod
+    def get_forbidden():
+        if CoderIgnore.forbidden_files_and_folders is None:
+            CoderIgnore.forbidden_files_and_folders = CoderIgnore.read_coderignore()
+        return CoderIgnore.forbidden_files_and_folders
+

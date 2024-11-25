@@ -13,7 +13,7 @@ openai==1.50.2
 cohere==5.10.0
 langchain-cohere==0.3.0
 chromadb==0.4.21
-todoist-api-python==2.1.5
+todoist-api-python==2.1.7
 termcolor==2.4.0
 lxml==5.3.0
 sounddevice==0.5.0

@@ -187,4 +187,4 @@ tool_input:
 
 
 if __name__ == "__main__":
-    print(finish_project_planning.invoke({}))
+    add_task.invoke({"task_name":"Dziki pies", "task_description": "Jakis tam opis", "order": 0, "epic_id": None})
