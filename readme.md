@@ -14,7 +14,7 @@
   <br>
 
 [![Docs](https://img.shields.io/badge/docs-latest-blue)](https://clean-coder.dev)
-[![Discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=Join&color=darkgreen)](https://discord.gg/8gat7Pv7QJ)
+[![Discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=Join&color=brightgreen)](https://discord.gg/8gat7Pv7QJ)
 
   <img src="/assets/CC_diagram_full.png" alt="Logo">
 </div>
