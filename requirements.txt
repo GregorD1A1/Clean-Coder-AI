@@ -1,7 +1,8 @@
 langchain==0.3.1
-langchain-core==0.3.6
+langchain-core==0.3.15
 langchain_community==0.3.1
 langgraph==0.2.48
+langgraph-checkpoint==2.0.4
 langgraph-checkpoint-sqlite==2.0.1
 python-dotenv==1.0.1
 langchain_anthropic==0.2.1
@@ -13,7 +14,7 @@ openai==1.50.2
 cohere==5.10.0
 langchain-cohere==0.3.0
 chromadb==0.4.21
-todoist-api-python==2.1.5
+todoist-api-python==2.1.7
 termcolor==2.4.0
 lxml==5.3.0
 sounddevice==0.5.0

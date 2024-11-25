@@ -5,17 +5,18 @@
   >
   <br>
   <img src="/assets/logo_wide_2.png" alt="Logo">
-  <h2>Clean Coder: Your 2-in-1 AI Scrum Master and Developer</h2>
+  <h2>Tired of explaining AI what to do? Let Clean Coder handle it for you.</h2>
   <br>
-  Clean Coder is your AI-powered software project assistant. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
+  Clean Coder is your 2-in-1 AI Scrum Master and Developer. Delegate planning, managing, and coding to AI. Agents create tasks within Todoist, write code, and test it, helping you create great projects with minimal effort and stress!
   <br>
   <br>
   <h3>⭐️ Your star motivates me to introduce new cool features! ⭐️</h3>  
   <br>
-  <td>
-    <a href="https://clean-coder.dev/" target="_blank"><strong>Docs</strong></a>
-    <a href="https://discord.gg/8gat7Pv7QJ" target="_blank"><strong>Discord</strong></a>
-  </td>
+
+[![Docs](https://img.shields.io/badge/docs-latest-blue)](https://clean-coder.dev)
+[![Discord](https://img.shields.io/static/v1?logo=discord&label=discord&message=Join&color=brightgreen)](https://discord.gg/8gat7Pv7QJ)
+
+  <img src="/assets/CC_diagram_full.png" alt="Logo">
 </div>
 
 ## 🏖️ Relax and watch it code
@@ -25,12 +26,6 @@ git clone https://github.com/GregorD1A1/Clean-Coder-AI
 cd Clean-Coder-AI
 
 pip install -r requirements.txt
-
-# create file with envinronment variables from template
-cp .env.template .env
-
-# open .env in text editor, provide api keys and work directory, save and close
-nano .env
 
 python clean_coder_pipeline.py
 ```
@@ -51,11 +46,17 @@ You can also [deploy with Docker](https://clean-coder.dev/quick_start/run_with_d
 
 ## 📺 Demo videos
 
+Create an entire web app ~~with~~ by Clean Coder:
+
 <div align="center">
 <a href="https://youtu.be/aNpB-Tw-YPw" title="Greg's Tech video">
   <img src="https://img.youtube.com/vi/aNpB-Tw-YPw/maxresdefault.jpg" width="600" alt="Demo video">
 </a>
 </div>
+
+## ⛓️‍💥 Something got broken?
+
+Report bugs or propose new features for Clean Coder on our [Discord](https://discord.gg/8gat7Pv7QJ)!
 
 ## 🌱 Contibutions
 

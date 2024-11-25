@@ -2,10 +2,18 @@ if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
 
+from dotenv import find_dotenv, load_dotenv
+from utilities.set_up_dotenv import set_up_env_manager, add_todoist_envs
+import os
+if not find_dotenv():
+    set_up_env_manager()
+elif load_dotenv(find_dotenv()) and not os.getenv("TODOIST_API_KEY"):
+    add_todoist_envs()
+
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.load import dumps, loads
 from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
@@ -17,7 +25,7 @@ from utilities.manager_utils import read_project_description, read_progress_desc
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
 from utilities.util_functions import render_tools, join_paths
-from utilities.start_project_functions import create_project_description_file
+from utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
 from utilities.llms import llm_open_router
 from utilities.print_formatters import print_formatted
 import json
@@ -53,6 +61,10 @@ if os.getenv("ANTHROPIC_API_KEY"):
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Manager"}))
 
+
+set_up_dot_clean_coder_dir(work_dir)
+
+
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
@@ -60,7 +72,7 @@ class AgentState(TypedDict):
 if os.path.exists(os.path.join(work_dir, '.clean_coder/project_description.txt')):
     project_description = read_project_description()
 else:
-    project_description = create_project_description_file()
+    project_description = create_project_description_file(work_dir)
 
 tool_executor = ToolExecutor(tools)
 tasks_progress_template = """Actual list of tasks you planned in Todoist:
@@ -164,6 +176,6 @@ def run_manager():
     inputs = {"messages": messages}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
-
 if __name__ == "__main__":
+
     run_manager()

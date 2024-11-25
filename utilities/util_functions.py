@@ -4,10 +4,10 @@ import os
 import xml.etree.ElementTree as ET
 import base64
 import requests
-from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
-
+from utilities.start_work_functions import file_folder_ignored, CoderIgnore
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
+
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
@@ -26,7 +26,7 @@ def check_file_contents(files, work_dir, line_numbers=True):
 
 
 def watch_file(filename, work_dir, line_numbers=True):
-    if file_folder_ignored(filename, forbidden_files_and_folders):
+    if file_folder_ignored(filename, CoderIgnore.get_forbidden()):
         return "You are not allowed to work with this file."
     try:
         with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
@@ -147,8 +147,8 @@ def list_directory_tree(work_dir):
     tree = []
     for root, dirs, files in os.walk(work_dir):
         # Filter out forbidden directories and files
-        dirs[:] = [d for d in dirs if not file_folder_ignored(d, forbidden_files_and_folders)]
-        files = [f for f in files if not file_folder_ignored(f, forbidden_files_and_folders)]
+        dirs[:] = [d for d in dirs if not file_folder_ignored(d, CoderIgnore.get_forbidden())]
+        files = [f for f in files if not file_folder_ignored(f, CoderIgnore.get_forbidden())]
         rel_path = os.path.relpath(root, work_dir)
         depth = rel_path.count(os.sep)
         indent = "│ " * depth
@@ -191,6 +191,7 @@ def invoke_tool(tool_call, tools):
     tool_name_to_tool = {tool.name: tool for tool in tools}
     name = tool_call["name"]
     requested_tool = tool_name_to_tool[name]
+
     return requested_tool.invoke(tool_call["arguments"])
 
 
