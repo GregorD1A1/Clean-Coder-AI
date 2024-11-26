@@ -63,7 +63,7 @@ with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
 def call_model_researcher(state):
     state = call_model(state, llms, printing=False)
     last_message = state["messages"][-1]
-    if len(last_message.json5_tool_calls) > 1:
+    if hasattr(last_message, 'json5_tool_calls') and len(last_message.json5_tool_calls) > 1:
         # Filter out the tool call with "final_response_researcher"
         state["messages"][-1].json5_tool_calls = [
             tool_call for tool_call in last_message.json5_tool_calls
