@@ -63,10 +63,12 @@ with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
 def call_model_researcher(state):
     state = call_model(state, llms, printing=False)
     last_message = state["messages"][-1]
-    if len(last_message.json5_tool_calls) > 1 and any(
-            tool_call["tool"] == "final_response_file_answerer" for tool_call in last_message.json5_tool_calls):
-        state["messages"].append(
-            HumanMessage(content=finish_too_early_msg))
+    if len(last_message.json5_tool_calls) > 1:
+        # Filter out the tool call with "final_response_researcher"
+        state["messages"][-1].json5_tool_calls = [
+            tool_call for tool_call in last_message.json5_tool_calls
+            if tool_call["tool"] != "final_response_researcher"
+        ]
     return state
 
 
@@ -74,7 +76,7 @@ def call_model_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content in (bad_json_format_msg, finish_too_early_msg, no_json_msg):
+    if last_message.content in (bad_json_format_msg, no_json_msg):
         return "agent"
     elif last_message.json5_tool_calls[0]["tool"] == "final_response_file_answerer":
         return END
