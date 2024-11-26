@@ -12,11 +12,10 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from langchain_mistralai import ChatMistralAI
 from utilities.llms import llm_open_router
-from utilities.print_formatters import print_formatted
+from utilities.print_formatters import print_formatted, print_error
 from utilities.util_functions import (
-    check_file_contents, check_application_logs, render_tools, find_tools_json
+    check_file_contents, render_tools, find_tools_json, exchange_file_contents
 )
 from utilities.langgraph_common_functions import (
     call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help
@@ -96,7 +95,7 @@ class Executor():
         if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
             state["messages"].append(
                 HumanMessage(content=multiple_jsons_msg))
-            print_formatted("\nToo many jsons provided, asked to provide one.", color="yellow")
+            print_error("\nToo many jsons provided, asked to provide one.")
         return state
 
     def call_tool_executor(self, state):
@@ -105,7 +104,7 @@ class Executor():
         for tool_call in last_ai_message.json5_tool_calls:
             if tool_call["tool"] == "create_file_with_code":
                 self.files.add(tool_call["tool_input"]["filename"])
-        self.exchange_file_contents(state)
+        state = exchange_file_contents(state, self.files, self.work_dir)
         return state
 
     # Conditional edge functions
@@ -129,16 +128,6 @@ class Executor():
             return "tool"
 
     # just functions
-    def exchange_file_contents(self, state):
-        # Remove old one
-        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
-        # Add new file contents
-        file_contents = check_file_contents(self.files, self.work_dir)
-        file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
-        file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
-        state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
-        return state
-
     def do_task(self, task, plan):
         print_formatted("Executor starting its work", color="green")
         print_formatted("✅ I follow the plan and will implement necessary changes!", color="light_blue")

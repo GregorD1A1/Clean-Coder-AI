@@ -14,7 +14,7 @@ from langchain.prompts import PromptTemplate
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools
+from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents
 from utilities.llms import llm_open_router
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
@@ -108,7 +108,7 @@ class Debugger():
         for tool_call in last_ai_message.json5_tool_calls:
             if tool_call["tool"] == "create_file_with_code":
                 self.files.add(tool_call["tool_input"]["filename"])
-        self.exchange_file_contents(state)
+        state = exchange_file_contents(state, self.files, self.work_dir)
         return state
 
     def check_log(self, state):
@@ -148,15 +148,7 @@ class Debugger():
             return "agent"
 
     # just functions
-    def exchange_file_contents(self, state):
-        # Remove old one
-        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
-        # Add new file contents
-        file_contents = check_file_contents(self.files, self.work_dir)
-        file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
-        file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
-        state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
-        return state
+
 
     def do_task(self, task, plan, text_files):
         print_formatted("Debugger starting its work", color="green")

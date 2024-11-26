@@ -7,6 +7,7 @@ import requests
 from utilities.start_work_functions import file_folder_ignored, CoderIgnore
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
+from langchain_core.messages import HumanMessage
 
 
 load_dotenv(find_dotenv())
@@ -193,6 +194,17 @@ def invoke_tool(tool_call, tools):
     requested_tool = tool_name_to_tool[name]
 
     return requested_tool.invoke(tool_call["arguments"])
+
+
+def exchange_file_contents(state, files, work_dir):
+    # Remove old one
+    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
+    # Add new file contents
+    file_contents = check_file_contents(files, work_dir)
+    file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
+    file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
+    state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
+    return state
 
 
 if __name__ == "__main__":

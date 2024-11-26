@@ -6,6 +6,7 @@ from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir
 from agents.executor_agent import Executor
 from dotenv import load_dotenv, find_dotenv
 
+
 load_dotenv(find_dotenv())
 
 

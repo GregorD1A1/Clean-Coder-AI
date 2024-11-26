@@ -17,7 +17,7 @@ No '```' tags should be inside of json."""
 multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
 multiple actions, choose only one for now; rest you can execute later."""
 no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to execute an action."""
-
+finish_too_early_msg = TOOL_NOT_EXECUTED_WORD + """You want to call final response with other tool calls. Don't you finishing too early?"""
 
 # nodes
 # def call_model(state, llms, printing=True):
@@ -81,7 +81,7 @@ def call_model(state, llms, printing=True):
         print_formatted_content(response.content)
     state["messages"].append(response)
 
-    return _process_tool_calls(state, response, printing)
+    return _handle_potential_problems(state, response, printing)
 
 
 def _start_loading_animation():
@@ -113,7 +113,7 @@ def _get_llm_response(llms, messages, printing):
     sys.exit()
 
 
-def _process_tool_calls(state, response, printing):
+def _handle_potential_problems(state, response, printing):
     if response.json5_tool_calls == "No json found in response.":
         state["messages"].append(HumanMessage(content=no_json_msg))
         if printing:

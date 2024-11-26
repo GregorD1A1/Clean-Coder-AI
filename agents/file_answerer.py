@@ -1,8 +1,6 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
-from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.prebuilt.tool_executor import ToolExecutor
@@ -15,9 +13,8 @@ from tools.tools_coder_pipeline import (
 from tools.rag.retrieval import vdb_available
 from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
 from utilities.langgraph_common_functions import (
-    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+    call_model, call_tool, bad_json_format_msg, finish_too_early_msg, no_json_msg
 )
-from utilities.print_formatters import print_formatted
 from utilities.llms import llm_open_router
 import os
 
@@ -65,6 +62,11 @@ with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
 # node functions
 def call_model_researcher(state):
     state = call_model(state, llms, printing=False)
+    last_message = state["messages"][-1]
+    if len(last_message.json5_tool_calls) > 1 and any(
+            tool_call["tool"] == "final_response_file_answerer" for tool_call in last_message.json5_tool_calls):
+        state["messages"].append(
+            HumanMessage(content=finish_too_early_msg))
     return state
 
 
@@ -72,7 +74,7 @@ def call_model_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+    if last_message.content in (bad_json_format_msg, finish_too_early_msg, no_json_msg):
         return "agent"
     elif last_message.json5_tool_calls[0]["tool"] == "final_response_file_answerer":
         return END

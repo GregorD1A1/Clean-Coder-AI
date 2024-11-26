@@ -14,9 +14,9 @@ from tools.tools_coder_pipeline import (
 from tools.rag.retrieval import vdb_available
 from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
 from utilities.langgraph_common_functions import (
-    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, no_json_msg, finish_too_early_msg
 )
-from utilities.print_formatters import print_formatted
+from utilities.print_formatters import print_formatted, print_error
 from utilities.llms import llm_open_router
 import os
 
@@ -45,7 +45,7 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
 #llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 llms = []
 if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Researcher"}))
 if openai_api_key:
@@ -66,6 +66,11 @@ with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
 # node functions
 def call_model_researcher(state):
     state = call_model(state, llms)
+    last_message = state["messages"][-1]
+    if len(last_message.json5_tool_calls) > 1 and any(tool_call["tool"] == "final_response_researcher" for tool_call in last_message.json5_tool_calls):
+        state["messages"].append(
+            HumanMessage(content=finish_too_early_msg))
+        print_error("\nToo many jsons provided, asked to provide one.")
     return state
 
 
@@ -73,7 +78,7 @@ def call_model_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+    if last_message.content in (bad_json_format_msg, no_json_msg, finish_too_early_msg):
         return "agent"
     elif last_message.json5_tool_calls[0]["tool"] == "final_response_researcher":
         return "human"
@@ -109,6 +114,7 @@ class Researcher():
     # node functions
     def call_tool_researcher(self, state):
         return call_tool(state, self.tool_executor)
+
 
     # just functions
     def research_task(self, task):
