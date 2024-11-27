@@ -62,6 +62,12 @@ class ScreenshotDescriptionsStructure(BaseModel):
 [Add more screenshot instructions as necessary]""")
 
 
+class ScreenshotCodesStructure(BaseModel):
+    """List of playwright codes"""
+    screenshot_codes: List[str] = Field(description="""
+Provide here your playwright codes for each screenshot.
+""")
+
 
 task = """Create Page for Intern Profile Editing
 1. Implement a new page in the frontend where interns can update their profile information.
@@ -282,11 +288,6 @@ This plan outlines the necessary steps to create a new page for intern profile e
 """
 
 
-def debug_print(response):
-    print(response.content)
-    return response
-
-
 def write_screenshot_codes(task, plan, work_dir):
     story = read_frontend_feedback_story()
     story = story.format(frontend_port=os.environ["FRONTEND_PORT"])
@@ -296,7 +297,7 @@ def write_screenshot_codes(task, plan, work_dir):
         story=story,
     )
     llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure)
-    xml_parser_chain = llm_screenshot_descriptions | debug_print | XMLOutputParser()
+    llm_screenshot_codes = llm.with_structured_output(ScreenshotCodesStructure)
     response = llm_screenshot_descriptions.invoke(scenarios_planning_prompt)
     questions = response.questions
 
@@ -315,9 +316,9 @@ def write_screenshot_codes(task, plan, work_dir):
 
     print("screenshots_xml:\n", screenshots_descriptions_formatted)
     print("end of screenshots xml")
-    final_output_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
+    codes_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
 
-    playwright_codes = xml_parser_chain.invoke(final_output_prompt)["response"]
+    playwright_codes = llm_screenshot_codes.invoke(codes_prompt)
     playwright_start = """
 from playwright._impl._errors import TimeoutError
 

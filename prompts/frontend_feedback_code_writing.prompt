@@ -12,7 +12,7 @@ Here are rules about how to write your code:
 
 Example of your output:
 '''
-<response>
+<screenshot_codes>
 <screenshot_1>
 # Go to page
 page.goto(f'http://localhost:5173/registration', timeout=10000)
@@ -27,7 +27,7 @@ page.click('button[type="submit"]')
 # Go to page
 page.goto(f'http://localhost:5173/home', timeout=10000)
 </screenshot_2>
-</response>
+</screenshot_codes>
 '''
 
 Here are the important info about our frontend app you need to know:
