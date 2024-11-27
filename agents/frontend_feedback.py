@@ -1,7 +1,7 @@
 import os
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.messages import HumanMessage
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.llms import llm_open_router
 from utilities.start_work_functions import read_frontend_feedback_story
@@ -18,14 +18,14 @@ from pydantic import BaseModel, Field
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(
-        model='claude-3-5-haiku-20241022', temperature=0, max_tokens=2000, timeout=120
-    ).with_config({"run_name": "VFeedback"}))
+        model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
+    ))
 if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-haiku").with_config({"run_name": "VFeedback"}))
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet"))
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "VFeedback"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120))
 if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "VFeedback"}))
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")))
 
 llm = llms[0].with_fallbacks(llms[1:])
 
@@ -53,13 +53,8 @@ class ScreenshotDescriptionsStructure(BaseModel):
         description="[List questions you have about missing information here.]"
     )
     screenshots: Optional[List[str]] = Field(default=None, description="""
-<screenshot_1>
-[Clear instruction for the first screenshot]
-</screenshot_1>
-<screenshot_2>
-[Clear instruction for the second screenshot, if needed]
-</screenshot_2>
-[Add more screenshot instructions as necessary]""")
+['Clear instruction for the first screenshot', 'Clear instruction for the second screenshot, if needed', ...]
+""")
 
 
 class ScreenshotCodesStructure(BaseModel):
@@ -296,16 +291,14 @@ def write_screenshot_codes(task, plan, work_dir):
         plan=plan,
         story=story,
     )
-    llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure)
-    llm_screenshot_codes = llm.with_structured_output(ScreenshotCodesStructure)
+    llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure).with_config({"run_name": "VFeedback_descriptions"})
+    llm_screenshot_codes = llm.with_structured_output(ScreenshotCodesStructure).with_config({"run_name": "VFeedback_codes"})
     response = llm_screenshot_descriptions.invoke(scenarios_planning_prompt)
     questions = response.questions
 
     screenshot_descriptions = response.screenshots
 
-    screenshots_descriptions_formatted = ""
-    for i, screenshot in enumerate(screenshot_descriptions):
-        screenshots_descriptions_formatted += f"<screenshot_{i+1}>{screenshot}</screenshot_{i+1}>\n"
+    screenshots_descriptions_formatted = str(screenshot_descriptions)
 
     # fulfill the missing informations
     if questions:
@@ -314,8 +307,7 @@ def write_screenshot_codes(task, plan, work_dir):
         answers = file_answerer.research_and_answer(questions)
         screenshots_descriptions_formatted += f"\nAdditional info:\n{str(answers)}"
 
-    print("screenshots_xml:\n", screenshots_descriptions_formatted)
-    print("end of screenshots xml")
+    print("screenshots:\n", screenshots_descriptions_formatted)
     codes_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
 
     playwright_codes = llm_screenshot_codes.invoke(codes_prompt)
@@ -334,12 +326,12 @@ except TimeoutError as e:
 browser.close()
 """
     playwright_codes_list = []
-    for i, playwright_code in enumerate(playwright_codes):
-        playwright_code = playwright_code[f"screenshot_{i+1}"]
+    for playwright_code in playwright_codes.screenshot_codes:
+        print(playwright_code)
         indented_playwright_code = textwrap.indent(playwright_code, '    ')
         code = playwright_start + indented_playwright_code + playwright_end
         playwright_codes_list.append(code)
-
+    print(playwright_codes_list)
     return playwright_codes_list, screenshot_descriptions
 
 

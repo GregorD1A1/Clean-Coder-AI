@@ -74,9 +74,7 @@ Your output:
 </analysis>
 
 <screenshots>
-<screenshot_1>
-Navigate to the /contact endpoint and capture a screenshot of the entire contact information page, ensuring that the newly added fax information is visible.
-</screenshot_1>
+['Navigate to the /contact endpoint and capture a screenshot of the entire contact information page, ensuring that the newly added fax information is visible.']
 </screenshots>
 </response>
 '''
@@ -116,10 +114,6 @@ Your output:
    One screenshot of the updated 'about us' page should be sufficient to verify the visual improvements. However, we're missing crucial information about how to access this page.
 
 </analysis>
-
-<screenshots>
-I cannot provide specific screenshot instructions without knowing the endpoint or URL for the 'about us' page.
-</screenshots>
 
 <questions>
 1. What is the endpoint or URL for accessing the 'about us' page?
@@ -169,12 +163,7 @@ Your output:
 </analysis>
 
 <screenshots>
-<screenshot_1>
-Log in as a user, navigate to the /survey-page endpoint, and capture a screenshot of the entire survey page.
-</screenshot_1>
-<screenshot_2>
-Navigate to the /survey-page endpoint (without being logged in), and capture a screenshot of what is displayed (e.g., an error message, login prompt, or redirect page).
-</screenshot_2>
+['Log in as a user, navigate to the /survey-page endpoint, and capture a screenshot of the entire survey page.', 'Navigate to the /survey-page endpoint (without being logged in), and capture a screenshot of what is displayed (e.g., an error message, login prompt, or redirect page).']
 </screenshots>
 </response>
 '''
@@ -212,6 +201,7 @@ Your output:
 </analysis>
 
 <screenshots>
+[]
 </screenshots>
 </response>
 '''

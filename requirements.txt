@@ -7,7 +7,7 @@ langgraph-checkpoint-sqlite==2.0.1
 python-dotenv==1.0.1
 langchain_anthropic==0.2.1
 langchain-openai==0.2.1
-langchain_mistralai==0.2.0
+langchain-ollama==0.2.0
 playwright==1.47.0
 libsass==0.23.0
 openai==1.50.2

@@ -36,16 +36,14 @@ def final_response_file_answerer(answer, additional_materials):
     """
     pass
 
-#llm = ChatOllama(model="gemma2:9b-instruct-fp16")
-#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
-#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
+
 llms = []
 if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
+    llms.append(ChatAnthropic(model='claude-3-5-haiku-20241022', temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
 if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "File Answerer"}))
+    llms.append(llm_open_router("anthropic/claude-3.5-haiku").with_config({"run_name": "File Answerer"}))
 if openai_api_key:
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
+    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "File Answerer"}))
 
@@ -67,7 +65,7 @@ def call_model_researcher(state):
         # Filter out the tool call with "final_response_researcher"
         state["messages"][-1].json5_tool_calls = [
             tool_call for tool_call in last_message.json5_tool_calls
-            if tool_call["tool"] != "final_response_researcher"
+            if tool_call["tool"] != "final_response_file_answerer"
         ]
     return state
 
