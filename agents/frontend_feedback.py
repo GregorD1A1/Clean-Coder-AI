@@ -343,7 +343,7 @@ def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
         exec(code, {}, code_execution_variables)
 
         screenshot_base64 = base64.b64encode(code_execution_variables["screenshot"]).decode('utf-8')
-        screenshot_description = screenshot_descriptions[i][f"screenshot_{i + 1}"]
+        screenshot_description = screenshot_descriptions[i]
         output_message_content.extend([
             {"type": "text", "text": screenshot_description},
             {
