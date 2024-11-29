@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 import base64
 import requests
 from utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
 from langchain_core.messages import HumanMessage
@@ -15,6 +16,9 @@ work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
 todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
+
+
+TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
 
 
 def check_file_contents(files, work_dir, line_numbers=True):
@@ -190,10 +194,10 @@ def render_tools(tools) -> str:
 
 def invoke_tool(tool_call, tools):
     tool_name_to_tool = {tool.name: tool for tool in tools}
-    name = tool_call["name"]
+    name = tool_call["tool"]
     requested_tool = tool_name_to_tool[name]
 
-    return requested_tool.invoke(tool_call["arguments"])
+    return requested_tool.invoke(tool_call["tool_input"])
 
 
 def exchange_file_contents(state, files, work_dir):
@@ -205,6 +209,16 @@ def exchange_file_contents(state, files, work_dir):
     file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
     state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
     return state
+
+
+def bad_tool_call_looped(state):
+    last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
+    tool_not_executed_msgs = [
+        m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
+    ]
+    if len(tool_not_executed_msgs) == 4:
+        print_formatted("Seems like AI been looped. Please suggest it how to introduce change correctly:", color="yellow")
+        return True
 
 
 if __name__ == "__main__":

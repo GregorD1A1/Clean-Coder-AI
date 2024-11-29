@@ -23,4 +23,5 @@ keyboard==0.13.5
 json5==0.9.25
 pygments==2.18.0
 rich==13.9.2
+vue-lexer==0.0.4
 requests==2.32.3

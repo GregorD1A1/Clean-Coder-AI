@@ -3,7 +3,6 @@ from langchain_anthropic import ChatAnthropic
 from langchain_community.chat_models import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
@@ -86,11 +85,10 @@ class ResearchFileAnswerer():
     def __init__(self, work_dir):
         see_file = prepare_see_file_tool(work_dir)
         list_dir = prepare_list_dir_tool(work_dir)
-        tools = [see_file, list_dir, final_response_file_answerer]
+        self.tools = [see_file, list_dir, final_response_file_answerer]
         if vdb_available():
-            tools.append(retrieve_files_by_semantic_query)
-        self.rendered_tools = render_tools(tools)
-        self.tool_executor = ToolExecutor(tools)
+            self.tools.append(retrieve_files_by_semantic_query)
+        self.rendered_tools = render_tools(self.tools)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
@@ -107,7 +105,7 @@ class ResearchFileAnswerer():
 
     # node functions
     def call_tool_researcher(self, state):
-        return call_tool(state, self.tool_executor)
+        return call_tool(state, self.tools)
 
     # just functions
     def research_and_answer(self, questions):
