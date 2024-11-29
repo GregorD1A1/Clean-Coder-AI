@@ -339,11 +339,16 @@ def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
     output_message_content = []
     p = sync_playwright().start()
     for i, code in enumerate(playwright_codes_list):
+        screenshot_description = screenshot_descriptions[i]
         code_execution_variables = {'p': p}
         exec(code, {}, code_execution_variables)
+        screenshot_bytes = code_execution_variables["output"]
+        if isinstance(screenshot_bytes, str):
+            # in case of error instead of screenshot_bytes
+            output_message_content.extend([{"type": "text", "text": screenshot_description}, {"type": "text", "text": screenshot_bytes}])
+            continue
 
-        screenshot_base64 = base64.b64encode(code_execution_variables["output"]).decode('utf-8')
-        screenshot_description = screenshot_descriptions[i]
+        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
         output_message_content.extend([
             {"type": "text", "text": screenshot_description},
             {
