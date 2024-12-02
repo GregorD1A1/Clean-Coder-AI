@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage
 from utilities.print_formatters import print_formatted, print_error, print_formatted_content
-from utilities.util_functions import find_tools_json, invoke_tool, TOOL_NOT_EXECUTED_WORD
+from utilities.util_functions import find_tools_json, invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
 from utilities.user_input import user_input
 from langgraph.graph import END
 from utilities.graphics import loading_animation
@@ -82,6 +82,24 @@ def _handle_potential_problems(state, response, printing):
     return state
 
 
+def call_model_native_tools(state, llms, printing=True):
+    messages = state["messages"]
+    loading_thread = None
+
+    if printing:
+        loading_thread = _start_loading_animation()
+
+    response = _get_llm_response(llms, messages, printing)
+    if printing and loading_thread:
+        _stop_loading_animation(loading_thread)
+
+    if printing:
+        print_formatted_content(response.content)
+    state["messages"].append(response)
+
+    return state
+
+
 def call_tool(state, tools):
     last_message = state["messages"][-1]
     if not hasattr(last_message, "json5_tool_calls"):
@@ -89,6 +107,18 @@ def call_tool(state, tools):
         return state
     json5_tool_calls = last_message.json5_tool_calls
     tool_responses = [invoke_tool(tool_call, tools) for tool_call in json5_tool_calls]
+    tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
+    response_message = HumanMessage(content=tool_response)
+    state["messages"].append(response_message)
+    return state
+
+
+def call_tool_native(state, tools):
+    last_message = state["messages"][-1]
+    if not last_message.tool_calls:
+        state["messages"].append(HumanMessage(content="No tool called"))
+        return state
+    tool_responses = [invoke_tool_native(tool_call, tools) for tool_call in last_message.tool_calls]
     tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
     response_message = HumanMessage(content=tool_response)
     state["messages"].append(response_message)

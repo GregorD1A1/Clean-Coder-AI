@@ -12,13 +12,4 @@ Questions:
 
 If you have not found an answer for one or more of questions in filesystem, honestly admit that there is no answer. Never make up an answer.
 
-You have access to following tools:
-{tools}
-
-You can use up to 3 tool cals simultaneously to speed up research. Generate tool call using next template:
-```json5
-{{
-    "tool": "$TOOL_NAME",
-    "tool_input": "$TOOL_PARAMS",
-}}
-```
+You can use up to 3 tool cals simultaneously to speed up research.
