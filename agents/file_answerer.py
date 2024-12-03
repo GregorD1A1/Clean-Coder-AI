@@ -100,7 +100,7 @@ class ResearchFileAnswerer():
             # Filter out the tool call with "final_response_researcher"
             state["messages"][-1].tool_calls = [
                 tool_call for tool_call in last_message.tool_calls
-                if tool_call["tool"] != "final_response_file_answerer"
+                if tool_call["name"] != "final_response_file_answerer"
             ]
         return state
 
