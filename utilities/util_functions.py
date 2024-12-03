@@ -8,7 +8,7 @@ from utilities.start_work_functions import file_folder_ignored, CoderIgnore
 from utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 
 
 load_dotenv(find_dotenv())
@@ -205,7 +205,8 @@ def invoke_tool_native(tool_call, tools):
     name = tool_call["name"]
     requested_tool = tool_name_to_tool[name]
 
-    return requested_tool.invoke(tool_call["args"])
+    tool_output = requested_tool.invoke(tool_call["args"])
+    return ToolMessage(tool_output, tool_call_id=tool_call["id"])
 
 
 def exchange_file_contents(state, files, work_dir):

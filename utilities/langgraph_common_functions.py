@@ -118,10 +118,8 @@ def call_tool_native(state, tools):
     if not last_message.tool_calls:
         state["messages"].append(HumanMessage(content="No tool called"))
         return state
-    tool_responses = [invoke_tool_native(tool_call, tools) for tool_call in last_message.tool_calls]
-    tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
-    response_message = HumanMessage(content=tool_response)
-    state["messages"].append(response_message)
+    tool_response_messages = [invoke_tool_native(tool_call, tools) for tool_call in last_message.tool_calls]
+    state["messages"].extend(tool_response_messages)
     return state
 
 
