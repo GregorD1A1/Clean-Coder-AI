@@ -41,7 +41,6 @@ def run_clean_coder_pipeline(task, work_dir):
     else:
         test_instruction, file_paths = executor.do_task(task, plan)
         vfeedback_screenshots_msg = None
-        #vfeedback_screenshots_msg = make_feedback_screenshots(task, plan, work_dir)
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:

@@ -302,34 +302,29 @@ def write_screenshot_codes(task, plan, work_dir):
 
     # fulfill the missing informations
     if questions:
-        print(f"I have a questions:\n{questions}")
         file_answerer = ResearchFileAnswerer(work_dir=work_dir)
         answers = file_answerer.research_and_answer(questions)
         screenshots_descriptions_formatted += f"\nAdditional info:\n{str(answers)}"
 
-    print("screenshots:\n", screenshots_descriptions_formatted)
     codes_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
 
     playwright_codes = llm_screenshot_codes.invoke(codes_prompt)
     playwright_start = """
-from playwright._impl._errors import TimeoutError
-
-
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
 """
     playwright_end = """
     output = page.screenshot()
-except TimeoutError as e:
+except Exception as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
 """
     playwright_codes_list = []
     for playwright_code in playwright_codes.screenshot_codes:
-        print(playwright_code)
         indented_playwright_code = textwrap.indent(playwright_code, '    ')
         code = playwright_start + indented_playwright_code + playwright_end
+        print(code)
         playwright_codes_list.append(code)
     print(playwright_codes_list)
     return playwright_codes_list, screenshot_descriptions
