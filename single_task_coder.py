@@ -37,16 +37,16 @@ def run_clean_coder_pipeline(task, work_dir):
             test_instruction, file_paths = executor.do_task(task, plan)
             playwright_codes, screenshot_descriptions = future.result()
         print_formatted("Making screenshots, please wait a while...", color="light_blue")
-        vfeedback_screenshots_msg = execute_screenshot_codes(playwright_codes, screenshot_descriptions)
+        first_vfeedback_screenshots_msg = execute_screenshot_codes(playwright_codes, screenshot_descriptions)
     else:
         test_instruction, file_paths = executor.do_task(task, plan)
-        vfeedback_screenshots_msg = None
+        first_vfeedback_screenshots_msg = None
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
     if human_message in ['o', 'ok']:
         return
-    debugger = Debugger(file_paths, work_dir, human_message, vfeedback_screenshots_msg)
-    debugger.do_task(task, plan, file_paths)
+    debugger = Debugger(file_paths, work_dir, human_message, first_vfeedback_screenshots_msg, playwright_codes, screenshot_descriptions)
+    debugger.do_task(task, plan)
 
 
 if __name__ == "__main__":

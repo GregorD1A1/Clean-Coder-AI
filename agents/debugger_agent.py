@@ -12,13 +12,13 @@ from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
+from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, exchange_screenshots, bad_tool_call_looped
 from utilities.llms import llm_open_router
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
     agent_looped_human_help,
 )
-from utilities.user_input import user_input
+from agents.frontend_feedback import execute_screenshot_codes
 
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")
@@ -58,7 +58,7 @@ with open(f"{parent_dir}/prompts/debugger_system.prompt", "r") as f:
 
 
 class Debugger():
-    def __init__(self, files, work_dir, human_feedback, vfeedback_screenshots_msg=None):
+    def __init__(self, files, work_dir, human_feedback, vfeedback_screenshots_msg=None, playwright_codes=None, screenshot_descriptions=None):
         self.work_dir = work_dir
         self.tools = prepare_tools(work_dir)
         rendered_tools = render_tools(self.tools)
@@ -68,6 +68,8 @@ class Debugger():
         self.files = files
         self.human_feedback = human_feedback
         self.visual_feedback = vfeedback_screenshots_msg
+        self.playwright_codes = playwright_codes
+        self.screenshot_descriptions = screenshot_descriptions
 
         # workflow definition
         debugger_workflow = StateGraph(AgentState)
@@ -75,14 +77,15 @@ class Debugger():
         debugger_workflow.add_node("agent", self.call_model_debugger)
         debugger_workflow.add_node("tool", self.call_tool_debugger)
         debugger_workflow.add_node("check_log", self.check_log)
+        debugger_workflow.add_node("frontend_screenshots", self.frontend_screenshots)
         debugger_workflow.add_node("human_help", agent_looped_human_help)
         debugger_workflow.add_node("human_end_process_confirmation", ask_human)
 
         debugger_workflow.set_entry_point("agent")
 
-        # executor_workflow.add_edge("agent", "checker")
         debugger_workflow.add_edge("tool", "agent")
         debugger_workflow.add_edge("human_help", "agent")
+        debugger_workflow.add_edge("frontend_screenshots", "agent")
         debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
         debugger_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
         debugger_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
@@ -112,8 +115,17 @@ class Debugger():
         # Add logs
         logs = check_application_logs()
         log_message = HumanMessage(content="Logs:\n" + logs)
-
         state["messages"].append(log_message)
+
+        return state
+
+    def frontend_screenshots(self, state):
+        print_formatted("Making screenshots, please wait a while...", color="light_blue")
+        # Remove old one
+        state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_screenshots")]
+        # Add new file contents
+        screenshot_msg = execute_screenshot_codes(self.playwright_codes, self.screenshot_descriptions)
+        state["messages"].append(screenshot_msg)
         return state
 
     # Conditional edge functions
@@ -125,7 +137,12 @@ class Debugger():
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
         elif last_message.json5_tool_calls[0]["tool"] == "final_response_debugger":
-            return "check_log" if log_file_path else "human_end_process_confirmation"
+            if log_file_path:
+                return "check_log"
+            elif self.screenshot_descriptions:
+                return "frontend_screenshots"
+            else:
+                return "human_end_process_confirmation"
         else:
             return "tool"
 
@@ -133,17 +150,17 @@ class Debugger():
         last_message = state["messages"][-1]
 
         if last_message.content.endswith("Logs are correct"):
-            return "human_end_process_confirmation"
+            if self.screenshot_descriptions:
+                return "frontend_screenshots"
+            else:
+                return "human_end_process_confirmation"
         else:
             return "agent"
 
-    # just functions
-
-
-    def do_task(self, task, plan, text_files):
+    def do_task(self, task, plan):
         print_formatted("Debugger starting its work", color="green")
         print_formatted("🛠️ Need to improve your code? I can help!", color="light_blue")
-        file_contents = check_file_contents(text_files, self.work_dir)
+        file_contents = check_file_contents(self.files, self.work_dir)
         inputs = {"messages": [
             self.system_message,
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan which developer implemented already:\n\n{plan}"),

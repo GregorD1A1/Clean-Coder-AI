@@ -7,20 +7,25 @@ from playwright._impl._errors import TimeoutError
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
-# Login as intern to view campaign profile
-      page.goto('http://localhost:5173/login')
-      page.fill('input[type="email"]', 'frontend.feedback@intern')
-      page.fill('input[type="password"]', '123')
-      page.click('button[type="submit"]')
-      page.wait_for_url('**/')
-      page.wait_for_load_state('networkidle')
+    # Login as campaign user
+    page.goto('http://localhost:5173/login')
+    page.fill('input[type="email"]', 'frontend.feedback@campaign')
+    page.fill('input[type="password"]', '123')
+    page.click('button[type="submit"]')
+    page.wait_for_url('**/')
+    page.wait_for_load_state('networkidle')
 
-      # Navigate to specific campaign profile
-      page.goto('http://localhost:5173/campaigns/d4b9d557-94d3-463d-a7ac-28bb51ab7dc7')
-      page.wait_for_load_state('networkidle')
-      output = page.screenshot()
-except TimeoutError as e:
-      output = f"{type(e).__name__}: {e}"
+    # Navigate to campaign profile page
+    # Note: Using a known UUID for the test campaign profile
+    page.goto('http://localhost:5173/campaign/test-campaign-uuid')
+
+    # Wait for the profile content to load
+    page.wait_for_selector('.campaign-profile')
+    page.wait_for_selector('.campaign-details')
+
+    # Ensure all dynamic content is loaded
+    page.wait_for_load_state('networkidle')
+    output = page.screenshot()
+except Exception as e:
+    output = f"{type(e).__name__}: {e}"
 browser.close()
-
-print(output)
