@@ -12,7 +12,7 @@ from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, exchange_screenshots, bad_tool_call_looped
+from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
 from utilities.llms import llm_open_router
 from utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
