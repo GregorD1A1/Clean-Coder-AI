@@ -179,8 +179,5 @@ def prepare_tools(work_dir):
     insert_code = prepare_insert_code_tool(work_dir)
     create_file = prepare_create_file_tool(work_dir)
     tools = [list_dir, see_file, replace_code, insert_code, create_file, ask_human_tool, final_response_debugger]
-    #if frontend_port:
-    #    watch_web_page_tool = prepare_watch_web_page_tool(frontend_port)
-    #    tools.append(watch_web_page_tool)
 
     return tools

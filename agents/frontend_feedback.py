@@ -8,7 +8,7 @@ from utilities.start_work_functions import read_frontend_feedback_story
 import base64
 from langchain.output_parsers import XMLOutputParser
 import textwrap
-from playwright.sync_api import sync_playwright
+
 from agents.file_answerer import ResearchFileAnswerer
 from typing import Optional, List
 from typing_extensions import Annotated, TypedDict
@@ -310,6 +310,9 @@ def write_screenshot_codes(task, plan, work_dir):
 
     playwright_codes = llm_screenshot_codes.invoke(codes_prompt)
     playwright_start = """
+from playwright.sync_api import sync_playwright
+
+p = sync_playwright().start()
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
@@ -319,6 +322,7 @@ try:
 except Exception as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
+p.stop()
 """
     playwright_codes_list = []
     for playwright_code in playwright_codes.screenshot_codes:
@@ -331,10 +335,10 @@ browser.close()
 
 def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
     output_message_content = []
-    p = sync_playwright().start()
+
     for i, code in enumerate(playwright_codes_list):
         screenshot_description = screenshot_descriptions[i]
-        code_execution_variables = {'p': p}
+        code_execution_variables = {}
         exec(code, {}, code_execution_variables)
         screenshot_bytes = code_execution_variables["output"]
         if isinstance(screenshot_bytes, str):
@@ -358,6 +362,9 @@ def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
 
 if __name__ == "__main__":
     codes = ["""
+from playwright.sync_api import sync_playwright
+
+p = sync_playwright().start()
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
@@ -370,10 +377,15 @@ try:
 except Exception as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
+p.stop()
 """, """
+from playwright.sync_api import sync_playwright
+
+p = sync_playwright().start()
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
+    
     # Login as campaign user
     page.goto('http://localhost:5173/login')
     page.fill('input[type="email"]', 'frontend.feedback@campaign')
@@ -381,6 +393,7 @@ try:
     page.click('button[type="submit"]')
     page.wait_for_url('**/')
     page.wait_for_load_state('networkidle')
+    print("byk")
     
     # Navigate to campaign profile page
     # Note: Using a known UUID for the test campaign profile
@@ -396,6 +409,7 @@ try:
 except Exception as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
+p.stop()
 """]
 
     execute_screenshot_codes(codes, ["scr1", "scr2"])
