@@ -8,7 +8,7 @@ recorder = VoiceRecorder()
 
 
 def user_input(prompt=""):
-    print_formatted(prompt + " Or use (m)icrophone to record it:", color="yellow", bold=True)
+    print_formatted(prompt + " Or use (m)icrophone to tell:", color="yellow", bold=True)
     user_sentence = input()
     if user_sentence == 'm':
         if not os.getenv("OPENAI_API_KEY"):
