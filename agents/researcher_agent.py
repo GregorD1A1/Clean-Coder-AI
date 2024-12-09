@@ -40,7 +40,6 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
     """
     pass
 
-#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 llms = []
 if anthropic_api_key:
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))

@@ -193,6 +193,11 @@ def list_directory_tree(work_dir):
             tree.append(f"{file_indent}Too many files/folders to display ({total_items} items)")
             dirs.clear()
             continue
+        elif total_items == 0:
+            file_indent = "│ " * (depth + 1)
+            tree.append(f"{file_indent}<Directory is empty>")
+            dirs.clear()
+            continue
 
         # Add files to the tree
         file_indent = "│ " * (depth + 1)

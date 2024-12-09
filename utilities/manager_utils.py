@@ -1,4 +1,7 @@
 from langchain_openai.chat_models import ChatOpenAI
+from langchain_community.chat_models import ChatOllama
+from langchain_anthropic import ChatAnthropic
+from utilities.llms import llm_open_router
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from todoist_api_python.api import TodoistAPI
@@ -22,7 +25,15 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 with open(f"{parent_dir}/prompts/actualize_project_description.prompt", "r") as f:
     actualize_description_prompt_template = f.read()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llms = []
+if os.getenv("OPENAI_API_KEY"):
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.3, timeout=90).with_config({"run_name": "Planer"}))
+if os.getenv("OPENROUTER_API_KEY"):
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Planer"}))
+if os.getenv("ANTHROPIC_API_KEY"):
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.3, timeout=90).with_config({"run_name": "Planer"}))
+if os.getenv("OLLAMA_MODEL"):
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Planer"}))
 
 def read_project_description():
     file_path = os.path.join(work_dir, ".clean_coder", "project_description.txt")

@@ -17,8 +17,6 @@ from utilities.print_formatters import print_formatted
 from utilities.start_project_functions import set_up_dot_clean_coder_dir
 from utilities.util_functions import create_frontend_feedback_story
 from concurrent.futures import ThreadPoolExecutor
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 use_frontend_feedback = bool(os.getenv("FRONTEND_PORT"))
