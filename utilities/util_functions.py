@@ -9,6 +9,8 @@ from utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
 from langchain_core.messages import HumanMessage, ToolMessage
+import click
+from utilities.start_work_functions import Work
 
 
 load_dotenv(find_dotenv())
@@ -19,6 +21,29 @@ PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
 
 
 TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
+
+storyfile_template = """<This is the story of your project for a frontend feedback agent. Modify it according to commentaries provided in <> brackets.>
+
+App we working on is ... <describe what your project about here>.
+
+How to write your playwright code:
+
+If you want to test changes that does not require to be logged in, just go straight away to the page you want to see:
+```python
+page.goto(f'http://localhost:{frontend_port}/your_endpoint_to_test')
+```
+
+If it required to be logged in, use next code first: <adjust login code according to login page of your app>.
+```python
+page.goto(f'http://localhost:{frontend_port}/login')
+page.fill('input[type="email"]', username)
+page.fill('input[type="password"]', password)
+page.click('button[type="submit"]')
+page.wait_for_url('**/')
+```
+For being logged in as usual user, use username="frontend.feedback@user", password="123". <exchange your login credentials for example user>
+For being logged in as admin user, use username="frontend.feedback@admin", password="456". <exchange your login credentials for example user>
+"""
 
 
 def check_file_contents(files, work_dir, line_numbers=True):
@@ -228,6 +253,15 @@ def bad_tool_call_looped(state):
     if len(tool_not_executed_msgs) == 4:
         print_formatted("Seems like AI been looped. Please suggest it how to introduce change correctly:", color="yellow")
         return True
+
+
+def create_frontend_feedback_story():
+    frontend_feedback_story_path = os.path.join(Work.dir(), '.clean_coder', 'frontend_feedback_story.txt')
+    if not os.path.exists(frontend_feedback_story_path):
+        with open(frontend_feedback_story_path, 'w') as file:
+            file.write(storyfile_template)
+        click.launch(frontend_feedback_story_path)
+        input("Fulfill file with informations needed for a frontend feedback agent to know. Save file and hit Enter.")
 
 
 if __name__ == "__main__":

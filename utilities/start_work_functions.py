@@ -5,15 +5,10 @@ import os
 import fnmatch
 
 
-
 def read_frontend_feedback_story():
     frontend_feedback_story_path = os.path.join(Work.dir(), '.clean_coder', 'frontend_feedback_story.txt')
-    if os.path.exists(frontend_feedback_story_path):
-        with open(frontend_feedback_story_path, 'r') as file:
-            return file.read()
-    else:
-        # handle creation of story file logic
-        return "<Story file does not exist."
+    with open(frontend_feedback_story_path, 'r') as file:
+        return file.read()
 
 
 def file_folder_ignored(path, ignore_patterns):
@@ -59,3 +54,7 @@ class Work:
         if Work.work_dir is None:
             Work.work_dir = Work.read_work_dir()
         return Work.work_dir
+
+
+if __name__ == '__main__':
+    read_frontend_feedback_story()

@@ -298,9 +298,12 @@ def write_screenshot_codes(task, plan, work_dir):
 
     screenshot_descriptions = response.screenshots
 
+    if not screenshot_descriptions:
+        return None, None
+
     screenshots_descriptions_formatted = str(screenshot_descriptions)
 
-    # fulfill the missing informations
+    # fulfill the missing information
     if questions:
         file_answerer = ResearchFileAnswerer(work_dir=work_dir)
         answers = file_answerer.research_and_answer(questions)
@@ -329,7 +332,6 @@ p.stop()
         indented_playwright_code = textwrap.indent(playwright_code, '    ')
         code = playwright_start + indented_playwright_code + playwright_end
         playwright_codes_list.append(code)
-    print(playwright_codes_list)
     return playwright_codes_list, screenshot_descriptions
 
 
@@ -361,55 +363,6 @@ def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
 
 
 if __name__ == "__main__":
-    codes = ["""
-from playwright.sync_api import sync_playwright
-
-p = sync_playwright().start()
-browser = p.chromium.launch(headless=False)
-page = browser.new_page()
-try:
-    # Go to campaign profile page
-    page.goto('http://localhost:5173/campaign/6b97b572-3714-4859-8794-1d211d57f513', timeout=10000)
-
-    # Wait for the profile content to be fully loaded
-    page.wait_for_load_state('networkidle')
-    output = page.screenshot()
-except Exception as e:
-    output = f"{type(e).__name__}: {e}"
-browser.close()
-p.stop()
-""", """
-from playwright.sync_api import sync_playwright
-
-p = sync_playwright().start()
-browser = p.chromium.launch(headless=False)
-page = browser.new_page()
-try:
-    
-    # Login as campaign user
-    page.goto('http://localhost:5173/login')
-    page.fill('input[type="email"]', 'frontend.feedback@campaign')
-    page.fill('input[type="password"]', '123')
-    page.click('button[type="submit"]')
-    page.wait_for_url('**/')
-    page.wait_for_load_state('networkidle')
-    print("byk")
-    
-    # Navigate to campaign profile page
-    # Note: Using a known UUID for the test campaign profile
-    page.goto('http://localhost:5173/campaign/test-campaign-uuid')
-    
-    # Wait for the profile content to load
-    page.wait_for_selector('.campaign-profile')
-    page.wait_for_selector('.campaign-details')
-    
-    # Ensure all dynamic content is loaded
-    page.wait_for_load_state('networkidle')
-    output = page.screenshot()
-except Exception as e:
-    output = f"{type(e).__name__}: {e}"
-browser.close()
-p.stop()
-"""]
+    codes = []
 
     execute_screenshot_codes(codes, ["scr1", "scr2"])

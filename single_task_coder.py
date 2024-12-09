@@ -15,6 +15,7 @@ import os
 from utilities.user_input import user_input
 from utilities.print_formatters import print_formatted
 from utilities.start_project_functions import set_up_dot_clean_coder_dir
+from utilities.util_functions import create_frontend_feedback_story
 from concurrent.futures import ThreadPoolExecutor
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -32,12 +33,16 @@ def run_clean_coder_pipeline(task, work_dir):
     executor = Executor(file_paths, work_dir)
 
     if use_frontend_feedback:
+        create_frontend_feedback_story()
         with ThreadPoolExecutor() as executor_thread:
             future = executor_thread.submit(write_screenshot_codes, task, plan, work_dir)
             test_instruction, file_paths = executor.do_task(task, plan)
             playwright_codes, screenshot_descriptions = future.result()
-        print_formatted("Making screenshots, please wait a while...", color="light_blue")
-        first_vfeedback_screenshots_msg = execute_screenshot_codes(playwright_codes, screenshot_descriptions)
+        if playwright_codes:
+            print_formatted("Making screenshots, please wait a while...", color="light_blue")
+            first_vfeedback_screenshots_msg = execute_screenshot_codes(playwright_codes, screenshot_descriptions)
+        else:
+            first_vfeedback_screenshots_msg = None
     else:
         test_instruction, file_paths = executor.do_task(task, plan)
         first_vfeedback_screenshots_msg = None

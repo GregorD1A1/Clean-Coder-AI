@@ -38,6 +38,7 @@ You can also [deploy with Docker](https://clean-coder.dev/quick_start/run_with_d
 
 - Get project supervised by [Manager agent](https://clean-coder.dev/quick_start/manager/) with thoroughly-described tasks organized in Todoist, just like with a human scrum master.
 - Watch tasks executed one by one by [Programming agents](https://clean-coder.dev/quick_start/programmer_pipeline/), with a well-designed context pipeline and advanced techniques for enhanced intelligence.
+- Allow AI to see fronted it creates using [frontend feedback feature](https://clean-coder.dev/features/frontend_feedback/). At the day of writing no other AI coder has that.
 - Create a [frontend based on images](https://clean-coder.dev/features/working_with_images/) with designs.
 - [Speak to Clean Coder](https://clean-coder.dev/features/talk_to_cc/) instead of writing.
 - Automatic file linting prevents from introducing incorrect changes and [log check for self-debug](https://clean-coder.dev/advanced_features_installation/logs_check/).
