@@ -30,6 +30,8 @@ pygments = "==2.18.0"
 rich = "==13.9.2"
 requests = "==2.32.3"
 pytest = "*"
+pyright = "*"
+ruff = "*"
 
 [dev-packages]
 
