@@ -3,9 +3,10 @@
 # example "make all" or "make run". If your system doesn't include make, or if
 # you just want to avoid it, you can always run the commands directly.
 
-
 lint:
-	bash tests/lint.sh
+	black .
+	ruff check --fix --show-fixes
+	pyright .
 unit-test:
 	python -m pytest -m "not integration" --disable-warnings
 integration-test:
