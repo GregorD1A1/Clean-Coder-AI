@@ -1,10 +1,8 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_mistralai.chat_models import ChatMistralAI
 from langchain_community.chat_models import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
@@ -14,9 +12,9 @@ from tools.tools_coder_pipeline import (
 from tools.rag.retrieval import vdb_available
 from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
 from utilities.langgraph_common_functions import (
-    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, no_json_msg, finish_too_early_msg
 )
-from utilities.print_formatters import print_formatted
+from utilities.print_formatters import print_formatted, print_error
 from utilities.llms import llm_open_router
 import os
 
@@ -42,10 +40,9 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
     """
     pass
 
-#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
 llms = []
 if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20240620', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
+    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=60).with_config({"run_name": "Researcher"}))
 if os.getenv("OPENROUTER_API_KEY"):
     llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Researcher"}))
 if openai_api_key:
@@ -66,6 +63,13 @@ with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
 # node functions
 def call_model_researcher(state):
     state = call_model(state, llms)
+    last_message = state["messages"][-1]
+    if hasattr(last_message, 'json5_tool_calls') and len(last_message.json5_tool_calls) > 1:
+        # Filter out the tool call with "final_response_researcher"
+        state["messages"][-1].json5_tool_calls = [
+            tool_call for tool_call in last_message.json5_tool_calls
+            if tool_call["tool"] != "final_response_researcher"
+        ]
     return state
 
 
@@ -73,7 +77,7 @@ def call_model_researcher(state):
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+    if last_message.content in (bad_json_format_msg, no_json_msg, finish_too_early_msg):
         return "agent"
     elif last_message.json5_tool_calls[0]["tool"] == "final_response_researcher":
         return "human"
@@ -85,11 +89,10 @@ class Researcher():
     def __init__(self, work_dir):
         see_file = prepare_see_file_tool(work_dir)
         list_dir = prepare_list_dir_tool(work_dir)
-        tools = [see_file, list_dir, final_response_researcher]
+        self.tools = [see_file, list_dir, final_response_researcher]
         if vdb_available():
-            tools.append(retrieve_files_by_semantic_query)
-        self.rendered_tools = render_tools(tools)
-        self.tool_executor = ToolExecutor(tools)
+            self.tools.append(retrieve_files_by_semantic_query)
+        self.rendered_tools = render_tools(self.tools)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
@@ -108,7 +111,8 @@ class Researcher():
 
     # node functions
     def call_tool_researcher(self, state):
-        return call_tool(state, self.tool_executor)
+        return call_tool(state, self.tools)
+
 
     # just functions
     def research_task(self, task):

@@ -5,8 +5,12 @@ import xml.etree.ElementTree as ET
 import base64
 import requests
 from utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
+from langchain_core.messages import HumanMessage, ToolMessage
+import click
+from utilities.start_work_functions import Work
 
 
 load_dotenv(find_dotenv())
@@ -14,6 +18,32 @@ work_dir = os.getenv("WORK_DIR")
 log_file_path = os.getenv("LOG_FILE")
 todoist_api = TodoistAPI(os.getenv('TODOIST_API_KEY'))
 PROJECT_ID = os.getenv('TODOIST_PROJECT_ID')
+
+
+TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
+
+storyfile_template = """<This is the story of your project for a frontend feedback agent. Modify it according to commentaries provided in <> brackets.>
+
+App we working on is ... <describe what your project about here>.
+
+How to write your playwright code:
+
+If you want to test changes that does not require to be logged in, just go straight away to the page you want to see:
+```python
+page.goto(f'http://localhost:{frontend_port}/your_endpoint_to_test')
+```
+
+If it required to be logged in, use next code first: <adjust login code according to login page of your app>.
+```python
+page.goto(f'http://localhost:{frontend_port}/login')
+page.fill('input[type="email"]', username)
+page.fill('input[type="password"]', password)
+page.click('button[type="submit"]')
+page.wait_for_url('**/')
+```
+For being logged in as usual user, use username="frontend.feedback@user", password="123". <exchange your login credentials for example user>
+For being logged in as admin user, use username="frontend.feedback@admin", password="456". <exchange your login credentials for example user>
+"""
 
 
 def check_file_contents(files, work_dir, line_numbers=True):
@@ -163,6 +193,11 @@ def list_directory_tree(work_dir):
             tree.append(f"{file_indent}Too many files/folders to display ({total_items} items)")
             dirs.clear()
             continue
+        elif total_items == 0:
+            file_indent = "│ " * (depth + 1)
+            tree.append(f"{file_indent}<Directory is empty>")
+            dirs.clear()
+            continue
 
         # Add files to the tree
         file_indent = "│ " * (depth + 1)
@@ -189,10 +224,49 @@ def render_tools(tools) -> str:
 
 def invoke_tool(tool_call, tools):
     tool_name_to_tool = {tool.name: tool for tool in tools}
+    name = tool_call["tool"]
+    requested_tool = tool_name_to_tool[name]
+
+    return requested_tool.invoke(tool_call["tool_input"])
+
+def invoke_tool_native(tool_call, tools):
+    # convert string to real function
+    tool_name_to_tool = {tool.name: tool for tool in tools}
     name = tool_call["name"]
     requested_tool = tool_name_to_tool[name]
 
-    return requested_tool.invoke(tool_call["arguments"])
+    tool_output = requested_tool.invoke(tool_call["args"])
+    return ToolMessage(tool_output, tool_call_id=tool_call["id"])
+
+
+def exchange_file_contents(state, files, work_dir):
+    # Remove old one
+    state["messages"] = [msg for msg in state["messages"] if not hasattr(msg, "contains_file_contents")]
+    # Add new file contents
+    file_contents = check_file_contents(files, work_dir)
+    file_contents = f"Find most actual file contents here:\n\n{file_contents}\nTake a look at line numbers before introducing changes."
+    file_contents_msg = HumanMessage(content=file_contents, contains_file_contents=True)
+    state["messages"].insert(2, file_contents_msg)  # insert after the system and plan msgs
+    return state
+
+
+def bad_tool_call_looped(state):
+    last_human_messages = [m for m in state["messages"] if m.type == "human"][-4:]
+    tool_not_executed_msgs = [
+        m for m in last_human_messages if isinstance(m.content, str) and m.content.startswith(TOOL_NOT_EXECUTED_WORD)
+    ]
+    if len(tool_not_executed_msgs) == 4:
+        print_formatted("Seems like AI been looped. Please suggest it how to introduce change correctly:", color="yellow")
+        return True
+
+
+def create_frontend_feedback_story():
+    frontend_feedback_story_path = os.path.join(Work.dir(), '.clean_coder', 'frontend_feedback_story.txt')
+    if not os.path.exists(frontend_feedback_story_path):
+        with open(frontend_feedback_story_path, 'w') as file:
+            file.write(storyfile_template)
+        click.launch(frontend_feedback_story_path)
+        input("Fulfill file with informations needed for a frontend feedback agent to know. Save file and hit Enter.")
 
 
 if __name__ == "__main__":

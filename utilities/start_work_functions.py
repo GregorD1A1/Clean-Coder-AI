@@ -5,20 +5,10 @@ import os
 import fnmatch
 
 
-try:
-    work_dir = os.environ["WORK_DIR"]
-except KeyError:
-    raise Exception("Please set up your project folder as WORK_DIR parameter in .env")
-
-
 def read_frontend_feedback_story():
-    frontend_feedback_story_path = os.path.join(work_dir, '.clean_coder', 'frontend_feedback_story.txt')
-    if os.path.exists(frontend_feedback_story_path):
-        with open(frontend_feedback_story_path, 'r') as file:
-            return file.read()
-    else:
-        # handle creation of story file logic
-        return "<Story file does not exist."
+    frontend_feedback_story_path = os.path.join(Work.dir(), '.clean_coder', 'frontend_feedback_story.txt')
+    with open(frontend_feedback_story_path, 'r') as file:
+        return file.read()
 
 
 def file_folder_ignored(path, ignore_patterns):
@@ -38,7 +28,7 @@ class CoderIgnore:
 
     @staticmethod
     def read_coderignore():
-        coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
+        coderignore_path = os.path.join(Work.dir(), '.clean_coder', '.coderignore')
         with open(coderignore_path, 'r') as file:
             return [line.strip() for line in file if line.strip() and not line.startswith('#')]
 
@@ -48,3 +38,23 @@ class CoderIgnore:
             CoderIgnore.forbidden_files_and_folders = CoderIgnore.read_coderignore()
         return CoderIgnore.forbidden_files_and_folders
 
+
+class Work:
+    work_dir = None
+
+    @staticmethod
+    def read_work_dir():
+        try:
+            return os.environ["WORK_DIR"]
+        except KeyError:
+            raise Exception("Please set up your project folder as WORK_DIR parameter in .env")
+
+    @staticmethod
+    def dir():
+        if Work.work_dir is None:
+            Work.work_dir = Work.read_work_dir()
+        return Work.work_dir
+
+
+if __name__ == '__main__':
+    read_frontend_feedback_story()

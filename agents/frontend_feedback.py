@@ -1,14 +1,14 @@
 import os
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.messages import HumanMessage
-from langchain_community.chat_models import ChatOllama
+from langchain_ollama import ChatOllama
 from langchain_anthropic import ChatAnthropic
 from utilities.llms import llm_open_router
 from utilities.start_work_functions import read_frontend_feedback_story
 import base64
 from langchain.output_parsers import XMLOutputParser
 import textwrap
-from playwright.sync_api import sync_playwright
+
 from agents.file_answerer import ResearchFileAnswerer
 from typing import Optional, List
 from typing_extensions import Annotated, TypedDict
@@ -18,14 +18,14 @@ from pydantic import BaseModel, Field
 llms = []
 if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(
-        model='claude-3-5-haiku-20241022', temperature=0, max_tokens=2000, timeout=120
-    ).with_config({"run_name": "VFeedback"}))
+        model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=120
+    ))
 if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-haiku").with_config({"run_name": "VFeedback"}))
+    llms.append(llm_open_router("anthropic/claude-3.5-sonnet"))
 if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0, timeout=120).with_config({"run_name": "VFeedback"}))
+    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=120))
 if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "VFeedback"}))
+    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")))
 
 llm = llms[0].with_fallbacks(llms[1:])
 
@@ -53,14 +53,15 @@ class ScreenshotDescriptionsStructure(BaseModel):
         description="[List questions you have about missing information here.]"
     )
     screenshots: Optional[List[str]] = Field(default=None, description="""
-<screenshot_1>
-[Clear instruction for the first screenshot]
-</screenshot_1>
-<screenshot_2>
-[Clear instruction for the second screenshot, if needed]
-</screenshot_2>
-[Add more screenshot instructions as necessary]""")
+['Clear instruction for the first screenshot', 'Clear instruction for the second screenshot, if needed', ...]
+""")
 
+
+class ScreenshotCodesStructure(BaseModel):
+    """List of playwright codes"""
+    screenshot_codes: List[str] = Field(description="""
+Provide here your playwright codes for each screenshot.
+""")
 
 
 task = """Create Page for Intern Profile Editing
@@ -282,11 +283,6 @@ This plan outlines the necessary steps to create a new page for intern profile e
 """
 
 
-def debug_print(response):
-    print(response.content)
-    return response
-
-
 def write_screenshot_codes(task, plan, work_dir):
     story = read_frontend_feedback_story()
     story = story.format(frontend_port=os.environ["FRONTEND_PORT"])
@@ -295,64 +291,66 @@ def write_screenshot_codes(task, plan, work_dir):
         plan=plan,
         story=story,
     )
-    llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure)
-    xml_parser_chain = llm_screenshot_descriptions | debug_print | XMLOutputParser()
+    llm_screenshot_descriptions = llm.with_structured_output(ScreenshotDescriptionsStructure).with_config({"run_name": "VFeedback_descriptions"})
+    llm_screenshot_codes = llm.with_structured_output(ScreenshotCodesStructure).with_config({"run_name": "VFeedback_codes"})
     response = llm_screenshot_descriptions.invoke(scenarios_planning_prompt)
     questions = response.questions
 
     screenshot_descriptions = response.screenshots
 
-    screenshots_descriptions_formatted = ""
-    for i, screenshot in enumerate(screenshot_descriptions):
-        screenshots_descriptions_formatted += f"<screenshot_{i+1}>{screenshot}</screenshot_{i+1}>\n"
+    if not screenshot_descriptions:
+        return None, None
 
-    # fulfill the missing informations
+    screenshots_descriptions_formatted = str(screenshot_descriptions)
+
+    # fulfill the missing information
     if questions:
-        print(f"I have a questions:\n{questions}")
         file_answerer = ResearchFileAnswerer(work_dir=work_dir)
         answers = file_answerer.research_and_answer(questions)
         screenshots_descriptions_formatted += f"\nAdditional info:\n{str(answers)}"
 
-    print("screenshots_xml:\n", screenshots_descriptions_formatted)
-    print("end of screenshots xml")
-    final_output_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
+    codes_prompt = prompt_template.format(story=story, plan=plan, screenshots=screenshots_descriptions_formatted)
 
-    playwright_codes = xml_parser_chain.invoke(final_output_prompt)["response"]
+    playwright_codes = llm_screenshot_codes.invoke(codes_prompt)
     playwright_start = """
-from playwright._impl._errors import TimeoutError
+from playwright.sync_api import sync_playwright
 
-
+p = sync_playwright().start()
 browser = p.chromium.launch(headless=False)
 page = browser.new_page()
 try:
 """
     playwright_end = """
-    screenshot = page.screenshot()
-except TimeoutError as e:
+    output = page.screenshot()
+except Exception as e:
     output = f"{type(e).__name__}: {e}"
 browser.close()
+p.stop()
 """
     playwright_codes_list = []
-    for i, playwright_code in enumerate(playwright_codes):
-        playwright_code = playwright_code[f"screenshot_{i+1}"]
+    for playwright_code in playwright_codes.screenshot_codes:
         indented_playwright_code = textwrap.indent(playwright_code, '    ')
         code = playwright_start + indented_playwright_code + playwright_end
         playwright_codes_list.append(code)
-
     return playwright_codes_list, screenshot_descriptions
 
 
 def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
     output_message_content = []
-    p = sync_playwright().start()
-    for i, code in enumerate(playwright_codes_list):
-        code_execution_variables = {'p': p}
-        exec(code, {}, code_execution_variables)
 
-        screenshot_base64 = base64.b64encode(code_execution_variables["screenshot"]).decode('utf-8')
-        screenshot_description = screenshot_descriptions[i][f"screenshot_{i + 1}"]
+    for i, code in enumerate(playwright_codes_list):
+        screenshot_description = screenshot_descriptions[i]
+        code_execution_variables = {}
+        exec(code, {}, code_execution_variables)
+        screenshot_bytes = code_execution_variables["output"]
+        if isinstance(screenshot_bytes, str):
+            # in case of error instead of screenshot_bytes
+            output_message_content.extend([{"type": "text", "text": screenshot_description}, {"type": "text", "text": screenshot_bytes}])
+            continue
+
+        screenshot_base64 = base64.b64encode(screenshot_bytes).decode('utf-8')
         output_message_content.extend([
-            {"type": "text", "text": screenshot_description},
+            {"type": "text", "text": f"See the screenshot with description:{screenshot_description}"},
             {
                 "type": "image_url",
                 "image_url": {
@@ -361,8 +359,10 @@ def execute_screenshot_codes(playwright_codes_list, screenshot_descriptions):
             },
         ])
 
-    return HumanMessage(content=output_message_content)
+    return HumanMessage(content=output_message_content, contains_screenshots=True)
 
 
 if __name__ == "__main__":
-    write_screenshot_codes(task, plan, "E://Eksperiments/Hacker_news_scraper")
+    codes = []
+
+    execute_screenshot_codes(codes, ["scr1", "scr2"])

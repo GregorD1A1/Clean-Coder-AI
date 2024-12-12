@@ -1,11 +1,8 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_mistralai.chat_models import ChatMistralAI
-from langchain_community.chat_models import ChatOllama
-from langchain_community.llms import Replicate
+from langchain_ollama import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
@@ -13,11 +10,10 @@ from tools.tools_coder_pipeline import (
      prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
 from tools.rag.retrieval import vdb_available
-from utilities.util_functions import find_tools_json, list_directory_tree, render_tools
+from utilities.util_functions import find_tools_json, list_directory_tree
 from utilities.langgraph_common_functions import (
-    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg
+    call_model_native_tools, call_tool_native, bad_json_format_msg, no_json_msg
 )
-from utilities.print_formatters import print_formatted
 from utilities.llms import llm_open_router
 import os
 
@@ -39,19 +35,17 @@ def final_response_file_answerer(answer, additional_materials):
     """
     pass
 
-#llm = ChatOllama(model="gemma2:9b-instruct-fp16")
-#llm = ChatMistralAI(api_key=mistral_api_key, model="mistral-large-latest")
-#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct")
-llms = []
-if anthropic_api_key:
-    llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
-if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "File Answerer"}))
-if openai_api_key:
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0.2, timeout=120).with_config({"run_name": "File Answerer"}))
-if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "File Answerer"}))
-
+def init_llms(tools):
+    llms = []
+    if anthropic_api_key:
+        llms.append(ChatAnthropic(model='claude-3-5-haiku-20241022', temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
+    if os.getenv("OPENROUTER_API_KEY"):
+        llms.append(llm_open_router("anthropic/claude-3.5-haiku").bind_tools(tools).with_config({"run_name": "File Answerer"}))
+    if openai_api_key:
+        llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
+    if os.getenv("OLLAMA_MODEL"):
+        llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).bind_tools(tools).with_config({"run_name": "File Answerer"}))
+    return llms
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -61,20 +55,13 @@ parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
     system_prompt_template = f.read()
 
-
-# node functions
-def call_model_researcher(state):
-    state = call_model(state, llms, printing=False)
-    return state
-
-
 # Logic for conditional edges
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+    if last_message.content == no_json_msg:
         return "agent"
-    elif last_message.json5_tool_calls[0]["tool"] == "final_response_file_answerer":
+    elif last_message.tool_calls[0]["name"] == "final_response_file_answerer":
         return END
     else:
         return "tool"
@@ -84,16 +71,15 @@ class ResearchFileAnswerer():
     def __init__(self, work_dir):
         see_file = prepare_see_file_tool(work_dir)
         list_dir = prepare_list_dir_tool(work_dir)
-        tools = [see_file, list_dir, final_response_file_answerer]
+        self.tools = [see_file, list_dir, final_response_file_answerer]
         if vdb_available():
-            tools.append(retrieve_files_by_semantic_query)
-        self.rendered_tools = render_tools(tools)
-        self.tool_executor = ToolExecutor(tools)
+            self.tools.append(retrieve_files_by_semantic_query)
+        self.llms = init_llms(self.tools)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
 
-        researcher_workflow.add_node("agent", call_model_researcher)
+        researcher_workflow.add_node("agent", self.call_model_researcher)
         researcher_workflow.add_node("tool", self.call_tool_researcher)
 
         researcher_workflow.set_entry_point("agent")
@@ -105,16 +91,26 @@ class ResearchFileAnswerer():
 
     # node functions
     def call_tool_researcher(self, state):
-        return call_tool(state, self.tool_executor)
+        return call_tool_native(state, self.tools)
+
+    def call_model_researcher(self, state):
+        state = call_model_native_tools(state, self.llms, printing=False)
+        last_message = state["messages"][-1]
+        if len(last_message.tool_calls) > 1:
+            # Filter out the tool call with "final_response_researcher"
+            state["messages"][-1].tool_calls = [
+                tool_call for tool_call in last_message.tool_calls
+                if tool_call["name"] != "final_response_file_answerer"
+            ]
+        return state
 
     # just functions
     def research_and_answer(self, questions):
-        system_message = system_prompt_template.format(questions=questions, tools=self.rendered_tools)
+        system_message = system_prompt_template.format(questions=questions)
         inputs = {
             "messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}
         researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-1]
-        tool_json = find_tools_json(researcher_response.content)[0]
-        answer = tool_json["tool_input"]
+        answer = researcher_response.tool_calls[0]["args"]
 
         return answer
 

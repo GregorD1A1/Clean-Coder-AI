@@ -15,7 +15,6 @@ from langchain_anthropic import ChatAnthropic
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.load import dumps, loads
-from langgraph.prebuilt.tool_executor import ToolExecutor
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
@@ -74,7 +73,6 @@ if os.path.exists(os.path.join(work_dir, '.clean_coder/project_description.txt')
 else:
     project_description = create_project_description_file(work_dir)
 
-tool_executor = ToolExecutor(tools)
 tasks_progress_template = """Actual list of tasks you planned in Todoist:
 
 {tasks}
@@ -102,7 +100,7 @@ def call_model_manager(state):
 
 
 def call_tool_manager(state):
-    state = call_tool(state, tool_executor)
+    state = call_tool(state, tools)
     state = actualize_tasks_list_and_progress_description(state)
     return state
 
