@@ -46,4 +46,4 @@ if __name__ == "__main__":
     if isinstance(work_dir, str):
         run_clean_coder_pipeline(task, work_dir)
     else:
-        logger.info("WORK_DIR environment variable is not set.")
+        logger.info("WORK_DIR environment variable is not set. Add it to .env file so single coder pipeline runs.")
