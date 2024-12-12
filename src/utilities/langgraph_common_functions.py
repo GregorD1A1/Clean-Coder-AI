@@ -1,9 +1,9 @@
 from langchain_core.messages import HumanMessage
-from utilities.print_formatters import print_formatted, print_error, print_formatted_content
-from utilities.util_functions import find_tools_json, invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
-from utilities.user_input import user_input
+from src.utilities.print_formatters import print_formatted, print_error, print_formatted_content
+from src.utilities.util_functions import find_tools_json, invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
+from src.utilities.user_input import user_input
 from langgraph.graph import END
-from utilities.graphics import loading_animation
+from src.utilities.graphics import loading_animation
 import threading
 import sys
 

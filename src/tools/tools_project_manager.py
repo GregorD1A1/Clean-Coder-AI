@@ -1,15 +1,15 @@
 from langchain.tools import tool
 from todoist_api_python.api import TodoistAPI
 import os
-from utilities.print_formatters import print_formatted
-from utilities.manager_utils import actualize_progress_description_file
-from utilities.user_input import user_input
+from src.utilities.print_formatters import print_formatted
+from src.utilities.manager_utils import actualize_progress_description_file
+from src.utilities.user_input import user_input
 from dotenv import load_dotenv, find_dotenv
 from single_task_coder import run_clean_coder_pipeline
 import uuid
 import requests
 import json
-from utilities.manager_utils import move_task
+from src.utilities.manager_utils import move_task
 
 
 load_dotenv(find_dotenv())

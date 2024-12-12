@@ -1,5 +1,5 @@
 import os
-from tools.tools_coder_pipeline import (
+from src.tools.tools_coder_pipeline import (
     ask_human_tool, prepare_list_dir_tool, prepare_see_file_tool,
     prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
 )
@@ -11,14 +11,14 @@ from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
-from utilities.llms import llm_open_router
-from utilities.langgraph_common_functions import (
+from src.utilities.print_formatters import print_formatted
+from src.utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
+from src.utilities.llms import llm_open_router
+from src.utilities.langgraph_common_functions import (
     call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
     agent_looped_human_help,
 )
-from agents.frontend_feedback import execute_screenshot_codes
+from src.agents.frontend_feedback import execute_screenshot_codes
 
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")

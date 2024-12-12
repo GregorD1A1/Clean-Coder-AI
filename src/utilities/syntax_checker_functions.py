@@ -3,7 +3,7 @@ import yaml
 import sass
 from lxml import etree
 import re
-from utilities.print_formatters import print_formatted
+from src.utilities.print_formatters import print_formatted
 
 
 def check_syntax(file_content, filename):

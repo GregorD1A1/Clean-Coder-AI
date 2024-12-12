@@ -4,13 +4,13 @@ import os
 import xml.etree.ElementTree as ET
 import base64
 import requests
-from utilities.start_work_functions import file_folder_ignored, CoderIgnore
-from utilities.print_formatters import print_formatted
+from src.utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from src.utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
 from langchain_core.messages import HumanMessage, ToolMessage
 import click
-from utilities.start_work_functions import Work
+from src.utilities.start_work_functions import Work
 
 
 load_dotenv(find_dotenv())

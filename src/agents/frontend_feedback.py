@@ -3,13 +3,13 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_ollama import ChatOllama
 from langchain_anthropic import ChatAnthropic
-from utilities.llms import llm_open_router
-from utilities.start_work_functions import read_frontend_feedback_story
+from src.utilities.llms import llm_open_router
+from src.utilities.start_work_functions import read_frontend_feedback_story
 import base64
 from langchain.output_parsers import XMLOutputParser
 import textwrap
 
-from agents.file_answerer import ResearchFileAnswerer
+from src.agents.file_answerer import ResearchFileAnswerer
 from typing import Optional, List
 from typing_extensions import Annotated, TypedDict
 from pydantic import BaseModel, Field

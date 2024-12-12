@@ -1,6 +1,6 @@
 import os, sys
 from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir, get_filenames_in_folder
-from agents.debugger_agent import Debugger
+from src.agents.debugger_agent import Debugger
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())

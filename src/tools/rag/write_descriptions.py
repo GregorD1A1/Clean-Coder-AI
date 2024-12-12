@@ -3,7 +3,7 @@ from pathlib import Path
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
-from utilities.util_functions import join_paths
+from src.utilities.util_functions import join_paths
 import chromadb
 from dotenv import load_dotenv, find_dotenv
 

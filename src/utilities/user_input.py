@@ -1,6 +1,6 @@
 import os
-from utilities.print_formatters import print_formatted
-from utilities.voice_utils import VoiceRecorder
+from src.utilities.print_formatters import print_formatted
+from src.utilities.voice_utils import VoiceRecorder
 import keyboard
 
 

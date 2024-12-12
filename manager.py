@@ -1,9 +1,9 @@
 if __name__ == "__main__":
-    from utilities.graphics import print_ascii_logo
+    from src.utilities.graphics import print_ascii_logo
     print_ascii_logo()
 
 from dotenv import find_dotenv, load_dotenv
-from utilities.set_up_dotenv import set_up_env_manager, add_todoist_envs
+from src.utilities.set_up_dotenv import set_up_env_manager, add_todoist_envs
 import os
 if not find_dotenv():
     set_up_env_manager()
@@ -17,16 +17,16 @@ from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langchain_core.load import dumps, loads
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
-from tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
+from src.tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
+from src.tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from langchain_community.chat_models import ChatOllama
-from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
-from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
+from src.utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
+from src.utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
-from utilities.util_functions import render_tools, join_paths
-from utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
-from utilities.llms import llm_open_router
-from utilities.print_formatters import print_formatted
+from src.utilities.util_functions import render_tools, join_paths
+from src.utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
+from src.utilities.llms import llm_open_router
+from src.utilities.print_formatters import print_formatted
 import json
 import os
 import warnings
@@ -83,7 +83,7 @@ What have been done so far:
 {progress_description}"""
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-with open(f"{current_dir}/prompts/manager_system.prompt", "r") as f:
+with open(f"{current_dir}/src/prompts/manager_system.prompt", "r") as f:
     system_prompt_template = f.read()
 
 system_message = SystemMessage(

@@ -3,7 +3,7 @@ import sys
 import time
 from termcolor import colored
 
-from utilities.print_formatters import print_formatted
+from src.utilities.print_formatters import print_formatted
 
 
 def print_ascii_logo():
