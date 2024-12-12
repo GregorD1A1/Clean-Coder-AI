@@ -2,12 +2,19 @@ if __name__ == "__main__":
     from utilities.graphics import print_ascii_logo
     print_ascii_logo()
 
+from dotenv import find_dotenv, load_dotenv
+from utilities.set_up_dotenv import set_up_env_manager, add_todoist_envs
+import os
+if not find_dotenv():
+    set_up_env_manager()
+elif load_dotenv(find_dotenv()) and not os.getenv("TODOIST_API_KEY"):
+    add_todoist_envs()
+
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_anthropic import ChatAnthropic
-from langchain_community.llms import Replicate
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
-from langgraph.prebuilt.tool_executor import ToolExecutor
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.load import dumps, loads
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
@@ -16,9 +23,11 @@ from langchain_community.chat_models import ChatOllama
 from utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from utilities.langgraph_common_functions import (call_model, call_tool, bad_json_format_msg, multiple_jsons_msg,
                                                   no_json_msg)
-from utilities.util_functions import render_tools
-from utilities.start_project_functions import create_project_description_file
+from utilities.util_functions import render_tools, join_paths
+from utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
 from utilities.llms import llm_open_router
+from utilities.print_formatters import print_formatted
+import json
 import os
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -41,7 +50,6 @@ tools = [
 ]
 rendered_tools = render_tools(tools)
 
-#llm = Replicate(model="meta/meta-llama-3.1-405b-instruct").with_config({"run_name": "Manager"})
 llms = []
 if os.getenv("OPENAI_API_KEY"):
     llms.append(ChatOpenAI(model="gpt-4o", temperature=0.4, timeout=120).with_config({"run_name": "Manager"}))
@@ -52,6 +60,10 @@ if os.getenv("ANTHROPIC_API_KEY"):
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Manager"}))
 
+
+set_up_dot_clean_coder_dir(work_dir)
+
+
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
@@ -59,9 +71,8 @@ class AgentState(TypedDict):
 if os.path.exists(os.path.join(work_dir, '.clean_coder/project_description.txt')):
     project_description = read_project_description()
 else:
-    project_description = create_project_description_file()
+    project_description = create_project_description_file(work_dir)
 
-tool_executor = ToolExecutor(tools)
 tasks_progress_template = """Actual list of tasks you planned in Todoist:
 
 {tasks}
@@ -84,11 +95,12 @@ system_message = SystemMessage(
 def call_model_manager(state):
     state = call_model(state, llms)
     state = cut_off_context(state)
+    save_messages_to_disk(state)
     return state
 
 
 def call_tool_manager(state):
-    state = call_tool(state, tool_executor)
+    state = call_tool(state, tools)
     state = actualize_tasks_list_and_progress_description(state)
     return state
 
@@ -125,6 +137,12 @@ def cut_off_context(state):
     return state
 
 
+def save_messages_to_disk(state):
+    messages_string = dumps(state["messages"])
+    with open(join_paths(work_dir, ".clean_coder/manager_messages.json"), "w") as f:
+        json.dump(messages_string, f)
+
+
 # workflow definition
 manager_workflow = StateGraph(AgentState)
 manager_workflow.add_node("agent", call_model_manager)
@@ -136,17 +154,26 @@ manager = manager_workflow.compile()
 
 
 def run_manager():
-    print("Manager starting its work")
-    project_tasks = get_project_tasks()
-    progress_description = read_progress_description()
-    tasks_and_progress_msg = HumanMessage(
-        content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
-        tasks_and_progress_message=True
-    )
-    start_human_message = HumanMessage(content="Go")    # Claude needs to have human message always as first
-    inputs = {"messages": [system_message, tasks_and_progress_msg, start_human_message]}
+    print_formatted("😀 Hello! I'm Manager agent. Let's plan your project together!", color="green")
+    saved_messages_path = join_paths(work_dir, ".clean_coder/manager_messages.json")
+    if not os.path.exists(saved_messages_path):
+        # new start
+        project_tasks = get_project_tasks()
+        progress_description = read_progress_description()
+        tasks_and_progress_msg = HumanMessage(
+            content=tasks_progress_template.format(tasks=project_tasks, progress_description=progress_description),
+            tasks_and_progress_message=True
+        )
+        start_human_message = HumanMessage(content="Go")    # Claude needs to have human message always as first
+        messages = [system_message, tasks_and_progress_msg, start_human_message]
+    else:
+        # continue previous work
+        with open(saved_messages_path, "r") as fp:
+            messages = loads(json.load(fp))
+
+    inputs = {"messages": messages}
     manager.invoke(inputs, {"recursion_limit": 1000})
 
-
 if __name__ == "__main__":
+
     run_manager()

@@ -3,18 +3,14 @@ import os
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv, find_dotenv
 from utilities.syntax_checker_functions import check_syntax
-from utilities.start_project_functions import file_folder_ignored, forbidden_files_and_folders
-from utilities.util_functions import join_paths
+from utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from utilities.util_functions import join_paths, TOOL_NOT_EXECUTED_WORD
 from utilities.user_input import user_input
 from tools.rag.retrieval import retrieve
 import base64
 
 
 load_dotenv(find_dotenv())
-
-
-TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
-#SUCCESSFUL_EXECUTION_WORD = "Tool been executed successfully."
 
 syntax_error_insert_code = """
 Changes can cause next error: {error_response}. Probably you:
@@ -39,7 +35,7 @@ tool input:
 :param directory: Name of directory to list files in.
 """
         try:
-            if file_folder_ignored(directory, forbidden_files_and_folders):
+            if file_folder_ignored(directory, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with directory {directory}."
             files = os.listdir(join_paths(work_dir, directory))
 
@@ -59,7 +55,7 @@ tool input:
 :param filename: Name and path of file to check.
 """
         try:
-            if file_folder_ignored(filename, forbidden_files_and_folders):
+            if file_folder_ignored(filename, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with {filename}."
             with open(join_paths(work_dir, filename), 'r', encoding='utf-8') as file:
                 lines = file.readlines()
@@ -226,7 +222,6 @@ commands: [
 {"action": "wait", "value": 5000},
 ],
 """
-        #try:
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         if login_required:
@@ -285,3 +280,4 @@ if __name__ == '__main__':
 
         ]
     })
+

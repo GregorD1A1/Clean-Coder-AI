@@ -10,10 +10,11 @@ Important: you can not modify any files! Do research only, modifications will in
 Your final selection should include files needed to be modified or needed as reference for a programmer 
 (for example to see how code in similar file implemented). 
 Avoid recommending unseen or non-existent files in final response. 
-Task is:
+Programmer's task is:
 '''
 {task}
 '''
+Remember, you not executing the task.
 
 You have access to following tools:
 {tools}

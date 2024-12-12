@@ -57,7 +57,8 @@ class VoiceRecorder:
         with open(self.soundfile_path, "rb") as soundfile:
             transcription = self.openai_client.audio.transcriptions.create(
                 model="whisper-1",
-                file=soundfile
+                file=soundfile,
+                timeout=20,
             )
         os.remove(self.soundfile_path)
         print(transcription.text)

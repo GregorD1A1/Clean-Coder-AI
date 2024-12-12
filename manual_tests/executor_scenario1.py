@@ -2,22 +2,15 @@ import os, sys
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
-import shutil
+from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir
 from agents.executor_agent import Executor
 from dotenv import load_dotenv, find_dotenv
 
+
 load_dotenv(find_dotenv())
 
-def setup_work_dir():
-    if os.path.exists("sandbox_work_dir"):
-        cleanup_work_dir()
-    os.makedirs("sandbox_work_dir")
-    shutil.copy2("projects_files/main_scenario_1.py", "sandbox_work_dir/main.py")
 
-def cleanup_work_dir():
-    shutil.rmtree("sandbox_work_dir")
-
-setup_work_dir()
+setup_work_dir("executor_scenario_1_files")
 executor = Executor({"main.py"}, "sandbox_work_dir")
 
 task = "Create fastapi app with few endpoints."

@@ -13,4 +13,5 @@ def llm_open_router(model):
         "HTTP-Referer": "https://github.com/GregorD1A1/Clean-Coder-AI",
         "X-Title": "Clean Coder",
     },
+    timeout=60,
 )
