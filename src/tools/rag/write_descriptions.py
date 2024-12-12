@@ -65,7 +65,7 @@ Write what file is responsible for.\n\n'''\n{code}'''
 
 
 def upload_descriptions_to_vdb():
-    chroma_client = chromadb.PersistentClient(path=os.getenv('WORK_DIR') + '.clean_coder/chroma_base')
+    chroma_client = chromadb.PersistentClient(path=join_paths(work_dir, '.clean_coder/chroma_base'))
     collection_name = f"clean_coder_{Path(work_dir).name}_file_descriptions"
 
     collection = chroma_client.get_or_create_collection(
@@ -73,7 +73,8 @@ def upload_descriptions_to_vdb():
     )
 
     # read files and upload to base
-    for root, _, files in os.walk(work_dir + '.clean_coder/files_and_folders_descriptions'):
+    description_folder = join_paths(work_dir, '.clean_coder/files_and_folders_descriptions')
+    for root, _, files in os.walk(description_folder):
         for file in files:
             file_path = Path(root) / file
             with open(file_path, 'r', encoding='utf-8') as file:
