@@ -85,7 +85,7 @@ class Debugger():
 
         debugger_workflow.add_edge("tool", "agent")
         debugger_workflow.add_edge("human_help", "agent")
-        debugger_workflow.add_edge("frontend_screenshots", "agent")
+        debugger_workflow.add_edge("frontend_screenshots", "human_end_process_confirmation")
         debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
         debugger_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
         debugger_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
