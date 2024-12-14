@@ -56,6 +56,14 @@ def print_formatted_content(content):
                 print_code_snippet(code=code_content, extension=language)
 
 
+def print_formatted_content_native_tools(content):
+    for response_part in content:
+        if response_part["type"] == "text":
+            print_formatted(content=response_part["text"], color="dark_grey")
+        elif response_part["type"] == "tool_use":
+            print_tool_message(tool_name=response_part["name"], tool_input=response_part["input"])
+
+
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
     if width:
         lines = content.split('\n')
@@ -171,34 +179,4 @@ def print_tool_message(tool_name, tool_input=None):
 
 
 if __name__ == '__main__':
-    code = """
-import Link from "next/link";
-
-const articles = [
-  { id: 1, title: "First Article", content: "Content of the first article.", excerpt: "A brief introduction to the first article..." },
-  { id: 2, title: "Second Article", content: "Content of the second article.", excerpt: "What you'll learn in the second article..." },
-  { id: 3, title: "Third Article", content: "Content of the third article.", excerpt: "Exploring the topics of the third article..." },
-];
-
-export default function ArticlesList() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start w-full max-w-2xl">
-        <h1 className="text-4xl font-bold text-center sm:text-left">Articles</h1>
-        <ul className="w-full space-y-6">
-          {articles.map((article) => (
-            <li key={article.id} className="border-b pb-4">
-              <Link href={`/articles/${article.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
-                {article.title}
-              </Link>
-              <p className="mt-2 text-gray-600">{article.excerpt}</p>
-            </li>
-          ))}
-        </ul>
-      </main>
-    </div>
-  );
-}
-
-"""
-    print_code_snippet(code, "tsx")
+   pass

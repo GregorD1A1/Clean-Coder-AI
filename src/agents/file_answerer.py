@@ -1,6 +1,3 @@
-from langchain_openai.chat_models import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_ollama import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
@@ -14,6 +11,7 @@ from src.utilities.util_functions import find_tools_json, list_directory_tree
 from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, bad_json_format_msg, no_json_msg
 )
+from src.utilities.llms import init_llms
 from src.utilities.llms import llm_open_router
 import os
 
@@ -35,17 +33,6 @@ def final_response_file_answerer(answer, additional_materials):
     """
     pass
 
-def init_llms(tools):
-    llms = []
-    if anthropic_api_key:
-        llms.append(ChatAnthropic(model='claude-3-5-haiku-20241022', temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if os.getenv("OPENROUTER_API_KEY"):
-        llms.append(llm_open_router("anthropic/claude-3.5-haiku").bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if openai_api_key:
-        llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if os.getenv("OLLAMA_MODEL"):
-        llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    return llms
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -74,7 +61,7 @@ class ResearchFileAnswerer():
         self.tools = [see_file, list_dir, final_response_file_answerer]
         if vdb_available():
             self.tools.append(retrieve_files_by_semantic_query)
-        self.llms = init_llms(self.tools)
+        self.llms = init_llms(self.tools, "File Answerer", temp=0.2)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)

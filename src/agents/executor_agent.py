@@ -2,21 +2,18 @@ import os
 from src.tools.tools_coder_pipeline import (
     ask_human_tool, prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
 )
-from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
-from langchain_community.chat_models import ChatOllama
-from langchain_anthropic import ChatAnthropic
-from src.utilities.llms import llm_open_router
+from src.utilities.llms import init_llms
 from src.utilities.print_formatters import print_formatted, print_error
 from src.utilities.util_functions import (
-    check_file_contents, render_tools, find_tools_json, exchange_file_contents, bad_tool_call_looped
+    check_file_contents, find_tools_json, exchange_file_contents, bad_tool_call_looped
 )
 from src.utilities.langgraph_common_functions import (
-    call_model, call_tool, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help
+    call_model_native_tools, call_tool_native, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help
 )
 
 
@@ -34,21 +31,6 @@ implemented changes work correctly."""
     print_formatted(content=test_instruction, color="blue")
 
 
-# llm = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", temperature=0).with_config({"run_name": "Executor"})
-# llm = ChatOllama(model="mixtral"), temperature=0).with_config({"run_name": "Executor"})
-llms = []
-if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(ChatAnthropic(
-        model='claude-3-5-sonnet-20240620', temperature=0, max_tokens=2000, timeout=60
-    ).with_config({"run_name": "Executor"}))
-if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Executor"}))
-if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Executor"}))
-if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Executor"}))
-
-
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
@@ -63,9 +45,9 @@ class Executor():
     def __init__(self, files, work_dir):
         self.work_dir = work_dir
         self.tools = prepare_tools(work_dir)
-        rendered_tools = render_tools(self.tools)
+        self.llms = init_llms(self.tools, "Executor")
         self.system_message = SystemMessage(
-            content=system_prompt_template.format(executor_tools=rendered_tools)
+            content=system_prompt_template
         )
         self.files = files
 
@@ -87,20 +69,15 @@ class Executor():
 
     # node functions
     def call_model_executor(self, state):
-        state = call_model(state, llms)
-        last_message = state["messages"][-1]
-        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
-            state["messages"].append(
-                HumanMessage(content=multiple_jsons_msg))
-            print_error("\nToo many jsons provided, asked to provide one.")
+        state = call_model_native_tools(state, self.llms)
         return state
 
     def call_tool_executor(self, state):
         last_ai_message = state["messages"][-1]
-        state = call_tool(state, self.tools)
-        for tool_call in last_ai_message.json5_tool_calls:
-            if tool_call["tool"] == "create_file_with_code":
-                self.files.add(tool_call["tool_input"]["filename"])
+        state = call_tool_native(state, self.tools)
+        for tool_call in last_ai_message.tool_calls:
+            if tool_call["name"] == "create_file_with_code":
+                self.files.add(tool_call["args"]["filename"])
         state = exchange_file_contents(state, self.files, self.work_dir)
         return state
 
@@ -112,7 +89,7 @@ class Executor():
             return "human_help"
         elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response_executor":
+        elif last_message.tool_calls[0]["name"] == "final_response_executor":
             return END
         else:
             return "tool"
@@ -127,10 +104,9 @@ class Executor():
             HumanMessage(content=f"Task: {task}\n\n######\n\nPlan:\n\n{plan}"),
             HumanMessage(content=f"File contents: {file_contents}", contains_file_contents=True)
         ]}
-        final_response = self.executor.invoke(inputs, {"recursion_limit": 150})
-        test_instruction = find_tools_json(final_response['messages'][-1].content)[0]["tool_input"]
+        self.executor.invoke(inputs, {"recursion_limit": 150})
 
-        return test_instruction, self.files
+        return self.files
 
 
 def prepare_tools(work_dir):

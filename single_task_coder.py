@@ -34,7 +34,7 @@ def run_clean_coder_pipeline(task, work_dir):
         create_frontend_feedback_story()
         with ThreadPoolExecutor() as executor_thread:
             future = executor_thread.submit(write_screenshot_codes, task, plan, work_dir)
-            test_instruction, file_paths = executor.do_task(task, plan)
+            file_paths = executor.do_task(task, plan)
             playwright_codes, screenshot_descriptions = future.result()
         if playwright_codes:
             print_formatted("Making screenshots, please wait a while...", color="light_blue")
@@ -42,7 +42,7 @@ def run_clean_coder_pipeline(task, work_dir):
         else:
             first_vfeedback_screenshots_msg = None
     else:
-        test_instruction, file_paths = executor.do_task(task, plan)
+        file_paths = executor.do_task(task, plan)
         first_vfeedback_screenshots_msg = None
 
     human_message = user_input("Please test app and provide commentary if debugging/additional refinement is needed.")
