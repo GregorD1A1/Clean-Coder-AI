@@ -34,6 +34,8 @@ if os.getenv("ANTHROPIC_API_KEY"):
     llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=0.3, timeout=90).with_config({"run_name": "Planer"}))
 if os.getenv("OLLAMA_MODEL"):
     llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Planer"}))
+llm = llms[0].with_fallbacks(llms[1:])
+
 
 def read_project_description():
     file_path = os.path.join(work_dir, ".clean_coder", "project_description.txt")
