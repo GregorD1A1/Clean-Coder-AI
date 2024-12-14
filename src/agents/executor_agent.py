@@ -87,8 +87,8 @@ class Executor():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
-            return "agent"
+        # elif last_message.content in (multiple_jsons_msg, no_json_msg):
+        #     return "agent"
         elif last_message.tool_calls[0]["name"] == "final_response_executor":
             return END
         else:
