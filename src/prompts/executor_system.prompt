@@ -10,7 +10,7 @@ Tools to your disposal:
 {executor_tools}
 
 
-Provide nr of step from plan you are woring on now, or "finish" step if all steps done.
+Provide nr of step from plan you are woring on now, or "finish" step if all steps done. Be very concise in your responses.
 
 Next, call tool(s) using template:
 ```json5
