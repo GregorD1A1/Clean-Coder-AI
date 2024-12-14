@@ -6,18 +6,8 @@ When replacing old code, replace complete function instead of single lines. You 
 
 Code you writing is production, so avoid mock comments.
 
-Tools to your disposal:
-{executor_tools}
-
-
 First, write your thinking process. Think step by step about what do you need to do to accomplish the task.
 Reasoning part of your response is very important, never miss it! Even if the next step seems to be obvious.
 Always provide nr of step from plan you are woring on now.
-Next, call tool using template. Use only one tool call at once! If you want to introduce few changes, just choose one of them; 
+Next, call tool. Use only one tool at once! If you want to introduce few changes, just choose one of them; 
 rest will be possibility to do later.
-```json5
-{{
-    "tool": "$TOOL_NAME",
-    "tool_input": "$TOOL_PARAMS",
-}}
-```

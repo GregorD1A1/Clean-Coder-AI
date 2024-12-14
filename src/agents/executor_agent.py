@@ -10,7 +10,7 @@ from langchain.tools import tool
 from src.utilities.llms import init_llms
 from src.utilities.print_formatters import print_formatted, print_error
 from src.utilities.util_functions import (
-    check_file_contents, find_tools_json, exchange_file_contents, bad_tool_call_looped
+    check_file_contents, exchange_file_contents, bad_tool_call_looped
 )
 from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help

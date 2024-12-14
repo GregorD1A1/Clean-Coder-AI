@@ -1,21 +1,18 @@
 import os
 from src.tools.tools_coder_pipeline import (
     ask_human_tool, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
 )
-from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
-from langchain_community.chat_models import ChatOllama
-from langchain_anthropic import ChatAnthropic
 from src.utilities.print_formatters import print_formatted
 from src.utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
-from src.utilities.llms import llm_open_router
+from src.utilities.llms import init_llms
 from src.utilities.langgraph_common_functions import (
-    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
+    call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
     agent_looped_human_help,
 )
 from src.agents.frontend_feedback import execute_screenshot_codes
@@ -33,20 +30,6 @@ tool input:
 implemented changes work correctly."""
     pass
 
-llms = []
-if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(
-        ChatAnthropic(
-            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=60
-        ).with_config({"run_name": "Debugger"})
-    )
-if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Debugger"}))
-if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Debugger"}))
-if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Debugger"}))
-
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
 
@@ -61,9 +44,9 @@ class Debugger():
     def __init__(self, files, work_dir, human_feedback, vfeedback_screenshots_msg=None, playwright_codes=None, screenshot_descriptions=None):
         self.work_dir = work_dir
         self.tools = prepare_tools(work_dir)
-        rendered_tools = render_tools(self.tools)
+        self.llms = init_llms(self.tools, "Debugger")
         self.system_message = SystemMessage(
-            content=system_prompt_template.format(executor_tools=rendered_tools)
+            content=system_prompt_template
         )
         self.files = files
         self.human_feedback = human_feedback
@@ -94,20 +77,15 @@ class Debugger():
 
     # node functions
     def call_model_debugger(self, state):
-        state = call_model(state, llms)
-        last_message = state["messages"][-1]
-        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
-            state["messages"].append(
-                HumanMessage(content=multiple_jsons_msg))
-            print_formatted("\nToo many jsons provided, asked to provide one.", color="yellow")
+        state = call_model_native_tools(state, self.llms)
         return state
 
     def call_tool_debugger(self, state):
         last_ai_message = state["messages"][-1]
-        state = call_tool(state, self.tools)
-        for tool_call in last_ai_message.json5_tool_calls:
-            if tool_call["tool"] == "create_file_with_code":
-                self.files.add(tool_call["tool_input"]["filename"])
+        state = call_tool_native(state, self.tools)
+        for tool_call in last_ai_message.tool_calls:
+            if tool_call["name"] == "create_file_with_code":
+                self.files.add(tool_call["args"]["filename"])
         state = exchange_file_contents(state, self.files, self.work_dir)
         return state
 
@@ -134,9 +112,9 @@ class Debugger():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+        elif last_message.content in (multiple_jsons_msg, no_json_msg):
             return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response_debugger":
+        elif last_message.tool_calls[0]["name"] == "final_response_debugger":
             if log_file_path:
                 return "check_log"
             elif self.screenshot_descriptions:
