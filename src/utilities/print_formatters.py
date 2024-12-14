@@ -57,6 +57,10 @@ def print_formatted_content(content):
 
 
 def print_formatted_content_native_tools(content):
+    if type(content) == str:
+        print_formatted(content=content, color="dark_grey")
+        return
+
     for response_part in content:
         if response_part["type"] == "text":
             print_formatted(content=response_part["text"], color="dark_grey")

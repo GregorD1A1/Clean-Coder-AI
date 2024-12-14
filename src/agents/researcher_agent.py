@@ -7,7 +7,7 @@ from src.tools.tools_coder_pipeline import (
      prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
 from src.tools.rag.retrieval import vdb_available
-from src.utilities.util_functions import find_tools_json, list_directory_tree, render_tools
+from src.utilities.util_functions import list_directory_tree
 from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, no_json_msg, finish_too_early_msg
 )
@@ -48,14 +48,15 @@ with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
 
 # Logic for conditional edges
 def after_agent_condition(state):
-    last_message = state["messages"][-1]
+    messages = [msg for msg in state["messages"] if msg.type == "ai"]
+    last_message = messages[-1]
 
     # if last_message.content in (no_json_msg, finish_too_early_msg):
     #     return "agent"
     if last_message.tool_calls[0]["name"] == "final_response_researcher":
         return "human"
     else:
-        return "tool"
+        return "agent"
 
 
 class Researcher():
@@ -65,27 +66,22 @@ class Researcher():
         self.tools = [see_file, list_dir, final_response_researcher]
         if vdb_available():
             self.tools.append(retrieve_files_by_semantic_query)
-        self.llms = init_llms(self.tools, "Researcher", temp=0.3)
+        self.llms = init_llms(self.tools, "Researcher")
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
 
         researcher_workflow.add_node("agent", self.call_model_researcher)
-        researcher_workflow.add_node("tool", self.call_tool_researcher)
         researcher_workflow.add_node("human", ask_human)
 
         researcher_workflow.set_entry_point("agent")
 
         researcher_workflow.add_conditional_edges("agent", after_agent_condition)
-        researcher_workflow.add_conditional_edges("human", after_ask_human_condition )
-        researcher_workflow.add_edge("tool", "agent")
+        researcher_workflow.add_conditional_edges("human", after_ask_human_condition)
 
         self.researcher = researcher_workflow.compile()
 
     # node functions
-    def call_tool_researcher(self, state):
-        return call_tool_native(state, self.tools)
-
     def call_model_researcher(self, state):
         state = call_model_native_tools(state, self.llms)
         last_message = state["messages"][-1]
@@ -95,6 +91,7 @@ class Researcher():
                 tool_call for tool_call in last_message.tool_calls
                 if tool_call["name"] != "final_response_researcher"
             ]
+        state = call_tool_native(state, self.tools)
         return state
 
     # just functions
@@ -105,8 +102,7 @@ class Researcher():
         system_message = system_prompt_template.format(task=task)
         inputs = {
             "messages": [SystemMessage(content=system_message), HumanMessage(content=list_directory_tree(work_dir))]}
-        researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-2]
-
+        researcher_response = self.researcher.invoke(inputs, {"recursion_limit": 100})["messages"][-3]
         response_args = researcher_response.tool_calls[0]["args"]
         text_files = set(response_args["files_to_work_on"] + response_args["reference_files"])
         image_paths = response_args["template_images"]
