@@ -9,7 +9,7 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
 from src.utilities.print_formatters import print_formatted
-from src.utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
+from src.utilities.util_functions import check_file_contents, check_application_logs, exchange_file_contents, bad_tool_call_looped
 from src.utilities.llms import init_llms
 from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
@@ -114,7 +114,7 @@ class Debugger():
             return "human_help"
         # elif last_message.content in (multiple_jsons_msg, no_json_msg):
         #     return "agent"
-        elif last_message.tool_calls[0]["name"] == "final_response_debugger":
+        elif last_message.tool_calls and last_message.tool_calls[0]["name"] == "final_response_debugger":
             if log_file_path:
                 return "check_log"
             elif self.screenshot_descriptions:

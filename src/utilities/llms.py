@@ -20,7 +20,19 @@ def llm_open_router(model):
     timeout=60,
 )
 
-def init_llms(tools, run_name, temp=0, parrallel_tool_calls=True):
+def init_llms(tools, run_name, temp=0):
+    llms = []
+    if os.getenv("ANTHROPIC_API_KEY"):
+        llms.append(ChatAnthropic(model='claude-3-5-sonnet-20241022', temperature=temp, timeout=120, max_tokens=2048).bind_tools(tools).with_config({"run_name": run_name}))
+    if os.getenv("OPENROUTER_API_KEY"):
+        llms.append(llm_open_router("anthropic/claude-3.5-sonnet").bind_tools(tools).with_config({"run_name": run_name}))
+    if os.getenv("OPENAI_API_KEY"):
+        llms.append(ChatOpenAI(model="gpt-4o", temperature=temp, timeout=120).bind_tools(tools).with_config({"run_name": run_name}))
+    if os.getenv("OLLAMA_MODEL"):
+        llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).bind_tools(tools).with_config({"run_name": run_name}))
+    return llms
+
+def init_llms_mini(tools, run_name, temp=0):
     llms = []
     if os.getenv("ANTHROPIC_API_KEY"):
         llms.append(ChatAnthropic(model='claude-3-5-haiku-20241022', temperature=temp, timeout=120).bind_tools(tools).with_config({"run_name": run_name}))

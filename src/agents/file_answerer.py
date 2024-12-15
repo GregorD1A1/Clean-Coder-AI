@@ -11,8 +11,7 @@ from src.utilities.util_functions import find_tools_json, list_directory_tree
 from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, bad_json_format_msg, no_json_msg
 )
-from src.utilities.llms import init_llms
-from src.utilities.llms import llm_open_router
+from src.utilities.llms import init_llms_mini
 import os
 
 
@@ -61,7 +60,7 @@ class ResearchFileAnswerer():
         self.tools = [see_file, list_dir, final_response_file_answerer]
         if vdb_available():
             self.tools.append(retrieve_files_by_semantic_query)
-        self.llms = init_llms(self.tools, "File Answerer", temp=0.2)
+        self.llms = init_llms_mini(self.tools, "File Answerer", temp=0.2)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)

@@ -12,7 +12,7 @@ from src.utilities.langgraph_common_functions import (
     call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, no_json_msg, finish_too_early_msg
 )
 from src.utilities.print_formatters import print_formatted
-from src.utilities.llms import init_llms
+from src.utilities.llms import init_llms_mini
 import os
 
 
@@ -51,8 +51,8 @@ def after_agent_condition(state):
     messages = [msg for msg in state["messages"] if msg.type == "ai"]
     last_message = messages[-1]
 
-    # if last_message.content in (no_json_msg, finish_too_early_msg):
-    #     return "agent"
+    if last_message.content == no_json_msg:
+        return "agent"
     if last_message.tool_calls[0]["name"] == "final_response_researcher":
         return "human"
     else:
@@ -66,7 +66,7 @@ class Researcher():
         self.tools = [see_file, list_dir, final_response_researcher]
         if vdb_available():
             self.tools.append(retrieve_files_by_semantic_query)
-        self.llms = init_llms(self.tools, "Researcher")
+        self.llms = init_llms_mini(self.tools, "Researcher")
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
@@ -91,6 +91,8 @@ class Researcher():
                 tool_call for tool_call in last_message.tool_calls
                 if tool_call["name"] != "final_response_researcher"
             ]
+        if len(last_message.tool_calls) == 0:
+            state["messages"].append(HumanMessage(content=no_json_msg))
         state = call_tool_native(state, self.tools)
         return state
 
