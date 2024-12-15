@@ -59,6 +59,6 @@ Create an entire web app ~~with~~ by Clean Coder:
 
 Report bugs or propose new features for Clean Coder on our [Discord](https://discord.gg/8gat7Pv7QJ)!
 
-## 🌱 Contibutions
+## 🌱 Contributions
 
 All contributions to the project are very welcome! Please check the [contributions guide](https://clean-coder.dev/community/contributions_guide/).
