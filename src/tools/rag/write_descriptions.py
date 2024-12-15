@@ -3,9 +3,12 @@ from pathlib import Path
 from langchain.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
-from src.utilities.util_functions import join_paths
-import chromadb
 from dotenv import load_dotenv, find_dotenv
+import chromadb
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+from src.utilities.util_functions import join_paths
+from src.utilities.llms import init_llms_mini
 
 
 load_dotenv(find_dotenv())
@@ -44,7 +47,8 @@ def write_descriptions(subfolders_with_files=['/']):
 Write what file is responsible for.\n\n'''\n{code}'''
 """
     )
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    llms = init_llms_mini(tools=[], run_name='File Describer')
+    llm = llms[0]
     chain = prompt | llm | StrOutputParser()
 
     description_folder = join_paths(work_dir, '.clean_coder/files_and_folders_descriptions')
