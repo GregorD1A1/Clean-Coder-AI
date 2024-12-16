@@ -60,11 +60,11 @@ Create an entire web app ~~with~~ by Clean Coder:
 Report bugs or propose new features for Clean Coder on our [Discord](https://discord.gg/8gat7Pv7QJ)!
 
 ## 🎖️ Hall of Fame
-
+<br>
 <div align="center">
   <a href="https://github.com/Grigorij-Dudnik/Clean-Coder-AI/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=Grigorij-Dudnik/Clean-Coder-AI" />
   </a>
 </div>
-<br><br>
+<br>
 Sweat, tears and endless glory... [Join the Clean Coder contributors!](https://clean-coder.dev/community/contributions_guide/)
