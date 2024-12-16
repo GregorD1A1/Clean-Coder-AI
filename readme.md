@@ -68,4 +68,4 @@ Report bugs or propose new features for Clean Coder on our [Discord](https://dis
 </div>
 <br>
 
-Sweat, tears and endless glory... [Join the Clean Coder contributors!](https://clean-coder.dev/community/contributions_guide/)
+Sweat, tears and endless glory... [Join the Clean Coder contributors](https://clean-coder.dev/community/contributions_guide/)!

@@ -26,8 +26,6 @@ from src.utilities.llms import init_llms
 from src.utilities.print_formatters import print_formatted
 import json
 import os
-import warnings
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 class AgentState(TypedDict):
@@ -54,9 +52,9 @@ What have been done so far:
 {progress_description}"""
 # node functions
     def call_model_manager(self, state):
+        self.save_messages_to_disk(state)
         state = call_model_native_tools(state, self.llms)
         state = self.cut_off_context(state)
-        self.save_messages_to_disk(state)
         return state
 
     def call_tool_manager(self, state):
@@ -94,7 +92,9 @@ What have been done so far:
         return state
 
     def save_messages_to_disk(self, state):
-        messages_string = dumps(state["messages"])
+        # remove system message
+        messages = state["messages"][1:]
+        messages_string = dumps(messages)
         with open(self.saved_messages_path, "w") as f:
             json.dump(messages_string, f)
 
@@ -155,6 +155,7 @@ What have been done so far:
             # continue previous work
             with open(self.saved_messages_path, "r") as fp:
                 messages = loads(json.load(fp))
+            messages = [self.system_message] + messages
 
         inputs = {"messages": messages}
         self.manager.invoke(inputs, {"recursion_limit": 1000})

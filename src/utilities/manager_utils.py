@@ -1,6 +1,7 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_community.chat_models import ChatOllama
 from langchain_anthropic import ChatAnthropic
+from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage, AIMessage
 from src.utilities.llms import llm_open_router
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
@@ -11,7 +12,8 @@ import os
 import uuid
 import requests
 import json
-
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 load_dotenv(find_dotenv())
 work_dir = os.getenv("WORK_DIR")
@@ -135,3 +137,23 @@ def move_task(task_id, epic_id):
         headers={"Authorization": f"Bearer {todoist_api_key}"},
         data={"commands": commands_json}
     )
+
+def message_to_dict(message):
+    """Convert a BaseMessage object to a dictionary."""
+    return {
+        "type": message.type,
+        "content": message.content,
+        "tool_calls": getattr(message, "tool_calls", None),  # Use getattr to handle cases where id might not exist
+        "tool_call_id": getattr(message, "tool_call_id", None),
+        "attribute": getattr(message, "attribute", None)
+    }
+
+def dict_to_message(msg_dict):
+    """Convert a dictionary back to a BaseMessage object."""
+    message_type = msg_dict["type"]
+    if message_type == "human":
+        return HumanMessage(type=msg_dict["type"], content=msg_dict["content"])
+    elif message_type == "ai":
+        return AIMessage(type=msg_dict["type"], content=msg_dict["content"], tool_calls=msg_dict.get("tool_calls"))
+    elif message_type == "tool":
+        return ToolMessage(type=msg_dict["type"], content=msg_dict["content"], tool_call_id=msg_dict.get("tool_call_id"))

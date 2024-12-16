@@ -23,7 +23,7 @@ TOOL_NOT_EXECUTED_WORD = "Tool not been executed. "
 
 @tool
 def add_task(task_name, task_description, order, epic_id):
-    """Add new task to project management platform (Todoist).
+    """Add new task to Todoist.
 Think very carefully before adding a new task to know what do you want exactly. Explain in detail what needs to be
 done in order to execute task.
 Avoid creating new tasks that have overlapping scope with old ones - modify or delete old tasks first.
