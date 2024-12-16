@@ -61,10 +61,10 @@ Report bugs or propose new features for Clean Coder on our [Discord](https://dis
 
 ## 🎖️ Hall of Fame
 
-<div align="center" style="padding-bottom: 50px;">
+<div align="center">
   <a href="https://github.com/Grigorij-Dudnik/Clean-Coder-AI/graphs/contributors">
     <img src="https://contrib.rocks/image?repo=Grigorij-Dudnik/Clean-Coder-AI" />
   </a>
 </div>
-
+<br><br>
 Sweat, tears and endless glory... [Join the Clean Coder contributors!](https://clean-coder.dev/community/contributions_guide/)
