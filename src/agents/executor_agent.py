@@ -13,13 +13,11 @@ from src.utilities.util_functions import (
     check_file_contents, exchange_file_contents, bad_tool_call_looped
 )
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, multiple_jsons_msg, no_tools_msg, agent_looped_human_help
+    call_model, call_tool, multiple_tools_msg, no_tools_msg, agent_looped_human_help
 )
 
 
 load_dotenv(find_dotenv())
-log_file_path = os.getenv("LOG_FILE")
-frontend_port = os.getenv("FRONTEND_PORT")
 
 
 @tool
@@ -69,12 +67,16 @@ class Executor():
 
     # node functions
     def call_model_executor(self, state):
-        state = call_model_native_tools(state, self.llms)
+        state = call_model(state, self.llms)
+        messages = [msg for msg in state["messages"] if msg.type == "ai"]
+        last_ai_message = messages[-1]
+        if len(last_ai_message.tool_calls) > 1:
+            state["messages"].append(HumanMessage(content=multiple_tools_msg))
         return state
 
     def call_tool_executor(self, state):
+        state = call_tool(state, self.tools)
         last_ai_message = state["messages"][-1]
-        state = call_tool_native(state, self.tools)
         for tool_call in last_ai_message.tool_calls:
             if tool_call["name"] == "create_file_with_code":
                 self.files.add(tool_call["args"]["filename"])
@@ -87,8 +89,8 @@ class Executor():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        # elif last_message.content in (multiple_jsons_msg, no_tools_msg):
-        #     return "agent"
+        elif last_message.content in (multiple_tools_msg, no_tools_msg):
+            return "agent"
         elif last_message.tool_calls[0]["name"] == "final_response_executor":
             return END
         else:

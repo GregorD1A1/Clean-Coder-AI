@@ -2,10 +2,9 @@ from langchain_openai.chat_models import ChatOpenAI
 from langchain.output_parsers import XMLOutputParser
 from typing import TypedDict, Annotated, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, AIMessage
-from langgraph.graph import END, StateGraph
+from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
-
-from src.utilities.print_formatters import print_formatted, print_formatted_content
+from src.utilities.print_formatters import print_formatted, print_formatted_content_planner
 from src.utilities.util_functions import check_file_contents, convert_images, get_joke
 from src.utilities.langgraph_common_functions import after_ask_human_condition
 from src.utilities.user_input import user_input
@@ -69,7 +68,7 @@ def call_planers(state):
 
     # Process and print the content
     print_formatted(f"Chosen plan:", color="light_blue")
-    print_formatted_content(plan.content)
+    print_formatted_content_planner(plan.content)
     print_formatted(f"\nPlease read the plan carefully. Never accept plan you don't understand.", color="light_blue")
 
     return state
@@ -89,7 +88,7 @@ def ask_human_planner(state):
 def call_model_corrector(state):
     messages = state["messages"]
     response = llm_planner.invoke(messages)
-    print_formatted_content(response.content)
+    print_formatted_content_planner(response.content)
     state["messages"].append(response)
 
     return state

@@ -9,7 +9,7 @@ from src.tools.tools_coder_pipeline import (
 from src.tools.rag.retrieval import vdb_available
 from src.utilities.util_functions import list_directory_tree
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, no_tools_msg
+    call_model, call_tool, no_tools_msg
 )
 from src.utilities.llms import init_llms_mini
 import os
@@ -77,10 +77,10 @@ class ResearchFileAnswerer():
 
     # node functions
     def call_tool_researcher(self, state):
-        return call_tool_native(state, self.tools)
+        return call_tool(state, self.tools)
 
     def call_model_researcher(self, state):
-        state = call_model_native_tools(state, self.llms, printing=False)
+        state = call_model(state, self.llms, printing=False)
         last_message = state["messages"][-1]
         if len(last_message.tool_calls) > 1:
             # Filter out the tool call with "final_response_researcher"

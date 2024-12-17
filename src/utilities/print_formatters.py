@@ -22,17 +22,21 @@ def split_text_and_code(text):
         elif i % 3 == 1:  # Code block or snippets parts
             language = parts[i]
             content = parts[i + 1]
-            result.append(('snippet_or_tool', language, content.strip()))
+            result.append(('code_snippet', language, content.strip()))
 
     return result
 
 
-def parse_tool_json(text):
-    try:
-        return json5.loads(text)
-    except ValueError:
-        return None
+def print_formatted_content_planner(content):
+    content_parts = split_text_and_code(content)
 
+    for part in content_parts:
+        if part[0] == 'text':
+            print_formatted(content=part[1], color="dark_grey")
+        elif part[0] == 'code_snippet':
+            language = part[1]
+            code_content = part[2]
+            print_code_snippet(code=code_content, extension=language)
 
 def print_formatted_content(response):
     if type(response.content) == str:

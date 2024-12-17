@@ -1,16 +1,14 @@
 from langchain_core.messages import HumanMessage
 from src.utilities.print_formatters import print_formatted, print_error, print_formatted_content, print_formatted_content
-from src.utilities.util_functions import find_tools_json, invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
+from src.utilities.util_functions import invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
 from src.utilities.user_input import user_input
 from langgraph.graph import END
 from src.utilities.graphics import loading_animation
 import threading
 import sys
 
-bad_json_format_msg = TOOL_NOT_EXECUTED_WORD + """Bad json format. Json should be enclosed with '```json5', '```' tags.
-Code inside of json should be provided in the way that not makes json invalid.
-No '```' tags should be inside of json."""
-multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
+
+multiple_tools_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
 multiple actions, choose only one for now; rest you can execute later."""
 no_tools_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a tool call to execute an action."""
 finish_too_early_msg = TOOL_NOT_EXECUTED_WORD + """You want to call final response with other tool calls. Don't you finishing too early?"""
@@ -46,7 +44,7 @@ def _get_llm_response(llms, messages, printing):
     sys.exit()
 
 
-def call_model_native_tools(state, llms, printing=True):
+def call_model(state, llms, printing=True):
     messages = state["messages"]
     loading_thread = None
 
@@ -63,21 +61,7 @@ def call_model_native_tools(state, llms, printing=True):
 
     return state
 
-
 def call_tool(state, tools):
-    last_message = state["messages"][-1]
-    if not hasattr(last_message, "json5_tool_calls"):
-        state["messages"].append(HumanMessage(content="No tool called"))
-        return state
-    json5_tool_calls = last_message.json5_tool_calls
-    tool_responses = [invoke_tool(tool_call, tools) for tool_call in json5_tool_calls]
-    tool_response = "\n\n###\n\n".join(tool_responses) if len(tool_responses) > 1 else tool_responses[0]
-    response_message = HumanMessage(content=tool_response)
-    state["messages"].append(response_message)
-    return state
-
-
-def call_tool_native(state, tools):
     last_message = state["messages"][-1]
     tool_response_messages = [invoke_tool_native(tool_call, tools) for tool_call in last_message.tool_calls]
     state["messages"].extend(tool_response_messages)

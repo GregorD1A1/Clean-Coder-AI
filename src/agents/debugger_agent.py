@@ -12,7 +12,7 @@ from src.utilities.print_formatters import print_formatted
 from src.utilities.util_functions import check_file_contents, check_application_logs, exchange_file_contents, bad_tool_call_looped
 from src.utilities.llms import init_llms
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_tools_msg,
+    call_model, call_tool, ask_human, after_ask_human_condition, multiple_tools_msg, no_tools_msg,
     agent_looped_human_help,
 )
 from src.agents.frontend_feedback import execute_screenshot_codes
@@ -77,12 +77,12 @@ class Debugger():
 
     # node functions
     def call_model_debugger(self, state):
-        state = call_model_native_tools(state, self.llms)
+        state = call_model(state, self.llms)
         return state
 
     def call_tool_debugger(self, state):
+        state = call_tool(state, self.tools)
         last_ai_message = state["messages"][-1]
-        state = call_tool_native(state, self.tools)
         for tool_call in last_ai_message.tool_calls:
             if tool_call["name"] == "create_file_with_code":
                 self.files.add(tool_call["args"]["filename"])
@@ -112,8 +112,8 @@ class Debugger():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        # elif last_message.content in (multiple_jsons_msg, no_tools_msg):
-        #     return "agent"
+        elif last_message.content in (multiple_tools_msg, no_tools_msg):
+             return "agent"
         elif last_message.tool_calls and last_message.tool_calls[0]["name"] == "final_response_debugger":
             if log_file_path:
                 return "check_log"

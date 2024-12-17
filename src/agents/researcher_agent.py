@@ -9,7 +9,7 @@ from src.tools.tools_coder_pipeline import (
 from src.tools.rag.retrieval import vdb_available
 from src.utilities.util_functions import list_directory_tree
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, no_tools_msg
+    call_model, call_tool, ask_human, after_ask_human_condition, no_tools_msg
 )
 from src.utilities.print_formatters import print_formatted
 from src.utilities.llms import init_llms_mini
@@ -83,7 +83,7 @@ class Researcher():
 
     # node functions
     def call_model_researcher(self, state):
-        state = call_model_native_tools(state, self.llms)
+        state = call_model(state, self.llms)
         last_message = state["messages"][-1]
         if len(last_message.tool_calls) == 0:
             state["messages"].append(HumanMessage(content=no_tools_msg))
@@ -94,7 +94,7 @@ class Researcher():
                 tool_call for tool_call in last_message.tool_calls
                 if tool_call["name"] != "final_response_researcher"
             ]
-        state = call_tool_native(state, self.tools)
+        state = call_tool(state, self.tools)
         return state
 
     # just functions
