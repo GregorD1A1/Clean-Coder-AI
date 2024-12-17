@@ -18,8 +18,8 @@ from dotenv import load_dotenv, find_dotenv
 from src.tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from src.tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from src.utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
-from src.utilities.langgraph_common_functions import (call_model_native_tools, call_tool_native, bad_json_format_msg, multiple_jsons_msg,
-                                                  no_json_msg)
+from src.utilities.langgraph_common_functions import (call_model_native_tools, call_tool_native, multiple_jsons_msg,
+                                                  no_tools_msg)
 from src.utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
 from src.utilities.util_functions import join_paths
 from src.utilities.llms import init_llms
@@ -66,7 +66,7 @@ What have been done so far:
     def after_agent_condition(self, state):
         last_message = state["messages"][-1]
 
-        if last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
+        if last_message.content in (multiple_jsons_msg, no_tools_msg):
             return "agent"
         else:
             return "tool"

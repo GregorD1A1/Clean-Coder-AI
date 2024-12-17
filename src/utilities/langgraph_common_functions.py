@@ -1,5 +1,5 @@
 from langchain_core.messages import HumanMessage
-from src.utilities.print_formatters import print_formatted, print_error, print_formatted_content, print_formatted_content_native_tools
+from src.utilities.print_formatters import print_formatted, print_error, print_formatted_content, print_formatted_content
 from src.utilities.util_functions import find_tools_json, invoke_tool, invoke_tool_native, TOOL_NOT_EXECUTED_WORD
 from src.utilities.user_input import user_input
 from langgraph.graph import END
@@ -12,30 +12,11 @@ Code inside of json should be provided in the way that not makes json invalid.
 No '```' tags should be inside of json."""
 multiple_jsons_msg = TOOL_NOT_EXECUTED_WORD + """You made multiple tool calls at once. If you want to execute 
 multiple actions, choose only one for now; rest you can execute later."""
-no_json_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a json tool call to execute an action."""
+no_tools_msg = TOOL_NOT_EXECUTED_WORD + """Please provide a tool call to execute an action."""
 finish_too_early_msg = TOOL_NOT_EXECUTED_WORD + """You want to call final response with other tool calls. Don't you finishing too early?"""
 
 
 # nodes
-def call_model(state, llms, printing=True):
-    messages = state["messages"]
-    loading_thread = None
-
-    if printing:
-        loading_thread = _start_loading_animation()
-
-    response = _get_llm_response(llms, messages, printing)
-    if printing and loading_thread:
-        _stop_loading_animation(loading_thread)
-
-    response.json5_tool_calls = find_tools_json(response.content)
-    if printing:
-        print_formatted_content(response.content)
-    state["messages"].append(response)
-
-    return _handle_potential_problems(state, response, printing)
-
-
 def _start_loading_animation():
     loading_animation.is_running = True
     thread = threading.Thread(target=loading_animation)
@@ -65,23 +46,6 @@ def _get_llm_response(llms, messages, printing):
     sys.exit()
 
 
-def _handle_potential_problems(state, response, printing):
-    if response.json5_tool_calls == "No json found in response.":
-        state["messages"].append(HumanMessage(content=no_json_msg))
-        if printing:
-            print_error('\nNo json provided, asked to provide one.')
-        return state
-
-    for tool_call in response.json5_tool_calls:
-        if tool_call is None or "tool" not in tool_call:
-            state["messages"].append(HumanMessage(content=bad_json_format_msg))
-            if printing:
-                print_error('\nBad json format provided, asked to provide again.')
-            return state
-
-    return state
-
-
 def call_model_native_tools(state, llms, printing=True):
     messages = state["messages"]
     loading_thread = None
@@ -94,7 +58,7 @@ def call_model_native_tools(state, llms, printing=True):
         _stop_loading_animation(loading_thread)
 
     if printing:
-        print_formatted_content_native_tools(response.content)
+        print_formatted_content(response)
     state["messages"].append(response)
 
     return state

@@ -9,7 +9,7 @@ from src.tools.tools_coder_pipeline import (
 from src.tools.rag.retrieval import vdb_available
 from src.utilities.util_functions import list_directory_tree
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, bad_json_format_msg, no_json_msg, finish_too_early_msg
+    call_model_native_tools, call_tool_native, ask_human, after_ask_human_condition, no_tools_msg
 )
 from src.utilities.print_formatters import print_formatted
 from src.utilities.llms import init_llms_mini
@@ -51,7 +51,7 @@ def after_agent_condition(state):
     messages = [msg for msg in state["messages"] if msg.type == "ai"]
     last_message = messages[-1]
 
-    if last_message.content == no_json_msg:
+    if last_message.content == no_tools_msg:
         return "agent"
     if last_message.tool_calls[0]["name"] == "final_response_researcher":
         return "human"
@@ -92,7 +92,7 @@ class Researcher():
                 if tool_call["name"] != "final_response_researcher"
             ]
         if len(last_message.tool_calls) == 0:
-            state["messages"].append(HumanMessage(content=no_json_msg))
+            state["messages"].append(HumanMessage(content=no_tools_msg))
         state = call_tool_native(state, self.tools)
         return state
 

@@ -13,7 +13,7 @@ from src.utilities.util_functions import (
     check_file_contents, exchange_file_contents, bad_tool_call_looped
 )
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, bad_json_format_msg, multiple_jsons_msg, no_json_msg, agent_looped_human_help
+    call_model_native_tools, call_tool_native, multiple_jsons_msg, no_tools_msg, agent_looped_human_help
 )
 
 
@@ -87,7 +87,7 @@ class Executor():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        # elif last_message.content in (multiple_jsons_msg, no_json_msg):
+        # elif last_message.content in (multiple_jsons_msg, no_tools_msg):
         #     return "agent"
         elif last_message.tool_calls[0]["name"] == "final_response_executor":
             return END

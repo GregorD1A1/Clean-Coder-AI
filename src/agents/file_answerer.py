@@ -7,9 +7,9 @@ from src.tools.tools_coder_pipeline import (
      prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
 from src.tools.rag.retrieval import vdb_available
-from src.utilities.util_functions import find_tools_json, list_directory_tree
+from src.utilities.util_functions import list_directory_tree
 from src.utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, bad_json_format_msg, no_json_msg
+    call_model_native_tools, call_tool_native, no_tools_msg
 )
 from src.utilities.llms import init_llms_mini
 import os
@@ -45,7 +45,7 @@ with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content == no_json_msg:
+    if last_message.content == no_tools_msg:
         return "agent"
     elif last_message.tool_calls[0]["name"] == "final_response_file_answerer":
         return END

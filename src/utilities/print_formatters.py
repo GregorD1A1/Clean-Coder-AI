@@ -34,38 +34,17 @@ def parse_tool_json(text):
         return None
 
 
-def print_formatted_content(content):
-    content_parts = split_text_and_code(content)
-
-    for part in content_parts:
-        if part[0] == 'text':
-            print_formatted(content=part[1], color="dark_grey")
-        elif part[0] == 'snippet_or_tool':
-            language = part[1]
-            code_content = part[2]
-            if language == 'json5':    # tool call
-                json_data = parse_tool_json(code_content)
-                if not json_data:
-                    print_formatted("Badly parsed tool json:")
-                    print_code_snippet(code=code_content, extension="json5")
-                    return
-                tool = json_data.get('tool')
-                tool_input = json_data.get('tool_input', {})
-                print_tool_message(tool_name=tool, tool_input=tool_input)
-            else:       # code snippet
-                print_code_snippet(code=code_content, extension=language)
-
-
-def print_formatted_content_native_tools(content):
-    if type(content) == str:
-        print_formatted(content=content, color="dark_grey")
-        return
-
-    for response_part in content:
-        if response_part["type"] == "text":
-            print_formatted(content=response_part["text"], color="dark_grey")
-        elif response_part["type"] == "tool_use":
-            print_tool_message(tool_name=response_part["name"], tool_input=response_part["input"])
+def print_formatted_content(response):
+    if type(response.content) == str:
+        print_formatted(content=response.content, color="dark_grey")
+        for tool_call in response.tool_calls:
+            print_tool_message(tool_name=tool_call["name"], tool_input=tool_call["args"])
+    else:
+        for response_part in response.content:
+            if response_part["type"] == "text":
+                print_formatted(content=response_part["text"], color="dark_grey")
+            elif response_part["type"] == "tool_use":
+                print_tool_message(tool_name=response_part["name"], tool_input=response_part["input"])
 
 
 def print_formatted(content, width=None, color=None, on_color=None, bold=False, end='\n'):
