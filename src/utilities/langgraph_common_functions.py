@@ -79,9 +79,6 @@ def call_tool(state, tools):
 
 def call_tool_native(state, tools):
     last_message = state["messages"][-1]
-    if not last_message.tool_calls:
-        state["messages"].append(HumanMessage(content="No tool called"))
-        return state
     tool_response_messages = [invoke_tool_native(tool_call, tools) for tool_call in last_message.tool_calls]
     state["messages"].extend(tool_response_messages)
     return state

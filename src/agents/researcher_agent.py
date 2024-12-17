@@ -48,12 +48,12 @@ with open(f"{parent_dir}/prompts/researcher_system.prompt", "r") as f:
 
 # Logic for conditional edges
 def after_agent_condition(state):
-    messages = [msg for msg in state["messages"] if msg.type == "ai"]
+    messages = [msg for msg in state["messages"] if msg.type in ["ai", "human"]]
     last_message = messages[-1]
 
     if last_message.content == no_tools_msg:
         return "agent"
-    if last_message.tool_calls[0]["name"] == "final_response_researcher":
+    elif last_message.tool_calls[0]["name"] == "final_response_researcher":
         return "human"
     else:
         return "agent"
@@ -85,14 +85,15 @@ class Researcher():
     def call_model_researcher(self, state):
         state = call_model_native_tools(state, self.llms)
         last_message = state["messages"][-1]
-        if len(last_message.tool_calls) > 1:
+        if len(last_message.tool_calls) == 0:
+            state["messages"].append(HumanMessage(content=no_tools_msg))
+            return state
+        elif len(last_message.tool_calls) > 1:
             # Filter out the tool call with "final_response_researcher"
             state["messages"][-1].tool_calls = [
                 tool_call for tool_call in last_message.tool_calls
                 if tool_call["name"] != "final_response_researcher"
             ]
-        if len(last_message.tool_calls) == 0:
-            state["messages"].append(HumanMessage(content=no_tools_msg))
         state = call_tool_native(state, self.tools)
         return state
 
