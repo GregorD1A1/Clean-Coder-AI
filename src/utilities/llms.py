@@ -14,7 +14,7 @@ def llm_open_router(model):
     openai_api_base="https://openrouter.ai/api/v1",
     model_name=model,
     default_headers={
-        "HTTP-Referer": "https://github.com/GregorD1A1/Clean-Coder-AI",
+        "HTTP-Referer": "https://github.com/Grigorij-Dudnik/Clean-Coder-AI",
         "X-Title": "Clean Coder",
     },
     timeout=60,

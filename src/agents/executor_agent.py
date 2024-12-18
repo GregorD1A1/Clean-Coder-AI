@@ -3,7 +3,7 @@ from src.tools.tools_coder_pipeline import (
     ask_human_tool, prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
 )
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
@@ -71,12 +71,15 @@ class Executor():
         messages = [msg for msg in state["messages"] if msg.type == "ai"]
         last_ai_message = messages[-1]
         if len(last_ai_message.tool_calls) > 1:
+            for tool_call in last_ai_message.tool_calls:
+                state["messages"].append(ToolMessage(content="too much tool calls", tool_call_id=tool_call["id"]))
             state["messages"].append(HumanMessage(content=multiple_tools_msg))
         return state
 
     def call_tool_executor(self, state):
         state = call_tool(state, self.tools)
-        last_ai_message = state["messages"][-1]
+        messages = [msg for msg in state["messages"] if msg.type == "ai"]
+        last_ai_message = messages[-1]
         for tool_call in last_ai_message.tool_calls:
             if tool_call["name"] == "create_file_with_code":
                 self.files.add(tool_call["args"]["filename"])
@@ -85,7 +88,8 @@ class Executor():
 
     # Conditional edge functions
     def after_agent_condition(self, state):
-        last_message = state["messages"][-1]
+        messages = [msg for msg in state["messages"] if msg.type in ["ai", "human"]]
+        last_message = messages[-1]
 
         if bad_tool_call_looped(state):
             return "human_help"
