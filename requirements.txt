@@ -27,6 +27,7 @@ vue-lexer==0.0.4
 requests==2.32.3
 click==8.1.7
 pytest==8.3.4
+pytest-cov==6.0.0
 pyright==1.1.390
 ruff==0.8.2
 httpx==0.27.2
