@@ -45,7 +45,7 @@ def write_descriptions(subfolders_with_files=['/']):
     prompt = ChatPromptTemplate.from_template(
 """Describe the following code in 4 sentences or less, focusing only on important information from integration point of view.
 Write what file is responsible for.\n\n'''\n{code}'''
-"""
+"""  # noqa: E501
     )
     llms = init_llms_mini(tools=[], run_name='File Describer')
     llm = llms[0]
