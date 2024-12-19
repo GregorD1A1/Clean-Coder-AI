@@ -12,4 +12,4 @@ unit-test:
 integration-test:
 	python -m pytest -m integration --disable-warnings
 unit-test-coverage:
-	python -m pytest -m "not integration" --disable-warnings --cov-report term-missing  --cov=agents tests
+	python -m pytest -m "not integration" --cov-report term-missing --cov=src
