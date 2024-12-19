@@ -32,7 +32,7 @@ def final_response_researcher(files_to_work_on, reference_files, template_images
 
     tool input:
     :param files_to_work_on: ["List", "of", "existing files", "to potentially introduce", "changes"],
-    :param reference_files: ["List", "of code files", "useful to code reference", "without images],
+    :param reference_files: ["List", "of code files", "useful as a reference", "without images"],
     :param template_images: ["List of", "template", "images"],
     """
     pass
