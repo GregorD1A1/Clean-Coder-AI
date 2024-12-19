@@ -6,3 +6,6 @@ env/
 venv/
 .clean_coder/
 manual_tests/sandbox_work_dir/
+Pipfile.lock
+Pipfile
+.coverage
