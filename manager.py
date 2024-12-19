@@ -18,8 +18,7 @@ from dotenv import load_dotenv, find_dotenv
 from src.tools.tools_project_manager import add_task, modify_task, create_epic, modify_epic, finish_project_planning, reorder_tasks
 from src.tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_file_tool, ask_human_tool
 from src.utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
-from src.utilities.langgraph_common_functions import (call_model_native_tools, call_tool_native, multiple_jsons_msg,
-                                                  no_tools_msg)
+from src.utilities.langgraph_common_functions import call_model, call_tool, multiple_tools_msg, no_tools_msg
 from src.utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
 from src.utilities.util_functions import join_paths
 from src.utilities.llms import init_llms
@@ -53,12 +52,12 @@ What have been done so far:
 # node functions
     def call_model_manager(self, state):
         self.save_messages_to_disk(state)
-        state = call_model_native_tools(state, self.llms)
+        state = call_model(state, self.llms)
         state = self.cut_off_context(state)
         return state
 
     def call_tool_manager(self, state):
-        state = call_tool_native(state, self.tools)
+        state = call_tool(state, self.tools)
         state = self.actualize_tasks_list_and_progress_description(state)
         return state
 
@@ -66,7 +65,7 @@ What have been done so far:
     def after_agent_condition(self, state):
         last_message = state["messages"][-1]
 
-        if last_message.content in (multiple_jsons_msg, no_tools_msg):
+        if last_message.content in (multiple_tools_msg, no_tools_msg):
             return "agent"
         else:
             return "tool"
