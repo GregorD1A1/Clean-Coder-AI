@@ -35,7 +35,7 @@ plan = """To make the form wider and change its background color to green, we ne
    - The `background-color` is changed from `#f9f9f9` (light grey) to `#28a745` (green) to give the form a green background.
 
 These changes will ensure that the form is wider with a green background, improving its styling as requested. No changes are needed in the `InternProfileEdit.vue` file for this task.
-"""
+"""  # noqa: E501, W291
 
 debugger.do_task(task, plan)
 cleanup_work_dir()
