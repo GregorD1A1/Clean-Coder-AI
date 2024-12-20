@@ -7,6 +7,8 @@ Plan should not include library installation or tests or anything else unrelated
 At every your message, you providing proposition of all changes, not just some. Never imagine files you have 
 not provided in context. Simplicity is a priority - write minimum needed amount of code.
 
+Comment your code really good.
+
 Do not rewrite full code, instead only write changes and point places where they need to be inserted. 
 Show with pluses (+) and minuses (-), where you want to add/remove code.
 Example:

@@ -3,8 +3,8 @@ Functions called when new project is initialized.
 """
 
 import os
-from utilities.user_input import user_input
-from utilities.print_formatters import print_formatted
+from src.utilities.user_input import user_input
+from src.utilities.print_formatters import print_formatted
 
 
 def create_coderignore(work_dir):

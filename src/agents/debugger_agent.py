@@ -1,24 +1,21 @@
 import os
-from tools.tools_coder_pipeline import (
+from src.tools.tools_coder_pipeline import (
     ask_human_tool, prepare_list_dir_tool, prepare_see_file_tool,
-    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool, prepare_watch_web_page_tool
+    prepare_create_file_tool, prepare_replace_code_tool, prepare_insert_code_tool
 )
-from langchain_openai.chat_models import ChatOpenAI
 from typing import TypedDict, Sequence
-from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
+from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
-from langchain_community.chat_models import ChatOllama
-from langchain_anthropic import ChatAnthropic
-from utilities.print_formatters import print_formatted
-from utilities.util_functions import check_file_contents, check_application_logs, render_tools, exchange_file_contents, bad_tool_call_looped
-from utilities.llms import llm_open_router
-from utilities.langgraph_common_functions import (
-    call_model, call_tool, ask_human, after_ask_human_condition, bad_json_format_msg, multiple_jsons_msg, no_json_msg,
+from src.utilities.print_formatters import print_formatted
+from src.utilities.util_functions import check_file_contents, check_application_logs, exchange_file_contents, bad_tool_call_looped
+from src.utilities.llms import init_llms
+from src.utilities.langgraph_common_functions import (
+    call_model, call_tool, ask_human, after_ask_human_condition, multiple_tools_msg, no_tools_msg,
     agent_looped_human_help,
 )
-from agents.frontend_feedback import execute_screenshot_codes
+from src.agents.frontend_feedback import execute_screenshot_codes
 
 load_dotenv(find_dotenv())
 log_file_path = os.getenv("LOG_FILE")
@@ -32,20 +29,6 @@ tool input:
 :param test_instruction: write detailed instruction for human what actions he need to do in order to check if
 implemented changes work correctly."""
     pass
-
-llms = []
-if os.getenv("ANTHROPIC_API_KEY"):
-    llms.append(
-        ChatAnthropic(
-            model='claude-3-5-sonnet-20241022', temperature=0, max_tokens=2000, timeout=60
-        ).with_config({"run_name": "Debugger"})
-    )
-if os.getenv("OPENROUTER_API_KEY"):
-    llms.append(llm_open_router("anthropic/claude-3.5-sonnet").with_config({"run_name": "Debugger"}))
-if os.getenv("OPENAI_API_KEY"):
-    llms.append(ChatOpenAI(model="gpt-4o", temperature=0, timeout=60).with_config({"run_name": "Debugger"}))
-if os.getenv("OLLAMA_MODEL"):
-    llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).with_config({"run_name": "Debugger"}))
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -61,9 +44,9 @@ class Debugger():
     def __init__(self, files, work_dir, human_feedback, vfeedback_screenshots_msg=None, playwright_codes=None, screenshot_descriptions=None):
         self.work_dir = work_dir
         self.tools = prepare_tools(work_dir)
-        rendered_tools = render_tools(self.tools)
+        self.llms = init_llms(self.tools, "Debugger")
         self.system_message = SystemMessage(
-            content=system_prompt_template.format(executor_tools=rendered_tools)
+            content=system_prompt_template
         )
         self.files = files
         self.human_feedback = human_feedback
@@ -85,7 +68,7 @@ class Debugger():
 
         debugger_workflow.add_edge("tool", "agent")
         debugger_workflow.add_edge("human_help", "agent")
-        debugger_workflow.add_edge("frontend_screenshots", "agent")
+        debugger_workflow.add_edge("frontend_screenshots", "human_end_process_confirmation")
         debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
         debugger_workflow.add_conditional_edges("check_log", self.after_check_log_condition)
         debugger_workflow.add_conditional_edges("human_end_process_confirmation", after_ask_human_condition)
@@ -94,20 +77,17 @@ class Debugger():
 
     # node functions
     def call_model_debugger(self, state):
-        state = call_model(state, llms)
-        last_message = state["messages"][-1]
-        if last_message.type == "ai" and len(last_message.json5_tool_calls) > 1:
-            state["messages"].append(
-                HumanMessage(content=multiple_jsons_msg))
-            print_formatted("\nToo many jsons provided, asked to provide one.", color="yellow")
+        state = call_model(state, self.llms)
         return state
 
     def call_tool_debugger(self, state):
-        last_ai_message = state["messages"][-1]
         state = call_tool(state, self.tools)
-        for tool_call in last_ai_message.json5_tool_calls:
-            if tool_call["tool"] == "create_file_with_code":
-                self.files.add(tool_call["tool_input"]["filename"])
+        messages = [msg for msg in state["messages"] if msg.type == "ai"]
+        last_ai_message = messages[-1]
+        if len(last_ai_message.tool_calls) > 1:
+            for tool_call in last_ai_message.tool_calls:
+                state["messages"].append(ToolMessage(content="too much tool calls", tool_call_id=tool_call["id"]))
+            state["messages"].append(HumanMessage(content=multiple_tools_msg))
         state = exchange_file_contents(state, self.files, self.work_dir)
         return state
 
@@ -130,13 +110,14 @@ class Debugger():
 
     # Conditional edge functions
     def after_agent_condition(self, state):
-        last_message = state["messages"][-1]
+        messages = [msg for msg in state["messages"] if msg.type in ["ai", "human"]]
+        last_message = messages[-1]
 
         if bad_tool_call_looped(state):
             return "human_help"
-        elif last_message.content in (bad_json_format_msg, multiple_jsons_msg, no_json_msg):
-            return "agent"
-        elif last_message.json5_tool_calls[0]["tool"] == "final_response_debugger":
+        elif last_message.content in (multiple_tools_msg, no_tools_msg):
+             return "agent"
+        elif last_message.tool_calls and last_message.tool_calls[0]["name"] == "final_response_debugger":
             if log_file_path:
                 return "check_log"
             elif self.screenshot_descriptions:

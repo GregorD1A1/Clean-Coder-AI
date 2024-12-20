@@ -2,11 +2,11 @@ from langchain.tools import tool
 import os
 from playwright.sync_api import sync_playwright
 from dotenv import load_dotenv, find_dotenv
-from utilities.syntax_checker_functions import check_syntax
-from utilities.start_work_functions import file_folder_ignored, CoderIgnore
-from utilities.util_functions import join_paths, TOOL_NOT_EXECUTED_WORD
-from utilities.user_input import user_input
-from tools.rag.retrieval import retrieve
+from src.utilities.syntax_checker_functions import check_syntax
+from src.utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from src.utilities.util_functions import join_paths, TOOL_NOT_EXECUTED_WORD
+from src.utilities.user_input import user_input
+from src.tools.rag.retrieval import retrieve
 import base64
 
 

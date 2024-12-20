@@ -4,13 +4,13 @@ import os
 import xml.etree.ElementTree as ET
 import base64
 import requests
-from utilities.start_work_functions import file_folder_ignored, CoderIgnore
-from utilities.print_formatters import print_formatted
+from src.utilities.start_work_functions import file_folder_ignored, CoderIgnore
+from src.utilities.print_formatters import print_formatted
 from dotenv import load_dotenv, find_dotenv
 from todoist_api_python.api import TodoistAPI
 from langchain_core.messages import HumanMessage, ToolMessage
 import click
-from utilities.start_work_functions import Work
+from src.utilities.start_work_functions import Work
 
 
 load_dotenv(find_dotenv())
@@ -206,20 +206,6 @@ def list_directory_tree(work_dir):
             tree.append(f"{file_indent}{connector}{file}")
 
     return "Content of directory tree:\n" + "\n".join(tree)
-
-
-def render_tools(tools) -> str:
-    from inspect import signature
-    descriptions = []
-    for tool in tools:
-        if hasattr(tool, "func") and tool.func:
-            sig = signature(tool.func)
-            description = f"tool_name: {tool.name}{sig}\n{tool.description}"
-        else:
-            description = f"{tool.name} - {tool.description}"
-
-        descriptions.append(description)
-    return "\n+++\n".join(descriptions)
 
 
 def invoke_tool(tool_call, tools):

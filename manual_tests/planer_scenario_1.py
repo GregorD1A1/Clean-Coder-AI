@@ -3,7 +3,7 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir, get_filenames_in_folder
-from agents.planner_agent import planning
+from src.agents.planner_agent import planning
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())

@@ -1,6 +1,6 @@
 import os, sys
 from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir, get_filenames_in_folder
-from agents.debugger_agent import Debugger
+from src.agents.debugger_agent import Debugger
 from dotenv import load_dotenv, find_dotenv
 
 load_dotenv(find_dotenv())
@@ -37,5 +37,5 @@ plan = """To make the form wider and change its background color to green, we ne
 These changes will ensure that the form is wider with a green background, improving its styling as requested. No changes are needed in the `InternProfileEdit.vue` file for this task.
 """
 
-debugger.do_task(task, plan, files)
+debugger.do_task(task, plan)
 cleanup_work_dir()

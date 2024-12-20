@@ -1,20 +1,17 @@
-from langchain_openai.chat_models import ChatOpenAI
-from langchain_anthropic import ChatAnthropic
-from langchain_ollama import ChatOllama
 from typing import TypedDict, Sequence
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
-from tools.tools_coder_pipeline import (
+from src.tools.tools_coder_pipeline import (
      prepare_see_file_tool, prepare_list_dir_tool, retrieve_files_by_semantic_query
 )
-from tools.rag.retrieval import vdb_available
-from utilities.util_functions import find_tools_json, list_directory_tree
-from utilities.langgraph_common_functions import (
-    call_model_native_tools, call_tool_native, bad_json_format_msg, no_json_msg
+from src.tools.rag.retrieval import vdb_available
+from src.utilities.util_functions import list_directory_tree
+from src.utilities.langgraph_common_functions import (
+    call_model, call_tool, no_tools_msg
 )
-from utilities.llms import llm_open_router
+from src.utilities.llms import init_llms_mini
 import os
 
 
@@ -35,17 +32,6 @@ def final_response_file_answerer(answer, additional_materials):
     """
     pass
 
-def init_llms(tools):
-    llms = []
-    if anthropic_api_key:
-        llms.append(ChatAnthropic(model='claude-3-5-haiku-20241022', temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if os.getenv("OPENROUTER_API_KEY"):
-        llms.append(llm_open_router("anthropic/claude-3.5-haiku").bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if openai_api_key:
-        llms.append(ChatOpenAI(model="gpt-4o-mini", temperature=0.2, timeout=120).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    if os.getenv("OLLAMA_MODEL"):
-        llms.append(ChatOllama(model=os.getenv("OLLAMA_MODEL")).bind_tools(tools).with_config({"run_name": "File Answerer"}))
-    return llms
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -59,7 +45,7 @@ with open(f"{parent_dir}/prompts/researcher_file_answerer.prompt", "r") as f:
 def after_agent_condition(state):
     last_message = state["messages"][-1]
 
-    if last_message.content == no_json_msg:
+    if last_message.content == no_tools_msg:
         return "agent"
     elif last_message.tool_calls[0]["name"] == "final_response_file_answerer":
         return END
@@ -74,7 +60,7 @@ class ResearchFileAnswerer():
         self.tools = [see_file, list_dir, final_response_file_answerer]
         if vdb_available():
             self.tools.append(retrieve_files_by_semantic_query)
-        self.llms = init_llms(self.tools)
+        self.llms = init_llms_mini(self.tools, "File Answerer", temp=0.2)
 
         # workflow definition
         researcher_workflow = StateGraph(AgentState)
@@ -91,10 +77,10 @@ class ResearchFileAnswerer():
 
     # node functions
     def call_tool_researcher(self, state):
-        return call_tool_native(state, self.tools)
+        return call_tool(state, self.tools)
 
     def call_model_researcher(self, state):
-        state = call_model_native_tools(state, self.llms, printing=False)
+        state = call_model(state, self.llms, printing=False)
         last_message = state["messages"][-1]
         if len(last_message.tool_calls) > 1:
             # Filter out the tool call with "final_response_researcher"
