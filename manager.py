@@ -85,10 +85,22 @@ What have been done so far:
         return state
 
     def cut_off_context(self, state):
-        system_message = next((msg for msg in state["messages"] if msg.type == "system"), None)
-        last_messages_excluding_system = [msg for msg in state["messages"][-20:] if msg.type != "system"]
-        state["messages"] = [system_message] + last_messages_excluding_system
+        approx_nr_msgs_to_save = 30
+        if len(state["messages"]) > approx_nr_msgs_to_save:
+            last_messages = state["messages"][-approx_nr_msgs_to_save:]
+
+            # Find the index of the first 'ai' message from the end in the last 30 messages
+            ai_message_index_in_last_msgs = next((i for i, message in enumerate(last_messages) if message.type == "ai"), None)
+            # Calculate the actual index of the 'ai' message in the original list
+            ai_message_index = len(state["messages"]) - approx_nr_msgs_to_save + ai_message_index_in_last_msgs
+            # Collect all messages starting from the 'ai' message
+            last_messages_excluding_system = [msg for msg in state["messages"][ai_message_index:] if msg.type != "system"]
+
+            system_message = state["messages"][0]
+            state["messages"] = [system_message] + last_messages_excluding_system
+
         return state
+
 
     def save_messages_to_disk(self, state):
         # remove system message
