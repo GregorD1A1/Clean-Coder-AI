@@ -58,7 +58,6 @@ class Debugger():
         debugger_workflow = StateGraph(AgentState)
 
         debugger_workflow.add_node("agent", self.call_model_debugger)
-        debugger_workflow.add_node("tool", self.call_tool_debugger)
         debugger_workflow.add_node("check_log", self.check_log)
         debugger_workflow.add_node("frontend_screenshots", self.frontend_screenshots)
         debugger_workflow.add_node("human_help", agent_looped_human_help)
@@ -66,7 +65,6 @@ class Debugger():
 
         debugger_workflow.set_entry_point("agent")
 
-        debugger_workflow.add_edge("tool", "agent")
         debugger_workflow.add_edge("human_help", "agent")
         debugger_workflow.add_edge("frontend_screenshots", "human_end_process_confirmation")
         debugger_workflow.add_conditional_edges("agent", self.after_agent_condition)
@@ -78,6 +76,7 @@ class Debugger():
     # node functions
     def call_model_debugger(self, state):
         state = call_model(state, self.llms)
+        state = self.call_tool_debugger(state)
         return state
 
     def call_tool_debugger(self, state):
@@ -115,8 +114,6 @@ class Debugger():
 
         if bad_tool_call_looped(state):
             return "human_help"
-        elif last_message.content in (multiple_tools_msg, no_tools_msg):
-             return "agent"
         elif last_message.tool_calls and last_message.tool_calls[0]["name"] == "final_response_debugger":
             if log_file_path:
                 return "check_log"
@@ -125,7 +122,7 @@ class Debugger():
             else:
                 return "human_end_process_confirmation"
         else:
-            return "tool"
+            return "agent"
 
     def after_check_log_condition(self, state):
         last_message = state["messages"][-1]

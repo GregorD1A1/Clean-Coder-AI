@@ -1,10 +1,19 @@
 import itertools
 import sys
 import time
+import random
 from termcolor import colored
-
+from time import sleep
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
+from rich.live import Live
+from rich.columns import Columns
+import os
+current = os.path.dirname(os.path.realpath(__file__))
+grandparent = os.path.dirname(os.path.dirname(current))
+sys.path.append(grandparent)
 from src.utilities.print_formatters import print_formatted
-
 
 def print_ascii_logo():
     with open("assets/ascii-art.txt", "r") as f:
@@ -56,3 +65,53 @@ def loading_animation(message="I'm thinking...", color="cyan"):
 
 
 loading_animation.is_running = True
+
+def task_completed_animation():
+    console = Console()
+    width = console.width  # Get console width
+
+    # Adjusted ASCII celebration art to fit console width
+    celebration_art = """
+   🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟
+   
+       🎊 TASK COMPLETED! 🎊
+       
+   🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟 🌟
+   """
+
+    # Symbols for animation
+    symbols = ["✨", "🎊", "🌟"]
+
+    # Initial celebration panel
+    console.clear()
+    panel = Panel(
+        Text(celebration_art, justify="center"),
+        border_style="bright_yellow",
+        padding=(1, 2)
+    )
+    console.print(panel)
+
+    # Calculate how many symbols fit in the width (considering each symbol + more spaces takes about 6 characters)
+    symbols_per_line = width // 6  # Increased space between symbols
+
+    # Animated confetti - full width but spaced out
+    with Live(console=console, refresh_per_second=15) as live:
+        for frame in range(20):
+            lines = []
+            for _ in range(5):  # 5 lines of confetti
+                line = "".join(
+                    f"{random.choice(symbols)}    "  # Added more spaces between symbols
+                    for _ in range(symbols_per_line)
+                )
+                lines.append(line)
+            
+            live.update(Text("\n".join(lines), justify="center"))
+            sleep(0.05)  # Fast animation
+
+    # Final message
+    final_panel = Panel(
+        Text("✨ Great job! Moving on to the next task... ✨",
+             justify="center"),
+        border_style="green"
+    )
+    console.print(final_panel)

@@ -10,6 +10,7 @@ import uuid
 import requests
 import json
 from src.utilities.manager_utils import move_task
+from src.utilities.graphics import task_completed_animation
 
 
 load_dotenv(find_dotenv())
@@ -183,6 +184,9 @@ tool_input:
     # Mark task as done
     todoist_api.close_task(task_id=task.id)
 
+    # Display task completed animation
+
+    task_completed_animation()
     return f"Task execution completed. Tester response: {tester_response}"
 
 
