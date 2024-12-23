@@ -75,7 +75,7 @@ Definition of Done:
 - A dedicated page for intern profile editing is implemented.
 - Fields for editing the specified information are included, using the registration page as a reference.
 - Changes are successfully sent to the backend for processing.
-"""
+"""  # noqa: E501
 
 plan = """### Plan for Implementing Intern Profile Editing Page
 
@@ -280,7 +280,7 @@ plan = """### Plan for Implementing Intern Profile Editing Page
      ```
 
 This plan outlines the necessary steps to create a new page for intern profile editing, ensuring that the changes are consistent with existing code and functionality.
-"""
+"""  # noqa: E501, W291
 
 
 def write_screenshot_codes(task, plan, work_dir):

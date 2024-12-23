@@ -39,7 +39,7 @@ you found in internet, files dev need to use, technical details related to exist
 attention on.
 :param order: order of the task in project.
 :param epic_id: id of the epic task belongs to.
-"""
+"""  # noqa: D205, D207, D213
     human_message = user_input("Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
         return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
@@ -63,7 +63,7 @@ tool_input:
 :param new_task_description: new detailed description of what needs to be done in order to implement task (optional).
 :param epic_id: id of the epic to move task to.
 :param delete: if True, task will be deleted.
-"""
+"""  # noqa: D205, D207, D213
     task_name = todoist_api.get_task(task_id).content
     human_message = user_input(f"I want to {'delete' if delete else 'modify'} task '{task_name}'. Type (o)k to agree or provide commentary.")
     if human_message not in ['o', 'ok']:
@@ -101,7 +101,7 @@ def reorder_tasks(task_items):
     ]
 
 }
-    """
+    """  # noqa: D205, D207, D213, D400, D411, D413, D415
     command = {
         "type": "item_reorder",
         "uuid": str(uuid.uuid4()),
@@ -124,7 +124,7 @@ def create_epic(name):
 Create an epic to group tasks with similar scope.
 tool_input:
 :param name: short description of functionality epic is about.
-"""
+"""  # noqa: D205, D207
     section = todoist_api.add_section(name=name, project_id=PROJECT_ID)
     return f"Epic {section} created successfully"
 
@@ -136,7 +136,7 @@ tool_input:
 :param epic_id: id of the epic.
 :param new_epic_name: new name of the epic (optional).
 :param delete: if True, epic will be deleted with all tasks inside.
-"""
+"""  # noqa: D205, D207, D213
     if delete:
         todoist_api.delete_section(section_id=epic_id)
         return "Epic deleted successfully"
@@ -151,7 +151,7 @@ def finish_project_planning():
 overlapping scope allowed. Tasks should be in execution order. That tool makes first task to be executed.
 tool_input:
 {}
-"""
+"""  # noqa: D205, D207, D213, D400, D415
     human_message = user_input(
         "Project planning finished. Provide your proposition of changes in task list or type (o)k to continue...\n"
     )

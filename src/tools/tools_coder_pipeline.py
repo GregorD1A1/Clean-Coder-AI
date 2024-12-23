@@ -33,7 +33,7 @@ def prepare_list_dir_tool(work_dir):
 List files in directory.
 tool input:
 :param directory: Name of directory to list files in.
-"""
+"""  # noqa: D205, D207
         try:
             if file_folder_ignored(directory, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with directory {directory}."
@@ -53,7 +53,7 @@ def prepare_see_file_tool(work_dir):
 Check contents of file.
 tool input:
 :param filename: Name and path of file to check.
-"""
+"""  # noqa: D205, D207
         try:
             if file_folder_ignored(filename, CoderIgnore.get_forbidden()):
                 return f"You are not allowed to work with {filename}."
@@ -82,7 +82,7 @@ Use that function at least once BEFORE calling final response to ensure you foun
 tool input:
 :param query: Semantic query describing subject you looking for in one sentence. Ask for a singe thing only.
 Explain here thing you look only: good query is "<Thing I'm looking for>", bad query is "Find a files containing <thing I'm looking for>"
-"""
+"""  # noqa: D205, D207, E501
     return retrieve(query)
 
 
@@ -96,7 +96,7 @@ tool input:
 :param filename: Name and path of file to change.
 :param start_line: Line number to insert new code after.
 :param code: Code to insert into the file. Without backticks around. Start it with appropriate indentation if needed.
-"""
+"""  # noqa: D205, D207
         try:
             with open(join_paths(work_dir, filename), 'r+', encoding='utf-8') as file:
                 file_contents = file.readlines()
@@ -106,7 +106,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print("Wrong syntax provided, asking to correct.")
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_insert_code.format(error_response=check_syntax_response)
-                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
+                message = "Never accept changes you don't understand. Type (o)k if you accept or provide commentary."
+                human_message = user_input(message)
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -130,7 +131,7 @@ tool input:
 :param start_line: Start line number to replace with new code. Inclusive - means start_line will be first line to change.
 :param code: New piece of code to replace old one. Without backticks around. Start it with appropriate indentation if needed.
 :param end_line: End line number to replace with new code. Inclusive - means end_line will be last line to change.
-"""
+"""  # noqa: D205, D207, E501
         try:
             with open(join_paths(work_dir, filename), 'r+', encoding='utf-8') as file:
                 file_contents = file.readlines()
@@ -140,7 +141,8 @@ tool input:
                 if check_syntax_response != "Valid syntax":
                     print(check_syntax_response)
                     return TOOL_NOT_EXECUTED_WORD + syntax_error_modify_code.format(error_response=check_syntax_response)
-                human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
+                message = "Never accept changes you don't understand. Type (o)k if you accept or provide commentary."
+                human_message = user_input(message)
                 if human_message not in ['o', 'ok']:
                     return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
                 file.seek(0)
@@ -164,9 +166,10 @@ with another tools.
 tool input:
 :param filename: Name and path of file to create.
 :param code: Code to write in the file.
-"""
+"""  # noqa: D205, D207
         try:
-            human_message = user_input("Never accept changes you don't understand. Type (o)k if you accept or provide commentary.")
+            message = "Never accept changes you don't understand. Type (o)k if you accept or provide commentary."
+            human_message = user_input(message)
             if human_message not in ['o', 'ok']:
                 return TOOL_NOT_EXECUTED_WORD + f"Action wasn't executed because of human interruption. He said: {human_message}"
 
@@ -192,7 +195,7 @@ def ask_human_tool(prompt):
     Ask human to do project setup/debug actions you're not available to do or provide observations of how does program works.
     tool input:
     :param prompt: prompt to human.
-    """
+    """  # noqa: D205, E501
     try:
         human_message = user_input(prompt)
         
@@ -221,7 +224,7 @@ commands: [
 {"action": "hover", "selector": ".main-page button[type='reload']"},
 {"action": "wait", "value": 5000},
 ],
-"""
+"""  # noqa: D205, D207, D400, D411, D413, D415, E501
         browser = p.chromium.launch(headless=False)
         page = browser.new_page()
         if login_required:
