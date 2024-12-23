@@ -1,7 +1,7 @@
-import os, sys
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent)
+import sys
+import pathlib
+repo_directory = pathlib.Path(__file__).parent.parent.resolve()
+sys.path.append(str(repo_directory))
 from manual_tests.utils_for_tests import setup_work_dir, cleanup_work_dir
 from src.agents.executor_agent import Executor
 from dotenv import load_dotenv, find_dotenv
