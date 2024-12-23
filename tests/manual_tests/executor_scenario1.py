@@ -57,7 +57,7 @@ async def register_endpoint():
 
 That's it!
 
-"""  # noqa: W293
+"""
 
 executor.do_task(task, plan)
 cleanup_work_dir()

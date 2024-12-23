@@ -29,7 +29,7 @@ def final_response_file_answerer(answer, additional_materials):
     tool input:
     :param answer: Provide answer(s) to question(s) here
     :param additional_materials: (Optional) You can provide code snippets here from files you seen to support your answer.
-    """  # noqa: D213, E501
+    """
     pass
 
 
