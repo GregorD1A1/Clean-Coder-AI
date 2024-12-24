@@ -20,7 +20,7 @@ from src.tools.tools_coder_pipeline import prepare_list_dir_tool, prepare_see_fi
 from src.utilities.manager_utils import read_project_description, read_progress_description, get_project_tasks
 from src.utilities.langgraph_common_functions import call_model, call_tool, multiple_tools_msg, no_tools_msg
 from src.utilities.start_project_functions import create_project_description_file, set_up_dot_clean_coder_dir
-from src.utilities.util_functions import join_paths
+from src.utilities.util_functions import join_paths, read_project_rules
 from src.utilities.llms import init_llms
 from src.utilities.print_formatters import print_formatted
 import json
@@ -135,9 +135,10 @@ What have been done so far:
         else:
             project_description = create_project_description_file(self.work_dir)
 
-        return SystemMessage(
-            content=system_prompt_template.format(project_description=project_description)
-        )
+        return SystemMessage(content=system_prompt_template.format(
+                project_description=project_description,
+                project_rules=read_project_rules()
+        ))
 
     # workflow definition
     def setup_workflow(self):
