@@ -9,11 +9,10 @@ from langgraph.graph import StateGraph
 from dotenv import load_dotenv, find_dotenv
 from langchain.tools import tool
 from src.utilities.print_formatters import print_formatted
-from src.utilities.util_functions import check_file_contents, check_application_logs, exchange_file_contents, bad_tool_call_looped
+from src.utilities.util_functions import check_file_contents, check_application_logs, exchange_file_contents, bad_tool_call_looped, read_project_rules
 from src.utilities.llms import init_llms
 from src.utilities.langgraph_common_functions import (
-    call_model, call_tool, ask_human, after_ask_human_condition, multiple_tools_msg, no_tools_msg,
-    agent_looped_human_help,
+    call_model, call_tool, ask_human, after_ask_human_condition, multiple_tools_msg, agent_looped_human_help,
 )
 from src.agents.frontend_feedback import execute_screenshot_codes
 
@@ -46,7 +45,7 @@ class Debugger():
         self.tools = prepare_tools(work_dir)
         self.llms = init_llms(self.tools, "Debugger")
         self.system_message = SystemMessage(
-            content=system_prompt_template
+            content=system_prompt_template.format(project_rules=read_project_rules())
         )
         self.files = files
         self.human_feedback = human_feedback

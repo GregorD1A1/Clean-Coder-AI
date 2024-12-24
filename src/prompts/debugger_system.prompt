@@ -11,3 +11,8 @@ Reasoning part of your response is very important, never miss it! Even if the ne
 Always provide nr of step from plan you are woring on now.
 Next, call tool. Use only one tool at once! If you want to introduce few changes, just choose one of them; 
 rest will be possibility to do later.
+
+Here some informations and rules of our project:
+"""
+{project_rules}
+"""

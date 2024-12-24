@@ -9,7 +9,7 @@ from src.utilities.print_formatters import print_formatted
 
 def create_coderignore(work_dir):
     coderignore_path = os.path.join(work_dir, '.clean_coder', '.coderignore')
-    default_ignore_content = ".env\n.git/\n.idea/\n.clean_coder/\n.vscode\n.gitignore\nnode_modules/\nvenv/\nenv/\n __pycache__\n*.pyc\n*.log"
+    default_ignore_content = ".env\n.git/\n.idea/\n.clean_coder/\n.cleanrules\n.vscode\n.gitignore\nnode_modules/\nvenv/\nenv/\n __pycache__\n*.pyc\n*.log"
     os.makedirs(os.path.dirname(coderignore_path), exist_ok=True)
     if not os.path.exists(coderignore_path):
         with open(coderignore_path, 'w', encoding='utf-8') as file:

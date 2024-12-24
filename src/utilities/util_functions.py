@@ -141,19 +141,7 @@ def convert_images(image_paths):
                  {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{see_image(image_path, work_dir)}"}}
                  for image_path in image_paths
              ]
-    # images for claude
-    '''
-    images.append(
-        {
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/png",
-                "data": see_image(image_path, work_dir),
-            },
-        }
-    )
-    '''
+
     return images
 
 
@@ -255,5 +243,10 @@ def create_frontend_feedback_story():
         input("Fulfill file with informations needed for a frontend feedback agent to know. Save file and hit Enter.")
 
 
-if __name__ == "__main__":
-    print(list_directory_tree(work_dir))
+def read_project_rules():
+    project_rules_path = os.path.join(Work.dir(), '.cleanrules')
+    if not os.path.exists(project_rules_path):
+        return "Project rules not exist."
+    with open(project_rules_path, 'r') as file:
+        return file.read()
+
